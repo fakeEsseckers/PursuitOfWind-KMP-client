@@ -78,6 +78,28 @@ class ForecastHourBuilder {
 /** `forecastHour { wind(18.kn, 24.kn) }`: three agreeing models, bearing 240°, daylight, dry, 15 °C. */
 fun forecastHour(block: ForecastHourBuilder.() -> Unit = {}): ForecastHour = ForecastHourBuilder().apply(block).build()
 
+/**
+ * One forecast hour per letter, an hour apart from [firstStart]: `G` stays GO, `M` adds rain (MARGINAL),
+ * `N` adds a thunderstorm (NO_GO). Spaces are ignored. [base] sets up every hour before the letter is applied.
+ */
+fun hoursFromPattern(
+    firstStart: Instant,
+    pattern: String,
+    base: ForecastHourBuilder.() -> Unit = {},
+): List<ForecastHour> =
+    pattern.filterNot { it == ' ' }.mapIndexed { index, letter ->
+        forecastHour {
+            base()
+            start = firstStart + index.hours
+            when (letter) {
+                'G' -> Unit
+                'M' -> precipMm = 3.0
+                'N' -> thunderRisk = ThunderRisk.HIGH
+                else -> error("Unknown verdict letter '$letter'")
+            }
+        }
+    }
+
 /** Smallest angle between two bearings, so 359.9999° and 0° are 0.0001° apart. */
 fun angularDistance(
     a: Bearing,
