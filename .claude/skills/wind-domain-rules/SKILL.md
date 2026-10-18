@@ -19,23 +19,26 @@ The decision engine (`:shared:windengine`, package `io.github.esseckers.pursuito
 
 | Type | Meaning |
 | --- | --- |
-| `WindSpeed(metersPerSecond)` | value class; `toKnots()`, `toKmh()`, `toBeaufort()`; factory `WindSpeed.knots(x)` |
+| `WindSpeed(metersPerSecond)` | value class; `toKnots()`, `toKmh()`, `toBeaufort()`; factories `WindSpeed.knots(x)`, `WindSpeed.kmh(x)` |
 | `Bearing(degrees)` | direction the wind blows **from**, normalized to [0, 360) |
-| `Sector(from, to)` | clockwise arc, inclusive on both ends, may wrap past 0°; `from == to` is invalid |
+| `Sector(from, to)` / `Sector.of(fromDeg, toDeg)` | clockwise arc, inclusive on both ends, may wrap past 0°; `from == to` is invalid |
 | `SkillLevel` | BEGINNER, INTERMEDIATE, ADVANCED |
-| `RiderProfile` | weightKg, level, quiverM2, optional min/max wind (kn), minSessionHours (2.0), maxDriveMinutes (180) |
-| `SpotConfig` | id, name, IANA timeZone, rideableSectors, dangerSectors, driveMinutes, dataQuality |
-| `ForecastHour` | start Instant, per-model wind (mean, gust, bearing), precipMm, tempC, thunderRisk, isDaylight |
-| `HourVerdict` | verdict, reasons (sorted by severity), recommended kite size or null |
-| `SessionWindow` | spotId, start, end, hours, marginalHours, leaveBy, usableStart, usableHours, confidence, score |
-| `DayDecision` | `Go(...)` or `NoGo(primaryReason, details, nextGoDay)` |
+| `RiderProfile` | weightKg, level, quiverM2, optional `minWind` / `maxWind` (`WindSpeed`), `minSession` (2 h), `maxDrive` (3 h) as `Duration` |
+| `SpotConfig` | `SpotId`, name, IANA `timeZone`, rideableSectors (non-empty), dangerSectors, `drive: Duration`. Data quality is spot metadata for the UI; the engine does not use it |
+| `ForecastHour` | start `Instant`, `byModel: Map<ModelId, ModelWind(mean, gust, bearing)>`, precipMm, tempC, `ThunderRisk`, isDaylight |
+| `HourVerdict` | start, verdict, reasons (sorted by severity), `recommendedKiteM2` or null, consensus `HourWind` (mean, gust, bearing, modelSpread) |
+| `SessionWindow` | spotId, start, end, hours, marginalHours, leaveBy, usableStart, `usable: Duration`, confidence, score, recommendedKiteM2, `qualifies` |
+| `SpotForecast` | spot + its forecast hours; input of `decideDays` |
+| `DayDecision` | `Go(date, window, alternatives)` or `NoGo(date, primaryReason, details: List<SpotNoGo>, nextGoDay)` |
+
+Entry points: `DecisionEngine.evaluateHour`, `DecisionEngine.findWindows`, `DecisionEngine.decideDays`, plus `localHourLabel(start, zone)` for chart labels.
 
 ## Rules
 
 ### 1. Model consensus per hour
 
 - Mean wind = arithmetic mean of model means. Gust = arithmetic mean of model gusts.
-- Direction = **vector mean** of model bearings (sum of unit vectors, `atan2`). If the resultant length is below 1e-6, fall back to the highest-priority model present: `ecmwf`, then `icon`, then `gfs`.
+- Direction = **vector mean** of model bearings (sum of unit vectors, `atan2`). If the resultant length is below 1e-6, fall back to the highest-priority model present: `ecmwf`, then `icon`, then `gfs`, then the model id that sorts first.
 - Model spread for the hour = max − min of model mean wind, in knots.
 
 ### 2. Wind range by level
@@ -46,7 +49,7 @@ The decision engine (`:shared:windengine`, package `io.github.esseckers.pursuito
 | INTERMEDIATE | 12 | 28 | 10 |
 | ADVANCED | 10 | 35 | 14 |
 
-Personal `minWindKn` / `maxWindKn`, when set, replace the level defaults. Gust spread tolerance always comes from the level.
+Personal `minWind` / `maxWind`, when set, replace the level defaults. Gust spread tolerance always comes from the level. Limits are inclusive (compared with a 1e-9 kn tolerance).
 
 ### 3. Hour rules (each produces GO, MARGINAL or NO_GO with a reason)
 
@@ -84,23 +87,25 @@ candidates  = quiver sizes within [0.8 × idealM2, 1.15 × idealM2]
 
 ### 5. Windows
 
-- Scan hours in time order per spot. A window is a maximal run of GO hours in which **isolated** MARGINAL hours (GO on both sides) are bridged. A MARGINAL hour at either edge, or two MARGINAL hours in a row, ends the run.
-- `leaveBy = start − driveMinutes − 30 min` (30 min to rig).
-- If `now > leaveBy`: `usableStart = now + driveMinutes + 30 min`, else `usableStart = start`. `usableHours = (end − usableStart)` in hours, floored at 0.
-- A window qualifies if `usableHours ≥ minSessionHours`; otherwise it is reported with reason WINDOW_TOO_SHORT.
-- Spots with `driveMinutes > maxDriveMinutes` produce no windows and report TOO_FAR.
+- Scan hours in time order per spot. A window is a maximal run of GO hours in which **isolated** MARGINAL hours (GO on both sides) are bridged. A MARGINAL hour at either edge, two MARGINAL hours in a row, or a missing forecast hour ends the run.
+- `leaveBy = start − drive − 30 min` (30 min to rig).
+- If `now > leaveBy`: `usableStart = now + drive + 30 min`, else `usableStart = start`. `usable = end − usableStart`, floored at 0.
+- A window qualifies if `usable ≥ minSession`; otherwise it is reported with `qualifies = false` (WINDOW_TOO_SHORT).
+- The window kite is the most frequent hour kite; tie → smaller.
+- Spots with `drive > maxDrive` produce no windows and report TOO_FAR.
 
 ### 6. Confidence and score
 
-- Window confidence from the **median** of hourly model spreads inside the window (even count → mean of the two middle values): ≤ 3 kn HIGH, ≤ 6 kn MEDIUM, otherwise LOW. Only one model → UNKNOWN.
+- Window confidence from the **median** of hourly model spreads inside the window (even count → mean of the two middle values): ≤ 3 kn HIGH, ≤ 6 kn MEDIUM, otherwise LOW. Hours with one model have no spread; no spread at all → UNKNOWN.
 - `score = usableHours × quality × confidenceFactor`, `quality = 1.0 − 0.15 × marginalHours` (floored at 0.1), `confidenceFactor`: HIGH 1.0, MEDIUM 0.85, LOW 0.6, UNKNOWN 0.8.
 - Ranking: higher score first; tie → shorter drive; tie → earlier start; tie → spot id ascending.
 
 ### 7. Day decision
 
-- Days are calendar dates in the **spot's time zone**. Hours are assigned to a day by their start instant converted to that zone.
+- Days are calendar dates in the **spot's time zone**. Hours are assigned to a day by their start instant converted to that zone. Dates before today (spot zone) are skipped.
 - `Go`: best qualifying window across favorite spots for that day, with recommended kite (most frequent hour recommendation in the window; tie → smaller), leaveBy, confidence and up to 2 alternative windows.
-- `NoGo.primaryReason`: if any GO hour existed that day but no window qualified → WINDOW_TOO_SHORT. Otherwise the most frequent hour reason across daylight hours of all favorite spots; tie → more severe. If all favorite spots are TOO_FAR → TOO_FAR.
+- `NoGo.primaryReason`: if all favorite spots are TOO_FAR → TOO_FAR. If any GO hour existed that day but no window qualified → WINDOW_TOO_SHORT. Otherwise the most frequent reason across daylight hours (hours without DARK) of reachable spots, counting every reason of an hour; tie → more severe; no daylight hour → DARK.
+- `NoGo.details`: one `SpotNoGo` per spot, same rule per spot.
 - `nextGoDay`: earliest later date within the forecast horizon that has a `Go`.
 
 ## UI copy guidance (EN, short, plain)
