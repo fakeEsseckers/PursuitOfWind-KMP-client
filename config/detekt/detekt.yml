@@ -1,0 +1,31 @@
+# Overrides on top of detekt's default configuration (buildUponDefaultConfig = true).
+# Formatting is owned by ktlint; detekt checks code smells only.
+
+naming:
+  FunctionNaming:
+    # Composables are PascalCase by convention.
+    ignoreAnnotated: ['Composable']
+  MatchingDeclarationName:
+    active: true
+
+style:
+  MaxLineLength:
+    # Same limit as ktlint (.editorconfig).
+    maxLineLength: 140
+  MagicNumber:
+    # Tests are full of literal vectors; previews and design tokens declare values on purpose.
+    excludes: ['**/commonTest/**', '**/jvmTest/**', '**/androidHostTest/**', '**/iosTest/**', '**/design/**']
+    ignorePropertyDeclaration: true
+    ignoreCompanionObjectPropertyDeclaration: true
+  UnusedPrivateMember:
+    # @Preview functions are used by tooling, not by code.
+    ignoreAnnotated: ['Preview']
+  WildcardImport:
+    active: true
+
+complexity:
+  LongParameterList:
+    # Composables take many optional parameters by design.
+    ignoreAnnotated: ['Composable']
+  TooManyFunctions:
+    ignoreAnnotatedFunctions: ['Preview']

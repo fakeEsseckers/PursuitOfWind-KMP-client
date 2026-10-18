@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Pursuit Of Wind</string>
+    <string name="app_tagline">Знай, когда ехать. Знай, кто за рулём.</string>
+    <string name="bootstrap_status">Идёт клиентская фаза. Следующим будет движок решений.</string>
+</resources>

@@ -1,0 +1,11 @@
+// Identity and version of the iOS app, shared by all build configurations.
+// To run on a device, create Config.local.xcconfig next to this file (it is gitignored) with:
+//   TEAM_ID = <your Apple developer team id>
+// and, if the bundle id is taken under your team, BUNDLE_ID = <a unique id>.
+TEAM_ID =
+BUNDLE_ID = io.github.esseckers.pursuitofwind
+APP_NAME = PursuitOfWind
+MARKETING_VERSION = 0.1.0
+CURRENT_PROJECT_VERSION = 1
+
+#include? "Config.local.xcconfig"

@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Pursuit Of Wind</string>
+    <string name="app_tagline">Know when to go. Know who’s driving.</string>
+    <string name="bootstrap_status">Client phase in progress. The decision engine comes next.</string>
+</resources>

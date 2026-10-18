@@ -1,0 +1,47 @@
+# Gradle / Kotlin
+.gradle/
+build/
+.kotlin/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Local configuration and secrets
+local.properties
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+signing.properties
+google-services.json
+GoogleService-Info.plist
+
+# Claude Code personal settings (team settings in .claude/settings.json stay committed)
+.claude/settings.local.json
+CLAUDE.local.md
+
+# IDEs
+# IDE code style comes from .editorconfig and kotlin.code.style=official, so .idea stays local.
+.idea/
+*.iml
+.vscode/
+.fleet/
+
+# Android
+captures/
+*.apk
+*.aab
+.externalNativeBuild/
+.cxx/
+
+# iOS / Xcode
+iosApp/Configuration/Config.local.xcconfig
+iosApp/build/
+xcuserdata/
+*.xcuserstate
+DerivedData/
+*.xcframework
+Pods/
+
+# OS
+.DS_Store
+Thumbs.db

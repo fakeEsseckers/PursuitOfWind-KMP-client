@@ -1,0 +1,12 @@
+{
+  "name": "Pursuit Of Wind (KMP)",
+  "image": "mcr.microsoft.com/devcontainers/java:21",
+  "hostRequirements": {
+    "cpus": 4,
+    "memory": "16gb"
+  },
+  "containerEnv": {
+    "ANDROID_HOME": "/home/vscode/android-sdk"
+  },
+  "postCreateCommand": "bash .devcontainer/install-android-sdk.sh && ./scripts/setup.sh"
+}
