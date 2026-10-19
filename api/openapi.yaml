@@ -1,0 +1,1661 @@
+openapi: 3.1.0
+info:
+  title: Pursuit Of Wind API
+  version: 1.0.0
+  summary: Kitesurf session decisions and crew rides.
+  description: |
+    Contract between the Pursuit Of Wind clients (Android, iOS) and the backend. Until the backend exists, the apps
+    run against an in-app fake server that implements this document; contract tests validate every fake response
+    against it.
+
+    Conventions:
+    - JSON, `camelCase` fields, timestamps in ISO-8601 UTC (`2026-07-18T11:00:00Z`).
+    - Wind speeds in metres per second (fields end with `Mps`), directions in degrees the wind blows **from**.
+    - Optional fields are omitted rather than sent as `null`. Clients ignore fields they do not know.
+    - Enum values are closed within `/v1`: adding one is a breaking change. Crew event types are open: clients skip
+      events whose `type` they do not know and still advance the feed cursor.
+    - Errors are `application/problem+json` (RFC 9457) with a machine-readable `code`.
+    - Mutations accept an `Idempotency-Key`. Repeating a request with the same key and body returns the stored
+      response with `Idempotent-Replayed: true`; the same key with a different body is `422 IDEMPOTENCY_KEY_REUSED`.
+      Keys are scoped to the user, method and path and kept for 24 hours; requests with the same key run one at a time.
+    - Authenticated requests carry `Authorization: Bearer <accessToken>`. On `401`, refresh the tokens once and retry.
+  license:
+    name: Apache-2.0
+    identifier: Apache-2.0
+servers:
+  - url: https://api.pursuitofwind.example
+    description: Placeholder. The backend lives in a separate repository and is not deployed yet.
+security:
+  - bearerAuth: []
+tags:
+  - name: Auth
+  - name: Profile
+  - name: Spots
+  - name: Forecast
+  - name: Crews
+  - name: Rides
+  - name: Devices
+
+paths:
+  /v1/auth/anonymous:
+    post:
+      tags: [Auth]
+      operationId: signInAnonymously
+      summary: Register this app installation and get tokens
+      description: |
+        Calling again with the same installation id returns new tokens for the same user, so the installation id is a
+        long-lived credential: store it like one (Keychain, encrypted storage).
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnonymousSignInRequest'
+      responses:
+        '200':
+          description: Signed in as the existing user of this installation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokens'
+        '201':
+          description: Signed in as a new user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokens'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        default:
+          $ref: '#/components/responses/Problem'
+
+  /v1/auth/refresh:
+    post:
+      tags: [Auth]
+      operationId: refreshTokens
+      summary: Exchange a refresh token for a new token pair
+      description: |
+        Refresh tokens rotate: the old one stops working once the new pair is issued. If a refresh fails with `401`
+        (for example because the response to an earlier refresh was lost), sign in anonymously again with the same
+        installation id.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokensRequest'
+      responses:
+        '200':
+          description: New token pair.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokens'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        default:
+          $ref: '#/components/responses/Problem'
+
+  /v1/me/profile:
+    get:
+      tags: [Profile]
+      operationId: getProfile
+      summary: The rider profile of the signed-in user
+      responses:
+        '200':
+          description: The profile.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiderProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: The user has not saved a profile yet (`NOT_FOUND`).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: /problems/not-found
+                title: Profile not found
+                status: 404
+                code: NOT_FOUND
+                instance: /v1/me/profile
+        default:
+          $ref: '#/components/responses/Problem'
+    put:
+      tags: [Profile]
+      operationId: putProfile
+      summary: Create or replace the rider profile
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RiderProfile'
+      responses:
+        '200':
+          description: The stored profile.
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiderProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        default:
+          $ref: '#/components/responses/Problem'
+
+  /v1/spots/catalog:
+    get:
+      tags: [Spots]
+      operationId: listSpotCatalog
+      summary: All known spots, page by page
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: One page of spots.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpotPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        default:
+          $ref: '#/components/responses/Problem'
+
+  /v1/me/spots:
+    get:
+      tags: [Spots]
+      operationId: listMySpots
+      summary: Spots the rider follows, with their drive time
+      responses:
+        '200':
+          description: The rider's spots.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MySpotList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        default:
+          $ref: '#/components/responses/Problem'
+
+  /v1/me/spots/{spotId}:
+    parameters:
+      - $ref: '#/components/parameters/SpotId'
+    put:
+      tags: [Spots]
+      operationId: putMySpot
+      summary: Follow a spot or update its drive time and favorite flag
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MySpotUpdate'
+      responses:
+        '200':
+          description: The followed spot.
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MySpot'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        default:
+          $ref: '#/components/responses/Problem'
+    delete:
+      tags: [Spots]
+      operationId: deleteMySpot
+      summary: Stop following a spot
+      description: Succeeds also when the rider does not follow the spot.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '204':
+          description: Not followed any more.
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        default:
+          $ref: '#/components/responses/Problem'
+
+  /v1/spots/{spotId}/forecast:
+    parameters:
+      - $ref: '#/components/parameters/SpotId'
+    get:
+      tags: [Forecast]
+      operationId: getSpotForecast
+      summary: Hourly forecast per weather model
+      description: |
+        Hours start on the full hour; a `from` inside an hour starts with that hour. Each hour carries every available
+        model's wind, each model at most once; the client combines them. Near the models' horizon fewer hours than
+        requested may come back. `isDaylight` is false when the hour starts before sunrise or ends later than
+        30 minutes before sunset.
+      parameters:
+        - name: from
+          in: query
+          description: First hour (inclusive). Defaults to the current hour.
+          schema:
+            type: string
+            format: date-time
+          example: '2026-07-18T00:00:00Z'
+        - name: hours
+          in: query
+          description: Number of hourly slots.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 168
+            default: 72
+      responses:
+        '200':
+          description: The forecast.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpotForecast'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        default:
+          $ref: '#/components/responses/Problem'
+
+  /v1/crews:
+    post:
+      tags: [Crews]
+      operationId: createCrew
+      summary: Create a crew; the creator becomes its owner
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCrewRequest'
+      responses:
+        '201':
+          description: The new crew.
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Crew'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        default:
+          $ref: '#/components/responses/Problem'
+
+  /v1/me/crews:
+    get:
+      tags: [Crews]
+      operationId: listMyCrews
+      summary: Crews the rider belongs to
+      responses:
+        '200':
+          description: The rider's crews.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrewList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        default:
+          $ref: '#/components/responses/Problem'
+
+  /v1/crews/join:
+    post:
+      tags: [Crews]
+      operationId: joinCrew
+      summary: Join a crew with an invite code
+      description: Joining a crew the rider already belongs to returns the crew unchanged.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JoinCrewRequest'
+      responses:
+        '200':
+          description: The joined crew.
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Crew'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: No crew has this invite code (`INVITE_INVALID`).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: /problems/invite-invalid
+                title: Invite code is not valid
+                status: 404
+                code: INVITE_INVALID
+        default:
+          $ref: '#/components/responses/Problem'
+
+  /v1/crews/{crewId}/members:
+    parameters:
+      - $ref: '#/components/parameters/CrewId'
+    get:
+      tags: [Crews]
+      operationId: listCrewMembers
+      summary: Members of a crew
+      responses:
+        '200':
+          description: The members.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrewMemberList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotAMember'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Problem'
+
+  /v1/crews/{crewId}/rides:
+    parameters:
+      - $ref: '#/components/parameters/CrewId'
+    get:
+      tags: [Rides]
+      operationId: listCrewRides
+      summary: Rides of a crew that end after `from`, by departure time
+      parameters:
+        - name: from
+          in: query
+          description: Only rides whose window ends after this instant. Defaults to now.
+          schema:
+            type: string
+            format: date-time
+          example: '2026-07-16T06:00:00Z'
+      responses:
+        '200':
+          description: The rides, cancelled ones included.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RideList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotAMember'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Problem'
+    post:
+      tags: [Rides]
+      operationId: createRide
+      summary: Offer a ride to a session window; the caller drives
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRideRequest'
+      responses:
+        '201':
+          description: The new ride.
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ride'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotAMember'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        default:
+          $ref: '#/components/responses/Problem'
+
+  /v1/rides/{rideId}:
+    parameters:
+      - $ref: '#/components/parameters/RideId'
+    get:
+      tags: [Rides]
+      operationId: getRide
+      summary: One ride, for example to reconcile after a seat conflict
+      responses:
+        '200':
+          description: The ride.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ride'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotAMember'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Problem'
+    delete:
+      tags: [Rides]
+      operationId: cancelRide
+      summary: Cancel a ride (driver only)
+      description: The ride stays visible with status `CANCELLED`. Cancelling twice returns the cancelled ride.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: The cancelled ride.
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ride'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Only the driver can cancel (`NOT_THE_DRIVER`), or the caller is not in the crew (`NOT_A_MEMBER`).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: /problems/not-the-driver
+                title: Only the driver can cancel this ride
+                status: 403
+                code: NOT_THE_DRIVER
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Problem'
+
+  /v1/rides/{rideId}/seats:
+    parameters:
+      - $ref: '#/components/parameters/RideId'
+    post:
+      tags: [Rides]
+      operationId: takeSeat
+      summary: Take a free seat in a ride
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '201':
+          description: Seat taken; the updated ride.
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ride'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotAMember'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: No free seat (`SEATS_FULL`), the caller is already in the ride (`ALREADY_JOINED`) or the ride is cancelled (`RIDE_CANCELLED`).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                seatsFull:
+                  value:
+                    type: /problems/seats-full
+                    title: No seats left
+                    status: 409
+                    code: SEATS_FULL
+                    detail: Ride rid_2b81 has no free seats.
+                    instance: /v1/rides/rid_2b81/seats
+                alreadyJoined:
+                  value:
+                    type: /problems/already-joined
+                    title: Already in this ride
+                    status: 409
+                    code: ALREADY_JOINED
+                rideCancelled:
+                  value:
+                    type: /problems/ride-cancelled
+                    title: The ride was cancelled
+                    status: 409
+                    code: RIDE_CANCELLED
+        default:
+          $ref: '#/components/responses/Problem'
+
+  /v1/rides/{rideId}/seats/me:
+    parameters:
+      - $ref: '#/components/parameters/RideId'
+    delete:
+      tags: [Rides]
+      operationId: releaseSeat
+      summary: Give the caller's seat back
+      description: Succeeds also when the caller has no seat in the ride.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: The updated ride.
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ride'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotAMember'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/Problem'
+
+  /v1/crews/{crewId}/feed:
+    parameters:
+      - $ref: '#/components/parameters/CrewId'
+    get:
+      tags: [Crews]
+      operationId: getCrewFeed
+      summary: Crew events in the order they happened
+      description: |
+        Page through the feed by passing `lastEventId` as `since` until `hasMore` is false. Event ids are opaque.
+        When `since` is unknown or too old, the response is `410 FEED_RESET`: reload the crew's rides, then read the
+        feed again without `since`.
+      parameters:
+        - name: since
+          in: query
+          description: Only events after this event id. Omit to get the latest events.
+          schema:
+            type: string
+          example: evt_0041
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Events, oldest first.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrewFeed'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/NotAMember'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '410':
+          description: '`since` is unknown or too old (`FEED_RESET`).'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: /problems/feed-reset
+                title: Feed position is no longer available
+                status: 410
+                code: FEED_RESET
+        default:
+          $ref: '#/components/responses/Problem'
+
+  /v1/me/push-token:
+    put:
+      tags: [Devices]
+      operationId: putPushToken
+      summary: Register this device for push notifications
+      description: Accepted and ignored until the backend sends pushes.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PushTokenRequest'
+      responses:
+        '204':
+          description: Registered.
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        default:
+          $ref: '#/components/responses/Problem'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Access token from `signInAnonymously` or `refreshTokens`.
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      description: Client-generated UUID that makes a mutation safe to retry.
+      schema:
+        type: string
+        format: uuid
+      example: 3f9d6c1e-8a42-4f4b-9d0e-6b1c2a7e5f10
+    SpotId:
+      name: spotId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^[A-Za-z0-9_-]+$'
+      example: nordstrand-bay
+    CrewId:
+      name: crewId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^[A-Za-z0-9_-]+$'
+      example: crw_weekend
+    RideId:
+      name: rideId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^[A-Za-z0-9_-]+$'
+      example: rid_7f3c
+    Cursor:
+      name: cursor
+      in: query
+      description: '`nextCursor` from the previous page. Omit for the first page.'
+      schema:
+        type: string
+    Limit:
+      name: limit
+      in: query
+      description: Maximum number of items.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 50
+
+  headers:
+    WwwAuthenticate:
+      description: Always `Bearer` (RFC 6750), with `error="invalid_token"` when a token was sent but is not valid.
+      required: true
+      schema:
+        type: string
+      example: Bearer error="invalid_token"
+    IdempotentReplayed:
+      description: '`true` when the response was stored for this `Idempotency-Key` and replayed.'
+      schema:
+        type: boolean
+    RetryAfter:
+      description: Seconds to wait before retrying.
+      schema:
+        type: integer
+        minimum: 0
+
+  responses:
+    Problem:
+      description: Unexpected error (`RATE_LIMITED` 429, `SERVICE_UNAVAILABLE` 503, `INTERNAL` 500).
+      headers:
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: /problems/service-unavailable
+            title: Service temporarily unavailable
+            status: 503
+            code: SERVICE_UNAVAILABLE
+    Unauthorized:
+      description: Missing, invalid or expired token (`UNAUTHORIZED`).
+      headers:
+        WWW-Authenticate:
+          $ref: '#/components/headers/WwwAuthenticate'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: /problems/unauthorized
+            title: Unauthorized
+            status: 401
+            code: UNAUTHORIZED
+    NotAMember:
+      description: The caller is not a member of the crew (`NOT_A_MEMBER`).
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: /problems/not-a-member
+            title: Not a member of this crew
+            status: 403
+            code: NOT_A_MEMBER
+    NotFound:
+      description: The resource does not exist (`NOT_FOUND`).
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: /problems/not-found
+            title: Not found
+            status: 404
+            code: NOT_FOUND
+            instance: /v1/spots/atlantis/forecast
+    ValidationFailed:
+      description: The request is malformed or breaks a constraint (`VALIDATION_FAILED`, `IDEMPOTENCY_KEY_REUSED`).
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            validationFailed:
+              value:
+                type: /problems/validation-failed
+                title: Request is not valid
+                status: 422
+                code: VALIDATION_FAILED
+                detail: weightKg must be between 30 and 200.
+            idempotencyKeyReused:
+              value:
+                type: /problems/idempotency-key-reused
+                title: Idempotency key was used for a different request
+                status: 422
+                code: IDEMPOTENCY_KEY_REUSED
+
+  schemas:
+    Problem:
+      type: object
+      description: |
+        Error body (RFC 9457). Clients branch on `code`, never on `title` or `detail`.
+        Known codes: `UNAUTHORIZED`, `NOT_FOUND`, `VALIDATION_FAILED`, `NOT_A_MEMBER`, `NOT_THE_DRIVER`,
+        `INVITE_INVALID`, `SEATS_FULL`, `ALREADY_JOINED`, `RIDE_CANCELLED`, `FEED_RESET`, `IDEMPOTENCY_KEY_REUSED`,
+        `RATE_LIMITED`, `SERVICE_UNAVAILABLE`, `INTERNAL`. New codes may be added; treat unknown ones by `status`.
+      required: [type, title, status, code]
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        code:
+          type: string
+          pattern: '^[A-Z][A-Z0-9_]*$'
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+      examples:
+        - type: /problems/seats-full
+          title: No seats left
+          status: 409
+          code: SEATS_FULL
+          detail: Ride rid_2b81 has no free seats.
+          instance: /v1/rides/rid_2b81/seats
+
+    Platform:
+      type: string
+      enum: [ANDROID, IOS]
+
+    AnonymousSignInRequest:
+      type: object
+      required: [installationId, platform]
+      properties:
+        installationId:
+          type: string
+          format: uuid
+          description: Random id the app generates once per installation.
+        platform:
+          $ref: '#/components/schemas/Platform'
+      examples:
+        - installationId: 0b6c7a52-3f1e-4c8d-9a7b-5e2f1d0c4b3a
+          platform: ANDROID
+
+    RefreshTokensRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+          minLength: 1
+      examples:
+        - refreshToken: rt_5Jw2kQe9
+
+    AuthTokens:
+      type: object
+      required: [userId, accessToken, refreshToken, accessTokenExpiresAt]
+      properties:
+        userId:
+          type: string
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        accessTokenExpiresAt:
+          type: string
+          format: date-time
+      examples:
+        - userId: usr_alex
+          accessToken: at_9fK2mZp1
+          refreshToken: rt_5Jw2kQe9
+          accessTokenExpiresAt: '2026-07-16T07:00:00Z'
+
+    SkillLevel:
+      type: string
+      enum: [BEGINNER, INTERMEDIATE, ADVANCED]
+
+    WindUnit:
+      type: string
+      description: How the app shows wind speeds. The API always uses m/s.
+      enum: [KNOTS, METERS_PER_SECOND, KILOMETERS_PER_HOUR, BEAUFORT]
+
+    RiderProfile:
+      type: object
+      required: [displayName, weightKg, level, quiverM2, minSessionMinutes, maxDriveMinutes, windUnit]
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 40
+        weightKg:
+          type: number
+          minimum: 30
+          maximum: 200
+        level:
+          $ref: '#/components/schemas/SkillLevel'
+        quiverM2:
+          type: array
+          description: Kite sizes in square metres. Empty means "do not size kites".
+          maxItems: 10
+          uniqueItems: true
+          items:
+            type: number
+            exclusiveMinimum: 0
+            maximum: 25
+        minWindMps:
+          type: number
+          minimum: 0
+          description: Personal lower wind limit; replaces the level default.
+        maxWindMps:
+          type: number
+          minimum: 0
+          description: Personal upper wind limit; replaces the level default.
+        minSessionMinutes:
+          type: integer
+          minimum: 30
+          maximum: 720
+        maxDriveMinutes:
+          type: integer
+          minimum: 0
+          maximum: 720
+        windUnit:
+          $ref: '#/components/schemas/WindUnit'
+      examples:
+        - displayName: Alex
+          weightKg: 80
+          level: INTERMEDIATE
+          quiverM2: [7, 9, 12]
+          minSessionMinutes: 120
+          maxDriveMinutes: 180
+          windUnit: KNOTS
+        - displayName: Mira
+          weightKg: 62.5
+          level: ADVANCED
+          quiverM2: [6, 8, 10]
+          minWindMps: 6.2
+          maxWindMps: 17.5
+          minSessionMinutes: 90
+          maxDriveMinutes: 240
+          windUnit: METERS_PER_SECOND
+
+    GeoPoint:
+      type: object
+      required: [lat, lon]
+      properties:
+        lat:
+          type: number
+          minimum: -90
+          maximum: 90
+        lon:
+          type: number
+          minimum: -180
+          maximum: 180
+      examples:
+        - lat: 54.4936
+          lon: 8.8131
+
+    Sector:
+      type: object
+      description: Clockwise arc of wind directions, both ends included; may wrap past north (`fromDeg` > `toDeg`).
+      required: [fromDeg, toDeg]
+      properties:
+        fromDeg:
+          type: number
+          minimum: 0
+          exclusiveMaximum: 360
+        toDeg:
+          type: number
+          minimum: 0
+          exclusiveMaximum: 360
+      examples:
+        - fromDeg: 300
+          toDeg: 60
+
+    DataQuality:
+      type: string
+      description: '`UNVERIFIED` sectors come from the community and have not been checked.'
+      enum: [VERIFIED, UNVERIFIED]
+
+    Spot:
+      type: object
+      required: [id, name, location, timeZone, rideableSectors, dangerSectors, dataQuality]
+      properties:
+        id:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          minLength: 1
+        location:
+          $ref: '#/components/schemas/GeoPoint'
+        timeZone:
+          type: string
+          description: IANA time zone of the spot.
+        rideableSectors:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/Sector'
+        dangerSectors:
+          type: array
+          description: Directions that are dangerous here, typically offshore. They win over rideable sectors.
+          items:
+            $ref: '#/components/schemas/Sector'
+        dataQuality:
+          $ref: '#/components/schemas/DataQuality'
+      examples:
+        - id: nordstrand-bay
+          name: Nordstrand Bay
+          location:
+            lat: 54.4936
+            lon: 8.8131
+          timeZone: Europe/Berlin
+          rideableSectors:
+            - fromDeg: 180
+              toDeg: 300
+          dangerSectors:
+            - fromDeg: 60
+              toDeg: 150
+          dataQuality: VERIFIED
+
+    SpotPage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Spot'
+        nextCursor:
+          type: string
+          description: Present when more spots follow.
+      examples:
+        - items:
+            - id: lake-weiss
+              name: Lake Weiss
+              location:
+                lat: 52.4123
+                lon: 11.6274
+              timeZone: Europe/Berlin
+              rideableSectors:
+                - fromDeg: 220
+                  toDeg: 320
+              dangerSectors: []
+              dataQuality: UNVERIFIED
+          nextCursor: c_lake-weiss
+
+    MySpotUpdate:
+      type: object
+      required: [driveMinutes, favorite]
+      properties:
+        driveMinutes:
+          type: integer
+          minimum: 0
+          maximum: 1440
+          description: One-way drive from the rider's home.
+        favorite:
+          type: boolean
+          description: Favorite spots take part in the daily GO / NO-GO decision.
+      examples:
+        - driveMinutes: 120
+          favorite: true
+
+    MySpot:
+      type: object
+      required: [spot, driveMinutes, favorite]
+      properties:
+        spot:
+          $ref: '#/components/schemas/Spot'
+        driveMinutes:
+          type: integer
+          minimum: 0
+          maximum: 1440
+        favorite:
+          type: boolean
+      examples:
+        - spot:
+            id: salt-lagoon
+            name: Salt Lagoon
+            location:
+              lat: 53.0712
+              lon: 8.2156
+            timeZone: Europe/Berlin
+            rideableSectors:
+              - fromDeg: 200
+                toDeg: 340
+            dangerSectors: []
+            dataQuality: VERIFIED
+          driveMinutes: 160
+          favorite: true
+
+    MySpotList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MySpot'
+      examples:
+        - items: []
+
+    ThunderRisk:
+      type: string
+      enum: [LOW, MEDIUM, HIGH]
+
+    ModelWind:
+      type: object
+      required: [model, meanMps, gustMps, bearingDeg]
+      properties:
+        model:
+          type: string
+          description: Weather model id, for example `ecmwf`, `icon` or `gfs`.
+          minLength: 1
+        meanMps:
+          type: number
+          minimum: 0
+        gustMps:
+          type: number
+          minimum: 0
+        bearingDeg:
+          type: number
+          minimum: 0
+          exclusiveMaximum: 360
+          description: Direction the wind blows from.
+      examples:
+        - model: ecmwf
+          meanMps: 9.26
+          gustMps: 12.35
+          bearingDeg: 240
+
+    ForecastHour:
+      type: object
+      required: [start, models, precipitationMm, temperatureC, thunderRisk, isDaylight]
+      properties:
+        start:
+          type: string
+          format: date-time
+        models:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/ModelWind'
+        precipitationMm:
+          type: number
+          minimum: 0
+        temperatureC:
+          type: number
+        thunderRisk:
+          $ref: '#/components/schemas/ThunderRisk'
+        isDaylight:
+          type: boolean
+      examples:
+        - start: '2026-07-18T11:00:00Z'
+          models:
+            - model: ecmwf
+              meanMps: 9.26
+              gustMps: 12.35
+              bearingDeg: 240
+            - model: icon
+              meanMps: 9.0
+              gustMps: 12.1
+              bearingDeg: 236
+            - model: gfs
+              meanMps: 9.5
+              gustMps: 12.9
+              bearingDeg: 245
+          precipitationMm: 0
+          temperatureC: 19.5
+          thunderRisk: LOW
+          isDaylight: true
+
+    SpotForecast:
+      type: object
+      required: [spotId, generatedAt, hours]
+      properties:
+        spotId:
+          type: string
+        generatedAt:
+          type: string
+          format: date-time
+        hours:
+          type: array
+          items:
+            $ref: '#/components/schemas/ForecastHour'
+      examples:
+        - spotId: nordstrand-bay
+          generatedAt: '2026-07-16T06:00:00Z'
+          hours:
+            - start: '2026-07-18T11:00:00Z'
+              models:
+                - model: ecmwf
+                  meanMps: 9.26
+                  gustMps: 12.35
+                  bearingDeg: 240
+              precipitationMm: 0.2
+              temperatureC: 19.5
+              thunderRisk: LOW
+              isDaylight: true
+
+    Person:
+      type: object
+      required: [userId, displayName]
+      properties:
+        userId:
+          type: string
+        displayName:
+          type: string
+      examples:
+        - userId: usr_andrei
+          displayName: Andrei
+
+    CreateCrewRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 40
+      examples:
+        - name: Weekend Crew
+
+    JoinCrewRequest:
+      type: object
+      required: [inviteCode]
+      properties:
+        inviteCode:
+          type: string
+          minLength: 1
+      examples:
+        - inviteCode: WIND-4KQ7
+
+    Crew:
+      type: object
+      required: [id, name, inviteCode, memberCount, createdAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        inviteCode:
+          type: string
+        memberCount:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+      examples:
+        - id: crw_weekend
+          name: Weekend Crew
+          inviteCode: WIND-4KQ7
+          memberCount: 4
+          createdAt: '2026-05-02T09:15:00Z'
+
+    CrewList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Crew'
+      examples:
+        - items: []
+
+    MemberRole:
+      type: string
+      enum: [OWNER, MEMBER]
+
+    CrewMember:
+      type: object
+      required: [userId, displayName, role, joinedAt]
+      properties:
+        userId:
+          type: string
+        displayName:
+          type: string
+        role:
+          $ref: '#/components/schemas/MemberRole'
+        joinedAt:
+          type: string
+          format: date-time
+      examples:
+        - userId: usr_mira
+          displayName: Mira
+          role: MEMBER
+          joinedAt: '2026-05-03T18:40:00Z'
+
+    CrewMemberList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CrewMember'
+      examples:
+        - items:
+            - userId: usr_alex
+              displayName: Alex
+              role: OWNER
+              joinedAt: '2026-05-02T09:15:00Z'
+
+    RideStatus:
+      type: string
+      enum: [SCHEDULED, CANCELLED]
+
+    CreateRideRequest:
+      type: object
+      required: [spotId, windowStart, windowEnd, departAt, meetingPoint, seatsTotal]
+      properties:
+        spotId:
+          type: string
+        windowStart:
+          type: string
+          format: date-time
+        windowEnd:
+          type: string
+          format: date-time
+        departAt:
+          type: string
+          format: date-time
+        meetingPoint:
+          type: string
+          minLength: 1
+          maxLength: 120
+        seatsTotal:
+          type: integer
+          minimum: 1
+          maximum: 8
+          description: Seats offered to passengers, the driver not included.
+      examples:
+        - spotId: nordstrand-bay
+          windowStart: '2026-07-18T11:00:00Z'
+          windowEnd: '2026-07-18T15:00:00Z'
+          departAt: '2026-07-18T08:30:00Z'
+          meetingPoint: Hauptbahnhof, north exit
+          seatsTotal: 3
+
+    Ride:
+      type: object
+      required:
+        [id, version, crewId, spotId, driver, windowStart, windowEnd, departAt, meetingPoint, seatsTotal, seatsFree, passengers, status, createdAt]
+      properties:
+        id:
+          type: string
+        version:
+          type: integer
+          minimum: 1
+          description: Grows with every change to the ride; a client keeps the copy with the highest version.
+        crewId:
+          type: string
+        spotId:
+          type: string
+        driver:
+          $ref: '#/components/schemas/Person'
+        windowStart:
+          type: string
+          format: date-time
+        windowEnd:
+          type: string
+          format: date-time
+        departAt:
+          type: string
+          format: date-time
+        meetingPoint:
+          type: string
+        seatsTotal:
+          type: integer
+          minimum: 1
+          maximum: 8
+        seatsFree:
+          type: integer
+          minimum: 0
+          maximum: 8
+        passengers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Person'
+        status:
+          $ref: '#/components/schemas/RideStatus'
+        createdAt:
+          type: string
+          format: date-time
+      examples:
+        - id: rid_7f3c
+          version: 2
+          crewId: crw_weekend
+          spotId: nordstrand-bay
+          driver:
+            userId: usr_andrei
+            displayName: Andrei
+          windowStart: '2026-07-18T11:00:00Z'
+          windowEnd: '2026-07-18T15:00:00Z'
+          departAt: '2026-07-18T08:30:00Z'
+          meetingPoint: Hauptbahnhof, north exit
+          seatsTotal: 3
+          seatsFree: 2
+          passengers:
+            - userId: usr_mira
+              displayName: Mira
+          status: SCHEDULED
+          createdAt: '2026-07-16T06:05:00Z'
+
+    RideList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ride'
+      examples:
+        - items: []
+
+    CrewEventBase:
+      type: object
+      required: [id, type, crewId, occurredAt, actor]
+      properties:
+        id:
+          type: string
+          description: Opaque; pass the newest one as `since` for the next call.
+        type:
+          type: string
+        crewId:
+          type: string
+        occurredAt:
+          type: string
+          format: date-time
+        actor:
+          $ref: '#/components/schemas/Person'
+
+    RideCreatedEvent:
+      allOf:
+        - $ref: '#/components/schemas/CrewEventBase'
+        - type: object
+          required: [type, ride]
+          properties:
+            type:
+              const: RIDE_CREATED
+            ride:
+              $ref: '#/components/schemas/Ride'
+      examples:
+        - id: evt_0041
+          type: RIDE_CREATED
+          crewId: crw_weekend
+          occurredAt: '2026-07-16T06:05:00Z'
+          actor:
+            userId: usr_andrei
+            displayName: Andrei
+          ride:
+            id: rid_7f3c
+            version: 1
+            crewId: crw_weekend
+            spotId: nordstrand-bay
+            driver:
+              userId: usr_andrei
+              displayName: Andrei
+            windowStart: '2026-07-18T11:00:00Z'
+            windowEnd: '2026-07-18T15:00:00Z'
+            departAt: '2026-07-18T08:30:00Z'
+            meetingPoint: Hauptbahnhof, north exit
+            seatsTotal: 3
+            seatsFree: 3
+            passengers: []
+            status: SCHEDULED
+            createdAt: '2026-07-16T06:05:00Z'
+
+    SeatTakenEvent:
+      allOf:
+        - $ref: '#/components/schemas/CrewEventBase'
+        - type: object
+          required: [type, rideId, rideVersion, seatsFree]
+          properties:
+            type:
+              const: SEAT_TAKEN
+            rideId:
+              type: string
+            rideVersion:
+              type: integer
+              minimum: 1
+            seatsFree:
+              type: integer
+              minimum: 0
+      examples:
+        - id: evt_0042
+          type: SEAT_TAKEN
+          crewId: crw_weekend
+          occurredAt: '2026-07-16T06:12:00Z'
+          actor:
+            userId: usr_mira
+            displayName: Mira
+          rideId: rid_7f3c
+          rideVersion: 2
+          seatsFree: 2
+
+    SeatReleasedEvent:
+      allOf:
+        - $ref: '#/components/schemas/CrewEventBase'
+        - type: object
+          required: [type, rideId, rideVersion, seatsFree]
+          properties:
+            type:
+              const: SEAT_RELEASED
+            rideId:
+              type: string
+            rideVersion:
+              type: integer
+              minimum: 1
+            seatsFree:
+              type: integer
+              minimum: 0
+      examples:
+        - id: evt_0044
+          type: SEAT_RELEASED
+          crewId: crw_weekend
+          occurredAt: '2026-07-16T08:00:00Z'
+          actor:
+            userId: usr_mira
+            displayName: Mira
+          rideId: rid_7f3c
+          rideVersion: 3
+          seatsFree: 3
+
+    RideCancelledEvent:
+      allOf:
+        - $ref: '#/components/schemas/CrewEventBase'
+        - type: object
+          required: [type, rideId, rideVersion]
+          properties:
+            type:
+              const: RIDE_CANCELLED
+            rideId:
+              type: string
+            rideVersion:
+              type: integer
+              minimum: 1
+
+    MemberJoinedEvent:
+      allOf:
+        - $ref: '#/components/schemas/CrewEventBase'
+        - type: object
+          required: [type, member]
+          properties:
+            type:
+              const: MEMBER_JOINED
+            member:
+              $ref: '#/components/schemas/CrewMember'
+
+    CrewEvent:
+      description: Something that happened in a crew. `type` tells which fields are present.
+      oneOf:
+        - $ref: '#/components/schemas/RideCreatedEvent'
+        - $ref: '#/components/schemas/SeatTakenEvent'
+        - $ref: '#/components/schemas/SeatReleasedEvent'
+        - $ref: '#/components/schemas/RideCancelledEvent'
+        - $ref: '#/components/schemas/MemberJoinedEvent'
+      discriminator:
+        propertyName: type
+        mapping:
+          RIDE_CREATED: '#/components/schemas/RideCreatedEvent'
+          SEAT_TAKEN: '#/components/schemas/SeatTakenEvent'
+          SEAT_RELEASED: '#/components/schemas/SeatReleasedEvent'
+          RIDE_CANCELLED: '#/components/schemas/RideCancelledEvent'
+          MEMBER_JOINED: '#/components/schemas/MemberJoinedEvent'
+
+    CrewFeed:
+      type: object
+      required: [items, hasMore]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CrewEvent'
+        lastEventId:
+          type: string
+          description: Id of the newest event in `items`; absent when `items` is empty.
+        hasMore:
+          type: boolean
+          description: More events follow; call again with `since` = `lastEventId`.
+      examples:
+        - items:
+            - id: evt_0040
+              type: MEMBER_JOINED
+              crewId: crw_weekend
+              occurredAt: '2026-07-15T19:02:00Z'
+              actor:
+                userId: usr_jonas
+                displayName: Jonas
+              member:
+                userId: usr_jonas
+                displayName: Jonas
+                role: MEMBER
+                joinedAt: '2026-07-15T19:02:00Z'
+            - id: evt_0042
+              type: SEAT_TAKEN
+              crewId: crw_weekend
+              occurredAt: '2026-07-16T06:12:00Z'
+              actor:
+                userId: usr_mira
+                displayName: Mira
+              rideId: rid_7f3c
+              rideVersion: 2
+              seatsFree: 2
+            - id: evt_0043
+              type: RIDE_CANCELLED
+              crewId: crw_weekend
+              occurredAt: '2026-07-16T07:30:00Z'
+              actor:
+                userId: usr_andrei
+                displayName: Andrei
+              rideId: rid_9a10
+              rideVersion: 3
+          lastEventId: evt_0043
+          hasMore: false
+
+    PushTokenRequest:
+      type: object
+      required: [platform, token]
+      properties:
+        platform:
+          $ref: '#/components/schemas/Platform'
+        token:
+          type: string
+          minLength: 1
+      examples:
+        - platform: IOS
+          token: 4f2b8c0d9e1a

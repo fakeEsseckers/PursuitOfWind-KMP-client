@@ -4,7 +4,7 @@
 
 Kitesurfers who live hours from the water lose whole days to forecasts that looked fine on paper. Pursuit Of Wind turns the raw forecast into one answer — *go or no-go, when, where, with which kite and when to leave* — and shows who from your crew is driving with free seats.
 
-> **Status:** client phase. The decision engine is done; the API contract and the in-app fake backend land next. See the [roadmap](#roadmap).
+> **Status:** client phase. The decision engine and the API contract are done; the in-app fake backend lands next. See the [roadmap](#roadmap).
 
 ## What is in this repository
 
@@ -22,7 +22,7 @@ graph LR
 | Module | Targets | Purpose |
 | --- | --- | --- |
 | `:shared:windengine` | Android, iOS, JVM | Pure-Kotlin decision engine: verdicts, session windows, kite size, day decisions. Reused by the server. |
-| `:shared:contract` | Android, iOS, JVM | DTOs mirroring `api/openapi.yaml`. Reused by the server. |
+| `:shared:contract` | Android, iOS, JVM | DTOs mirroring [`api/openapi.yaml`](api/openapi.yaml). Reused by the server. |
 | `:shared:data` | Android, iOS, JVM | *Planned:* Ktor client, in-app fake backend, Room, DataStore, repositories. |
 | `:shared:app` | Android, iOS | Compose Multiplatform UI, ViewModels, navigation, DI. Exported to iOS as `PursuitOfWindKit`. |
 | `:androidApp` | Android | Android entry point. |
@@ -35,6 +35,12 @@ Allowed dependencies are enforced by `checkModuleGraph`, part of `./gradlew chec
 For every forecast hour the engine combines the weather models, checks wind range for the rider's level, gusts, direction against the spot's rideable and dangerous sectors, thunderstorms, rain, cold and daylight, and picks a kite from the rider's quiver. Rideable hours become session windows with a leave-by time, a confidence from model agreement and a score; the best window across the rider's spots becomes the day's GO, otherwise a NO-GO with the main reason and the next GO day. Day boundaries follow each spot's time zone, including daylight saving changes.
 
 The rules, thresholds and formulas are in [`docs/domain-rules.md`](docs/domain-rules.md). Each rule has a table-driven test vector; seeded property tests cover angles, sectors, kite sizing and window structure; coverage of the module is enforced at 90% ([ADR 0004](docs/adr/0004-decision-engine-as-pure-kotlin.md)).
+
+## API contract
+
+[`api/openapi.yaml`](api/openapi.yaml) (OpenAPI 3.1) is the single source of truth for the client, the in-app fake server and the future backend: anonymous auth, rider profile, spots, hourly forecasts per weather model, crews, rides with seats, and a crew event feed. Errors are `application/problem+json` with a machine-readable code; mutations accept an `Idempotency-Key`.
+
+Contract tests in `:shared:contract` parse the spec, check its conventions (operation ids, `401` on authenticated calls, `Idempotency-Key` on mutations, problem bodies for every error), validate every example against its schema, and require each schema and its DTO to have exactly the same fields, required fields and types. The shared route table `ApiRoute` is checked against the spec too. Changes are logged in [`api/CHANGELOG.md`](api/CHANGELOG.md).
 
 ## Build and run
 
@@ -62,7 +68,7 @@ open iosApp/iosApp.xcodeproj            # then Run on an iOS simulator
 
 1. Bootstrap: build, modules, CI — done
 2. Decision engine: verdicts, windows, kite sizing — done
-3. API contract and in-app fake backend
+3. API contract — done; in-app fake backend — next
 4. Data layer: network, cache, offline
 5. Screens: Today, Spot detail, Spots, Crew, Settings
 6. Demo mode with scripted scenarios
