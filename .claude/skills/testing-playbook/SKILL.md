@@ -20,8 +20,10 @@ description: How tests are written and run in Pursuit Of Wind — test pyramid, 
 ## Conventions
 
 - Test names describe behavior in backticks: `` `gust spread over tolerance by 4 knots is NO_GO GUSTY`() ``.
+- Kotlin/Native (iOS tests) rejects some characters in backticked names: no `.`, `,`, `:`, `;`, `/`, `\`, `<`, `>`, `[`, `]`, `(`, `)`. Write "0 until 360", not "[0, 360)". `./gradlew :shared:windengine:compileTestKotlinIosSimulatorArm64` catches this on Linux too.
+- Property tests use a fixed seed (`PropTestConfig(seed = …)`, opt-in `ExperimentalKotest`) so every run and platform checks the same cases.
 - Engine vectors are table-driven: one `data class Vector(...)` list per section of `wind-domain-rules/reference.md`, IDs in the test name (`C3`, `D4`) so failures point to the rule.
-- Arrange data with builders (`forecastHour { mean = 18.kn; gust = 24.kn; bearing = 240.0 }`), not long constructors.
+- Arrange data with builders (`forecastHour { wind(18.kn, 24.kn) }`, `hoursFromPattern(start, "N G G M G N")` in `Fixtures.kt`), not long constructors. ktlint_official allows one statement per line, so give builders helpers instead of `a = 1; b = 2` one-liners.
 - No real time, no real network, no `Random` without a seed, no `Thread.sleep`.
 
 ## Coroutines

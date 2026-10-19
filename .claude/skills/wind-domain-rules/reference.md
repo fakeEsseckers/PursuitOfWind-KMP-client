@@ -54,7 +54,7 @@ Profile: 80 kg, INTERMEDIATE (12–28 kn, gust spread ≤ 10), quiver 7 / 9 / 12
 | C9 | mean 18, gust 24, not daylight | NO_GO | DARK | 9 |
 | C10 | mean 30, gust 34 | NO_GO | TOO_STRONG, OVERPOWERED_FOR_QUIVER | null |
 | C11 | mean 18, gust 24, temp 3 °C | MARGINAL | COLD | 9 |
-| C12 | mean 14, gust 18, personal minWindKn = 15 | NO_GO | TOO_LIGHT | 12 |
+| C12 | mean 14, gust 18, personal minWind = 15 kn | NO_GO | TOO_LIGHT | 12 |
 | C13 | mean 18, gust 24, bearing 100, thunder HIGH, precip 3.0 | NO_GO | THUNDERSTORM, OFFSHORE_DANGER, RAIN | 9 |
 
 Note on C4: the kite is still computed (7) even though the hour is NO_GO; the UI hides it for NO_GO hours.
@@ -74,7 +74,7 @@ Hour verdicts as a sequence (G = GO, M = MARGINAL, N = NO_GO), hourly slots star
 
 ## E. Leave-by and usable time
 
-Window 13:00–17:00 local (Europe/Berlin, summer, so 11:00Z–15:00Z) on 2026-07-18, drive 120 min, rig 30 min, minSessionHours 2.0.
+Window 13:00–17:00 local (Europe/Berlin, summer, so 11:00Z–15:00Z) on 2026-07-18, drive 120 min, rig 30 min, minSession 2 h.
 
 | ID | now (local) | leaveBy | usableStart | usableHours | Qualifies |
 | --- | --- | --- | --- | ---: | --- |
@@ -102,7 +102,7 @@ Window 13:00–17:00 local (Europe/Berlin, summer, so 11:00Z–15:00Z) on 2026-0
 | G1 | Spot A has window F5, spot B has window F6 on the same day | Go(spot A), alternatives contain spot B |
 | G2 | Only GO hours that day form a 1-hour window | NoGo(WINDOW_TOO_SHORT) |
 | G3 | No GO hours; daylight reasons: GUSTY ×5, TOO_LIGHT ×5 | NoGo(GUSTY) — tie broken by severity |
-| G4 | Every favorite spot exceeds maxDriveMinutes | NoGo(TOO_FAR) |
+| G4 | Every favorite spot exceeds maxDrive | NoGo(TOO_FAR) |
 | G5 | Today NoGo, day after tomorrow Go | `nextGoDay` = day after tomorrow |
 
 ## H. Time zones and DST (Europe/Berlin)

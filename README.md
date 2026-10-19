@@ -4,7 +4,7 @@
 
 Kitesurfers who live hours from the water lose whole days to forecasts that looked fine on paper. Pursuit Of Wind turns the raw forecast into one answer — *go or no-go, when, where, with which kite and when to leave* — and shows who from your crew is driving with free seats.
 
-> **Status:** client phase, bootstrap. The decision engine, the API contract and the screens land next. See the [roadmap](#roadmap).
+> **Status:** client phase. The decision engine is done; the API contract and the in-app fake backend land next. See the [roadmap](#roadmap).
 
 ## What is in this repository
 
@@ -21,7 +21,7 @@ graph LR
 
 | Module | Targets | Purpose |
 | --- | --- | --- |
-| `:shared:windengine` | Android, iOS, JVM | Pure-Kotlin decision engine: verdicts, session windows, kite size. Reused by the server. |
+| `:shared:windengine` | Android, iOS, JVM | Pure-Kotlin decision engine: verdicts, session windows, kite size, day decisions. Reused by the server. |
 | `:shared:contract` | Android, iOS, JVM | DTOs mirroring `api/openapi.yaml`. Reused by the server. |
 | `:shared:data` | Android, iOS, JVM | *Planned:* Ktor client, in-app fake backend, Room, DataStore, repositories. |
 | `:shared:app` | Android, iOS | Compose Multiplatform UI, ViewModels, navigation, DI. Exported to iOS as `PursuitOfWindKit`. |
@@ -29,6 +29,12 @@ graph LR
 | `iosApp/` | iOS | Xcode project hosting the shared UI. |
 
 Allowed dependencies are enforced by `checkModuleGraph`, part of `./gradlew check` ([ADR 0002](docs/adr/0002-module-structure-and-dependency-rules.md)).
+
+## Decision engine
+
+For every forecast hour the engine combines the weather models, checks wind range for the rider's level, gusts, direction against the spot's rideable and dangerous sectors, thunderstorms, rain, cold and daylight, and picks a kite from the rider's quiver. Rideable hours become session windows with a leave-by time, a confidence from model agreement and a score; the best window across the rider's spots becomes the day's GO, otherwise a NO-GO with the main reason and the next GO day. Day boundaries follow each spot's time zone, including daylight saving changes.
+
+The rules, thresholds and formulas are in [`docs/domain-rules.md`](docs/domain-rules.md). Each rule has a table-driven test vector; seeded property tests cover angles, sectors, kite sizing and window structure; coverage of the module is enforced at 90% ([ADR 0004](docs/adr/0004-decision-engine-as-pure-kotlin.md)).
 
 ## Build and run
 
@@ -50,11 +56,12 @@ open iosApp/iosApp.xcodeproj            # then Run on an iOS simulator
 | [0001](docs/adr/0001-kotlin-multiplatform-and-compose-multiplatform.md) | Kotlin Multiplatform with Compose Multiplatform for both UIs |
 | [0002](docs/adr/0002-module-structure-and-dependency-rules.md) | Module structure for AGP 9 and enforced dependency rules |
 | [0003](docs/adr/0003-dependency-version-policy.md) | Stable dependencies inside Kotlin's tested compatibility range |
+| [0004](docs/adr/0004-decision-engine-as-pure-kotlin.md) | Decision engine as pure Kotlin for three runtimes |
 
 ## Roadmap
 
-1. Bootstrap: build, modules, CI
-2. Decision engine: verdicts, windows, kite sizing
+1. Bootstrap: build, modules, CI — done
+2. Decision engine: verdicts, windows, kite sizing — done
 3. API contract and in-app fake backend
 4. Data layer: network, cache, offline
 5. Screens: Today, Spot detail, Spots, Crew, Settings

@@ -14,6 +14,17 @@ kotlin {
     android {
         namespace = appNamespace("engine")
     }
+
+    sourceSets {
+        commonMain.dependencies {
+            // Time zones and local dates for day boundaries. Instant and Duration come from the Kotlin stdlib.
+            api(libs.kotlinx.datetime)
+        }
+        commonTest.dependencies {
+            implementation(libs.kotest.property)
+            implementation(libs.kotlinx.coroutines.test)
+        }
+    }
 }
 
 kover {
