@@ -20,5 +20,15 @@ kotlin {
         commonMain.dependencies {
             api(libs.kotlinx.serialization.json)
         }
+        jvmTest {
+            // The contract tests load api/openapi.yaml from the test classpath.
+            resources.srcDir(layout.settingsDirectory.dir("api"))
+            resources.include("openapi.yaml")
+            dependencies {
+                implementation(libs.swagger.parser)
+                implementation(libs.json.schema.validator)
+                implementation(libs.jackson.dataformat.yaml)
+            }
+        }
     }
 }

@@ -35,6 +35,11 @@ kermit = "2.2.0"
 # Testing and quality
 turbine = "1.2.1"
 kotest = "6.2.6"
+# JVM-only, used by contract tests to parse api/openapi.yaml and validate JSON against its schemas.
+swagger-parser = "2.1.48"
+json-schema-validator = "3.0.8"
+# Jackson 3, the version json-schema-validator is built against; reads the YAML spec in tests.
+jackson = "3.2.1"
 kover = "0.9.11"
 detekt = "1.23.8"
 ktlint-gradle = "14.2.0"
@@ -89,6 +94,9 @@ kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
+swagger-parser = { module = "io.swagger.parser.v3:swagger-parser-v3", version.ref = "swagger-parser" }
+json-schema-validator = { module = "com.networknt:json-schema-validator", version.ref = "json-schema-validator" }
+jackson-dataformat-yaml = { module = "tools.jackson.dataformat:jackson-dataformat-yaml", version.ref = "jackson" }
 
 # Plugin artifacts for build-logic (compileOnly; the root build puts the plugins on the classpath)
 android-gradlePlugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }

@@ -19,6 +19,7 @@ The full brief for this phase is `docs/prompts/client-phase.ru.md` (Russian). Th
 ./gradlew :shared:windengine:allTests       # engine tests on every target available on this machine
 ./gradlew :shared:windengine:jvmTest        # fastest feedback loop for engine work
 ./gradlew :shared:windengine:testAndroidHostTest
+./gradlew :shared:contract:jvmTest          # API contract: spec, examples and DTO parity
 ./gradlew iosSimulatorArm64Test             # macOS only
 ./gradlew ktlintFormat                      # auto-fix formatting
 ./gradlew checkModuleGraph                  # module dependency rules
