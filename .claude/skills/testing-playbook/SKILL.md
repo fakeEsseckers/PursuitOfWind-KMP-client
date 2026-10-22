@@ -36,12 +36,20 @@ description: How tests are written and run in Pursuit Of Wind — test pyramid, 
 ## Using the fake server in tests
 
 ```kotlin
-val server = FakePursuitOfWindServer(seed = Seed.from(DemoScenarioId.SaturdayOn), clock = clock)
-val client = createHttpClient(engine = server.engine, tokenStore = InMemoryTokenStore())
+@Test
+fun `a retried seat request does not take a second seat`() =
+    runTest {
+        val driver = fakeDriver() // fresh server, ControllableClock at THURSDAY_MORNING, engine on the test scheduler
+        val token = driver.signIn()
+        driver.send(ApiRoute.JOIN_CREW, token = token, value = JoinCrewRequestDto("WIND-4KQ7"))
+        …
+    }
 ```
 
-- Network modes: set `server.network = NetworkMode.Flaky(seed = 1)` to test retries, `Offline` to test cache fallback.
-- Test the optimistic seat join rollback with the `car-fills-up` seed.
+- Pass the test dispatcher to `FakePursuitOfWindServer(clock, seed, dispatcher)` (as `fakeDriver()` does) so `SLOW` waits in virtual time.
+- `server.networkMode = NetworkMode.FLAKY` fails about 30% of requests with `503`, in the same order for the same seed; `OFFLINE` throws `IOException`.
+- Move time with `ControllableClock.advanceBy` to expire access tokens (1 h) or idempotency keys (24 h).
+- Repository tests use the same server through the app's real `HttpClient` (`server.engine`, `FakePursuitOfWindServer.BASE_URL`).
 
 ## Property tests (Kotest)
 
@@ -57,7 +65,7 @@ val client = createHttpClient(engine = server.engine, tokenStore = InMemoryToken
 ./gradlew :shared:windengine:allTests           # engine on all available targets (JVM, Android host, iOS on macOS)
 ./gradlew :shared:windengine:jvmTest            # fastest loop
 ./gradlew :shared:windengine:testAndroidHostTest
-./gradlew :shared:data:jvmTest                  # contract tests
+./gradlew :shared:data:jvmTest                  # fake backend tests + contract replay against api/openapi.yaml
 ./gradlew koverHtmlReport                       # coverage report (build/reports/kover/html)
 ./gradlew iosSimulatorArm64Test                 # macOS only
 ```

@@ -14,7 +14,7 @@ style:
     maxLineLength: 140
   MagicNumber:
     # Tests are full of literal vectors; previews and design tokens declare values on purpose.
-    excludes: ['**/commonTest/**', '**/jvmTest/**', '**/androidHostTest/**', '**/iosTest/**', '**/design/**']
+    excludes: ['**/commonTest/**', '**/jvmTest/**', '**/androidHostTest/**', '**/iosTest/**', '**/test/**', '**/design/**']
     ignorePropertyDeclaration: true
     ignoreCompanionObjectPropertyDeclaration: true
   UnusedPrivateMember:

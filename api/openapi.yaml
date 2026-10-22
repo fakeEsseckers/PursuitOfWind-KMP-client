@@ -95,6 +95,8 @@ paths:
                 $ref: '#/components/schemas/AuthTokens'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
         default:
           $ref: '#/components/responses/Problem'
 
@@ -172,6 +174,8 @@ paths:
                 $ref: '#/components/schemas/SpotPage'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
         default:
           $ref: '#/components/responses/Problem'
 
@@ -240,6 +244,8 @@ paths:
               $ref: '#/components/headers/IdempotentReplayed'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
         default:
           $ref: '#/components/responses/Problem'
 
@@ -371,6 +377,8 @@ paths:
                 title: Invite code is not valid
                 status: 404
                 code: INVITE_INVALID
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
         default:
           $ref: '#/components/responses/Problem'
 
@@ -425,6 +433,8 @@ paths:
           $ref: '#/components/responses/NotAMember'
         '404':
           $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
         default:
           $ref: '#/components/responses/Problem'
     post:
@@ -514,6 +524,8 @@ paths:
                 code: NOT_THE_DRIVER
         '404':
           $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
         default:
           $ref: '#/components/responses/Problem'
 
@@ -569,6 +581,8 @@ paths:
                     title: The ride was cancelled
                     status: 409
                     code: RIDE_CANCELLED
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
         default:
           $ref: '#/components/responses/Problem'
 
@@ -598,6 +612,8 @@ paths:
           $ref: '#/components/responses/NotAMember'
         '404':
           $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
         default:
           $ref: '#/components/responses/Problem'
 
@@ -644,6 +660,8 @@ paths:
                 title: Feed position is no longer available
                 status: 410
                 code: FEED_RESET
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
         default:
           $ref: '#/components/responses/Problem'
 
@@ -913,12 +931,17 @@ components:
 
     RiderProfile:
       type: object
+      description: |
+        When both are set, `minWindMps` must be below `maxWindMps`; otherwise the request fails with
+        `422 VALIDATION_FAILED`.
       required: [displayName, weightKg, level, quiverM2, minSessionMinutes, maxDriveMinutes, windUnit]
       properties:
         displayName:
           type: string
           minLength: 1
           maxLength: 40
+          pattern: '\S'
+          description: Must contain a non-space character.
         weightKg:
           type: number
           minimum: 30
@@ -1249,6 +1272,8 @@ components:
           type: string
           minLength: 1
           maxLength: 40
+          pattern: '\S'
+          description: Must contain a non-space character.
       examples:
         - name: Weekend Crew
 
@@ -1259,6 +1284,7 @@ components:
         inviteCode:
           type: string
           minLength: 1
+          description: Case-insensitive; leading and trailing spaces are ignored.
       examples:
         - inviteCode: WIND-4KQ7
 
@@ -1340,6 +1366,9 @@ components:
 
     CreateRideRequest:
       type: object
+      description: |
+        `spotId` must be a spot of the catalog, `windowStart` must be before `windowEnd`, and `departAt` must not be
+        after `windowStart`; otherwise the request fails with `422 VALIDATION_FAILED`.
       required: [spotId, windowStart, windowEnd, departAt, meetingPoint, seatsTotal]
       properties:
         spotId:
@@ -1357,6 +1386,8 @@ components:
           type: string
           minLength: 1
           maxLength: 120
+          pattern: '\S'
+          description: Must contain a non-space character.
         seatsTotal:
           type: integer
           minimum: 1

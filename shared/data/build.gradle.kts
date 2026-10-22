@@ -18,6 +18,15 @@ kotlin {
             api(projects.shared.windengine)
             api(projects.shared.contract)
             implementation(libs.kotlinx.coroutines.core)
+            // The in-app fake backend ships with the app (FAKE and DEMO environments), so the mock engine is not test-only.
+            api(libs.ktor.client.core)
+            implementation(libs.ktor.client.mock)
+        }
+        commonTest.dependencies {
+            implementation(libs.kotlinx.coroutines.test)
+        }
+        jvmTest.dependencies {
+            implementation(projects.testing.openapi)
         }
     }
 }
