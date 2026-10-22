@@ -41,4 +41,5 @@ include(
     ":shared:contract",
     ":shared:data",
     ":shared:app",
+    ":testing:openapi",
 )

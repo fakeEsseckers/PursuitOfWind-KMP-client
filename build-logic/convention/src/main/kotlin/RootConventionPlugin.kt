@@ -14,6 +14,27 @@ import org.gradle.kotlin.dsl.withType
  * configuration cache, but not with Isolated Projects; move the check into each module before enabling that.
  */
 class RootConventionPlugin : Plugin<Project> {
+    private companion object {
+        val TEST_CONFIGURATION = Regex("^test|Test(?=[A-Z]|$)")
+    }
+
+    /**
+     * Project dependencies per module, from test configurations or from all others. A test configuration starts with
+     * `test` or has `Test` as a whole camel-case word (`testImplementation`, `jvmTestImplementation`,
+     * `androidHostTestCompileClasspath`), so names like `latestRelease` are not mistaken for one.
+     * Folders such as `:shared` are containers without a build file, not modules.
+     */
+    private fun Project.projectEdges(test: Boolean): Map<String, List<String>> =
+        subprojects.filter { it.buildFile.isFile }.associate { module ->
+            module.path to
+                module.configurations
+                    .filter { TEST_CONFIGURATION.containsMatchIn(it.name) == test }
+                    .flatMap { configuration -> configuration.dependencies.withType<ProjectDependency>().map { it.path } }
+                    .filter { it != module.path }
+                    .distinct()
+                    .sorted()
+        }
+
     override fun apply(target: Project) {
         with(target) {
             require(this == rootProject) { "pursuitofwind.root must be applied to the root project only" }
@@ -26,20 +47,9 @@ class RootConventionPlugin : Plugin<Project> {
                     group = "verification"
                     description = "Verifies that modules only depend on the projects allowed by moduleGraph { }."
                     allowedEdges.set(moduleGraph.rules)
-                    actualEdges.set(
-                        provider {
-                            // Folders such as `:shared` are containers without a build file, not modules.
-                            subprojects.filter { it.buildFile.isFile }.associate { module ->
-                                module.path to
-                                    module.configurations
-                                        .flatMap { configuration ->
-                                            configuration.dependencies.withType<ProjectDependency>().map { it.path }
-                                        }.filter { it != module.path }
-                                        .distinct()
-                                        .sorted()
-                            }
-                        },
-                    )
+                    testSupportModules.set(moduleGraph.testSupportModules)
+                    actualEdges.set(provider { projectEdges(test = false) })
+                    actualTestEdges.set(provider { projectEdges(test = true) })
                     report.set(layout.buildDirectory.file("reports/module-graph/report.txt"))
                 }
 

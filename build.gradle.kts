@@ -1,6 +1,7 @@
 plugins {
     // Put every plugin on the root classpath once; modules apply them by id through the convention plugins.
     alias(libs.plugins.kotlin.multiplatform) apply false
+    alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.compose.compiler) apply false
     alias(libs.plugins.compose.multiplatform) apply false
@@ -20,6 +21,9 @@ moduleGraph {
     module(":shared:data", ":shared:windengine", ":shared:contract")
     module(":shared:app", ":shared:data", ":shared:windengine", ":shared:contract")
     module(":androidApp", ":shared:app")
+
+    // Test support: any module may use these from its tests, none from production code.
+    testSupport(":testing:openapi")
 }
 
 // Aggregated JVM coverage report: ./gradlew koverHtmlReport

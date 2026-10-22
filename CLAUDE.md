@@ -20,6 +20,7 @@ The full brief for this phase is `docs/prompts/client-phase.ru.md` (Russian). Th
 ./gradlew :shared:windengine:jvmTest        # fastest feedback loop for engine work
 ./gradlew :shared:windengine:testAndroidHostTest
 ./gradlew :shared:contract:jvmTest          # API contract: spec, examples and DTO parity
+./gradlew :shared:data:jvmTest              # fake backend tests + every exchange validated against api/openapi.yaml
 ./gradlew iosSimulatorArm64Test             # macOS only
 ./gradlew ktlintFormat                      # auto-fix formatting
 ./gradlew checkModuleGraph                  # module dependency rules
@@ -35,11 +36,12 @@ Toolchain versions and why: `gradle/libs.versions.toml` and `docs/adr/0003-depen
 | `:shared:windengine` | pure-Kotlin decision engine (android, ios, jvm) — reused by the server |
 | `:shared:contract` | API DTOs mirroring `api/openapi.yaml` (android, ios, jvm) |
 | `:shared:data` | Ktor client, `FakePursuitOfWindServer`, Room, DataStore, repositories, `AppError` |
+| `:testing:openapi` | JVM, test-only: validates requests and responses against `api/openapi.yaml` |
 | `:shared:app` | ViewModels, Compose UI, navigation, Koin graph, demo mode; iOS framework `PursuitOfWindKit` |
 | `:androidApp` | Android entry point, WorkManager, notifications, deep links |
 | `iosApp/` | Xcode project, SwiftUI host, BG tasks, URL scheme |
 
-Dependencies point one way: `androidApp → app → data → (windengine, contract)`; `app` may also use `windengine` and `contract` directly. `windengine` and `contract` depend on nothing project-internal. `checkModuleGraph` enforces this.
+Dependencies point one way: `androidApp → app → data → (windengine, contract)`; `app` may also use `windengine` and `contract` directly. `windengine` and `contract` depend on nothing project-internal. `:testing:*` modules may be used from tests only. `checkModuleGraph` enforces this.
 
 ## Hard rules
 

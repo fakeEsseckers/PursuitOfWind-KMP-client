@@ -13,26 +13,34 @@ The whole data layer — serialization, headers, token refresh, error mapping, r
 
 | Piece | Responsibility |
 | --- | --- |
-| `FakePursuitOfWindServer` | Ktor `MockEngine` handler; tiny router on method + path template; returns spec-conformant JSON and `problem+json` errors |
-| `FakeState` | in-memory state (users, profiles, spots, crews, rides, feed, idempotency records) guarded by a `Mutex` |
-| `Seed` | deterministic initial state; created from a `DemoScenario` or the plain `FAKE` environment |
-| `ForecastGenerator` | procedural forecasts for 3 models (`ecmwf`, `icon`, `gfs`) from scenario parameters with seeded noise |
-| `NetworkSimulator` | `NORMAL`, `SLOW` (2 s), `FLAKY` (30% `503`, seeded), `OFFLINE` (throws `IOException`) |
-| `ControllableClock` | implements the app's `Clock`; can `advanceBy(duration)` and `set(instant)`; used by the fake **and** the engine in demo mode |
+| `FakePursuitOfWindServer(clock, seed, dispatcher)` | public entry point: `engine` (Ktor `MockEngine`), `BASE_URL`, `networkMode`; handles one request at a time under a `Mutex` |
+| `NetworkMode` | `NORMAL`, `SLOW` (2 s on the injected dispatcher), `FLAKY` (30% `503` + `Retry-After: 1`, seeded), `OFFLINE` (throws `kotlinx.io.IOException`) |
+| `ControllableClock` | a `kotlin.time.Clock` with `advanceBy(duration)` and `set(instant)`; used by the fake **and** the engine in demo mode |
+| `Seed`, `SeedSpot`, `SeedCrew`, `SeedMember`, `SeedRide`, `ForecastProfile` | deterministic initial state; `Seed.default(now)` has five spots, the Weekend Crew (`WIND-4KQ7`) and one ride |
+| `internal/Router` | method + path → `ApiRoute` and path parameters |
+| `internal/FakeApi` | one handler per `ApiRoute` (checked complete at startup), Bearer authentication, `Idempotency-Key` storage and replay |
+| `internal/*Routes` | `AuthRoutes`, `ProfileRoutes`, `SpotRoutes`, `CrewRoutes`, `RideRoutes`: the operations |
+| `internal/FakeState` | users, tokens, profiles, followed spots, crews with their feeds, rides, idempotency records |
+| `internal/ForecastGenerator` | hourly forecasts for `ecmwf`, `icon`, `gfs` as a pure function of seed, spot, hour and model; `SunTimes` sets `isDaylight` |
+| `internal/Validation` | the spec's field limits and cross-field rules, failing with `422 VALIDATION_FAILED` |
 
 Rules:
 
-- Determinism: every random source takes a seed. The same scenario always renders the same screens (screenshot tests depend on it).
-- Delays go through the injected clock/dispatcher, never `Thread.sleep` or wall-clock `delay` in tests.
+- Determinism: every random source takes a seed; ids are sequential (`usr_0001`, `evt_000001`). The same seed and clock always produce the same responses (screenshot tests depend on it).
+- Time comes only from the injected `Clock`; delays only from `delay` on the injected dispatcher. No `Clock.System`, no `Thread.sleep`.
+- Errors are thrown as `ProblemException` from `problem(…)`, `notFound(…)`, `invalid(…)`, `check422(…)`; `FakeApi` turns them into `application/problem+json`. Any other exception from a handler becomes `500 INTERNAL`.
+- Enforce only what `api/openapi.yaml` states (schema limits, rules in schema descriptions); a new rule goes into the spec first. Strings are stored as sent.
+- `Idempotency-Key` applies to authenticated mutations only; the token endpoints ignore it.
+- `Seed` validates itself (unique ids and invite codes, rides that fit their crew, seats and spot), so a broken scenario fails when it is built.
 - The fake validates the Bearer token and honors `Idempotency-Key` exactly as described in skill `api-contract-workflow`.
-- Every route has a contract test (`jvmTest`) that validates its responses against `api/openapi.yaml`.
+- Seeded users (Andrei, Mira, Jonas) cannot sign in; the signed-in user joins the Weekend Crew with its invite code. Demo scenarios will pre-join the demo user.
 
-## Adding a fake route
+## Adding or changing a fake route
 
-1. Make sure the endpoint exists in the spec and DTOs (contract first).
-2. Add the handler: parse path params, decode body into the DTO, mutate `FakeState` under the mutex, append feed events if relevant, return the DTO.
-3. Return errors only through `problem(status, code, title)`.
-4. Add the contract test and a repository test using the route.
+1. Make sure the operation exists in the spec, the DTOs and `ApiRoute` (contract first).
+2. Write the handler in the matching `*Routes` class: read path parameters with `call.pathParameter`, decode the body with `call.decode(Dto.serializer())`, validate, change `FakeState`, append feed events with `state.addEvent` when crew members should see the change, bump the ride `version` on every ride change, and return the DTO with `json(…)`.
+3. Register it in the `handlers` map of `FakeApi` (startup fails if an `ApiRoute` has no handler).
+4. Reach every success and error status of the operation in `Tour.kt`; `FakeServerContractTest` validates the exchanges against the spec. Test behavior beyond the schema in `commonTest` with `fakeDriver()`.
 
 ## Environments
 

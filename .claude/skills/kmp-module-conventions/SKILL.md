@@ -15,8 +15,9 @@ description: Module layout, source sets, dependency rules and platform-code poli
 | `:shared:app` | android, ios | ViewModels, Compose UI, navigation, theme, DI graph (`initKoin`), demo mode UI; exports iOS framework `PursuitOfWindKit` | Ktor or Room types in public APIs |
 | `:androidApp` | android | `Application`, `MainActivity`, WorkManager workers, notification channel, manifest, deep links, signing | shared business logic |
 | `iosApp/` | — | Xcode project, SwiftUI `App`, `Info.plist`, BG task registration | business logic |
+| `:testing:openapi` | jvm (plain Kotlin/JVM) | `OpenApiSpec`: loads `api/openapi.yaml`, validates JSON against its schemas, checks recorded requests and responses | anything production code needs |
 
-Allowed dependency direction: `contract` and `windengine` are independent leaves and do not depend on each other. `data → windengine, contract`. `app → data, windengine, contract`. `androidApp → app`. Nothing depends on `app` except entry points. The rules live in `moduleGraph { }` in the root `build.gradle.kts`; `checkModuleGraph` (part of `check`) fails on any other project dependency. A new module needs a line there.
+Allowed dependency direction: `contract` and `windengine` are independent leaves and do not depend on each other. `data → windengine, contract`. `app → data, windengine, contract`. `androidApp → app`. Nothing depends on `app` except entry points. The rules live in `moduleGraph { }` in the root `build.gradle.kts`; `checkModuleGraph` (part of `check`) fails on any other project dependency. A new module needs a line there. Test-support modules are declared with `testSupport(":testing:x")`: any module may use them from its test source sets, none from production code. `:testing:openapi` is plain JVM, so it goes into `jvmTest`.
 
 ## Gradle rules
 

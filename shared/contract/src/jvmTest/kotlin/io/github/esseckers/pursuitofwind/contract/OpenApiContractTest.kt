@@ -1,9 +1,11 @@
 package io.github.esseckers.pursuitofwind.contract
 
-import io.github.esseckers.pursuitofwind.contract.OpenApiDocument.arrayOrEmpty
-import io.github.esseckers.pursuitofwind.contract.OpenApiDocument.obj
-import io.swagger.v3.parser.OpenAPIV3Parser
-import io.swagger.v3.parser.core.models.ParseOptions
+import io.github.esseckers.pursuitofwind.testing.openapi.OpenApiSpec
+import io.github.esseckers.pursuitofwind.testing.openapi.OpenApiSpec.arrayOrEmpty
+import io.github.esseckers.pursuitofwind.testing.openapi.OpenApiSpec.obj
+import io.github.esseckers.pursuitofwind.testing.openapi.Parameter
+import io.github.esseckers.pursuitofwind.testing.openapi.parameters
+import io.github.esseckers.pursuitofwind.testing.openapi.type
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.PolymorphicKind
@@ -89,21 +91,12 @@ class OpenApiContractTest {
 
     @Test
     fun `the spec parses without errors or warnings`() {
-        val options =
-            ParseOptions().apply {
-                isResolve = true
-                isValidateInternalRefs = true
-            }
-
-        val result = OpenAPIV3Parser().readContents(OpenApiDocument.text, null, options)
-
-        assertEquals(emptyList(), result.messages.orEmpty())
-        assertEquals("3.1.0", result.openAPI.openapi)
+        assertEquals(emptyList(), OpenApiSpec.parserMessages())
     }
 
     @Test
     fun `every schema has a DTO with exactly the same fields and required fields`() {
-        val unmapped = OpenApiDocument.schemas.keys - dtoBySchema.keys - eventSubtypes.keys - abstractSchemas
+        val unmapped = OpenApiSpec.schemas.keys - dtoBySchema.keys - eventSubtypes.keys - abstractSchemas
         assertEquals(emptySet(), unmapped, "Schemas without a DTO")
 
         dtoBySchema.forEach { (name, serializer) -> assertSameShape(name, serializer, discriminator = null) }
@@ -113,7 +106,7 @@ class OpenApiContractTest {
     @Test
     fun `every schema example is valid and survives a round trip through its DTO`() {
         var checked = 0
-        OpenApiDocument.schemas.forEach { (name, schema) ->
+        OpenApiSpec.schemas.forEach { (name, schema) ->
             val examples = schema.jsonObject["examples"].arrayOrEmpty()
             val isObject = dtoBySchema[name]?.descriptor?.kind == StructureKind.CLASS || name in eventSubtypes
             if (isObject && name !in coveredByOtherExamples) assertTrue(examples.isNotEmpty(), "Schema $name has no example")
@@ -143,7 +136,7 @@ class OpenApiContractTest {
                 .filter { it.type == String::class.java }
                 .map { it.get(null) as String }
         val problemDescription =
-            OpenApiDocument.schemas
+            OpenApiSpec.schemas
                 .obj("Problem")
                 .getValue("description")
                 .jsonPrimitive.content
@@ -153,11 +146,11 @@ class OpenApiContractTest {
         operations().forEach { (where, operation) ->
             operation.obj("responses").forEach { (status, response) ->
                 if (status != "default" && !status.startsWith("4")) return@forEach
-                val content = OpenApiDocument.response(response).obj("content")
+                val content = OpenApiSpec.response(response).obj("content")
                 assertEquals(setOf(ProblemDto.MEDIA_TYPE), content.keys, "$where $status")
                 assertEquals(
                     "Problem",
-                    OpenApiDocument.refName(
+                    OpenApiSpec.refName(
                         content
                             .obj(ProblemDto.MEDIA_TYPE)
                             .getValue("schema")
@@ -189,7 +182,7 @@ class OpenApiContractTest {
             }
             element.values.forEach(::check)
         }
-        check(OpenApiDocument.root)
+        check(OpenApiSpec.root)
     }
 
     @Test
@@ -208,14 +201,14 @@ class OpenApiContractTest {
     @Test
     fun `operations follow the API conventions`() {
         val operationIds = mutableListOf<String>()
-        OpenApiDocument.root.obj("paths").forEach { (path, pathItem) ->
+        OpenApiSpec.root.obj("paths").forEach { (path, pathItem) ->
             assertTrue(path.startsWith("/v1/"), "$path is not under /v1")
-            val pathParameters = pathItem.jsonObject["parameters"].arrayOrEmpty()
             HTTP_METHODS.filter { it in pathItem.jsonObject }.forEach { method ->
                 val operation = pathItem.jsonObject.obj(method)
                 val where = "${method.uppercase()} $path"
                 val responses = operation.obj("responses").keys
-                val parameters = (pathParameters + operation["parameters"].arrayOrEmpty()).map(::parameterName)
+                val declared = OpenApiSpec.parameters(method, path)
+                val parameters = declared.map { it.name }
                 val secured = operation["security"]?.jsonArray?.isNotEmpty() ?: true
 
                 operationIds += operation.getValue("operationId").jsonPrimitive.content
@@ -224,8 +217,13 @@ class OpenApiContractTest {
                 assertTrue("default" in responses, "$where has no default response")
                 assertTrue(responses.any { it.startsWith("2") }, "$where has no success response")
                 if (secured) assertTrue("401" in responses, "$where is authenticated but does not document 401")
+                if ("requestBody" in operation) assertTrue("422" in responses, "$where takes a body but does not document 422")
+                if (declared.any { it.location == "query" && it.isConstrained() }) {
+                    assertTrue("422" in responses, "$where has constrained query parameters but does not document 422")
+                }
                 if (secured && method != "get") {
                     assertTrue(ApiHeaders.IDEMPOTENCY_KEY in parameters, "$where is a mutation without Idempotency-Key")
+                    assertTrue("422" in responses, "$where takes Idempotency-Key but does not document 422 IDEMPOTENCY_KEY_REUSED")
                 }
                 PATH_PARAMETER.findAll(path).forEach { match ->
                     assertTrue(match.groupValues[1] in parameters, "$where does not declare path parameter ${match.value}")
@@ -246,7 +244,7 @@ class OpenApiContractTest {
         when (descriptor.kind) {
             SerialKind.ENUM -> {
                 val values =
-                    OpenApiDocument.schemas
+                    OpenApiSpec.schemas
                         .obj(name)
                         .getValue("enum")
                         .jsonArray
@@ -255,7 +253,7 @@ class OpenApiContractTest {
             }
 
             StructureKind.CLASS -> {
-                val (properties, required) = OpenApiDocument.objectShape(name)
+                val (properties, required) = OpenApiSpec.objectShape(name)
                 val dtoRequired =
                     (0 until descriptor.elementsCount)
                         .filterNot(descriptor::isElementOptional)
@@ -270,7 +268,7 @@ class OpenApiContractTest {
 
             PolymorphicKind.SEALED -> {
                 val variants =
-                    OpenApiDocument.schemas
+                    OpenApiSpec.schemas
                         .obj(name)
                         .getValue("oneOf")
                         .jsonArray
@@ -295,7 +293,7 @@ class OpenApiContractTest {
         val type = schema["type"]?.jsonPrimitive?.content
         when {
             ref != null -> {
-                val expected = dtoBySchema.getValue(OpenApiDocument.refName(ref)).descriptor.serialName
+                val expected = dtoBySchema.getValue(OpenApiSpec.refName(ref)).descriptor.serialName
                 assertEquals(expected, field.serialName.removeSuffix("?"), where)
             }
 
@@ -316,7 +314,7 @@ class OpenApiContractTest {
 
     /** `("POST /v1/crews", operation)` for every operation in the spec. */
     private fun operations(): List<Pair<String, JsonObject>> =
-        OpenApiDocument.root.obj("paths").flatMap { (path, pathItem) ->
+        OpenApiSpec.root.obj("paths").flatMap { (path, pathItem) ->
             HTTP_METHODS.filter { it in pathItem.jsonObject }.map { method ->
                 "${method.uppercase()} $path" to
                     pathItem.jsonObject.obj(method)
@@ -327,7 +325,7 @@ class OpenApiContractTest {
         schemaName: String,
         example: JsonElement,
     ) {
-        assertEquals(emptyList(), OpenApiDocument.validate(schemaName, example.toString()), "Example of $schemaName: $example")
+        assertEquals(emptyList(), OpenApiSpec.validate(schemaName, example.toString()), "Example of $schemaName: $example")
     }
 
     private fun assertRoundTrip(
@@ -350,9 +348,9 @@ class OpenApiContractTest {
     private fun mediaExamples(): List<Triple<String, String, JsonElement>> {
         val responses =
             operations().flatMap { (where, operation) ->
-                operation.obj("responses").map { (status, response) -> "$where $status" to OpenApiDocument.response(response) }
+                operation.obj("responses").map { (status, response) -> "$where $status" to OpenApiSpec.response(response) }
             } +
-                OpenApiDocument.root
+                OpenApiSpec.root
                     .obj("components")
                     .obj("responses")
                     .map { (name, response) -> "responses/$name" to response.jsonObject }
@@ -378,16 +376,8 @@ class OpenApiContractTest {
             .jsonPrimitive.content
             .substringAfterLast('/')
 
-    private fun parameterName(parameter: JsonElement): String {
-        val resolved =
-            parameter.jsonObject["\$ref"]?.let {
-                OpenApiDocument.root
-                    .obj("components")
-                    .obj("parameters")
-                    .obj(ref(parameter))
-            }
-        return (resolved ?: parameter.jsonObject).getValue("name").jsonPrimitive.content
-    }
+    /** A value the server has to check, so a bad one is `422`: a non-string type or any keyword that limits strings. */
+    private fun Parameter.isConstrained(): Boolean = OpenApiSpec.type(schema) != "string" || schema.keys.any { it in STRING_LIMITS }
 
     /** JSON equality where `80` and `80.0` are the same number. */
     private fun sameJson(
@@ -415,6 +405,7 @@ class OpenApiContractTest {
     private companion object {
         val HTTP_METHODS = listOf("get", "put", "post", "delete", "patch")
         val PATH_PARAMETER = Regex("\\{([^}]+)}")
+        val STRING_LIMITS = setOf("format", "pattern", "enum", "minLength", "maxLength")
         val PRIMITIVE_KINDS =
             mapOf(
                 "string" to PrimitiveKind.STRING,
