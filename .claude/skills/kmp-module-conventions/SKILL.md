@@ -11,7 +11,7 @@ description: Module layout, source sets, dependency rules and platform-code poli
 | --- | --- | --- | --- |
 | `:shared:windengine` | android, ios (arm64, simulatorArm64), jvm | engine types and pure functions | any I/O, DI, serialization, platform API |
 | `:shared:contract` | android, ios, jvm | `@Serializable` DTOs mirroring `api/openapi.yaml`, error body, enums | business logic, mapping to domain |
-| `:shared:data` | android, ios, jvm (tests only) | Ktor client, `FakePursuitOfWindServer`, Room, DataStore, repositories, `AppError`, DTO↔domain mappers, platform service interfaces | Compose, ViewModels |
+| `:shared:data` | android, ios, jvm (tests only) | Ktor client, `FakePursuitOfWindServer`, Room 3 (KSP), DataStore, repositories, `AppError`, DTO↔domain mappers, platform service interfaces, `dataModule(environment)` | Compose, ViewModels |
 | `:shared:app` | android, ios | ViewModels, Compose UI, navigation, theme, DI graph (`initKoin`), demo mode UI; exports iOS framework `PursuitOfWindKit` | Ktor or Room types in public APIs |
 | `:androidApp` | android | `Application`, `MainActivity`, WorkManager workers, notification channel, manifest, deep links, signing | shared business logic |
 | `iosApp/` | — | Xcode project, SwiftUI `App`, `Info.plist`, BG task registration | business logic |

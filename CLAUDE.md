@@ -20,7 +20,7 @@ The full brief for this phase is `docs/prompts/client-phase.ru.md` (Russian). Th
 ./gradlew :shared:windengine:jvmTest        # fastest feedback loop for engine work
 ./gradlew :shared:windengine:testAndroidHostTest
 ./gradlew :shared:contract:jvmTest          # API contract: spec, examples and DTO parity
-./gradlew :shared:data:jvmTest              # fake backend tests + every exchange validated against api/openapi.yaml
+./gradlew :shared:data:jvmTest              # data layer and fake backend tests, contract validation against api/openapi.yaml
 ./gradlew iosSimulatorArm64Test             # macOS only
 ./gradlew ktlintFormat                      # auto-fix formatting
 ./gradlew checkModuleGraph                  # module dependency rules
@@ -47,7 +47,7 @@ Dependencies point one way: `androidApp → app → data → (windengine, contra
 
 1. The engine is pure: no `Clock.System`, no I/O, no platform or DI types; `now` is a parameter. Units inside are SI.
 2. Contract first: `api/openapi.yaml` → DTOs → fake route → contract test. Never the other way round.
-3. The fake backend sits at the HTTP layer (Ktor MockEngine). No fake repositories.
+3. The fake backend sits at the HTTP layer (an in-process Ktor engine). No fake repositories.
 4. Platform services are interfaces in common code with platform implementations bound in Koin. `expect/actual` only for small factories.
 5. Demo mode uses its own database and DataStore and never touches user data.
 6. No secrets in the repo. Signing material and tokens come from environment variables or CI secrets.

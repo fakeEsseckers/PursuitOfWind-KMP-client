@@ -3,19 +3,14 @@ package io.github.esseckers.pursuitofwind.data.fake
 import io.github.esseckers.pursuitofwind.contract.ApiHeaders
 import io.github.esseckers.pursuitofwind.data.fake.internal.FakeApi
 import io.github.esseckers.pursuitofwind.data.fake.internal.FakeCall
+import io.github.esseckers.pursuitofwind.data.fake.internal.FakeEngine
 import io.github.esseckers.pursuitofwind.data.fake.internal.FakeResponse
 import io.github.esseckers.pursuitofwind.data.fake.internal.Router
 import io.github.esseckers.pursuitofwind.data.fake.internal.notFound
 import io.github.esseckers.pursuitofwind.data.fake.internal.serviceUnavailable
 import io.ktor.client.engine.HttpClientEngine
-import io.ktor.client.engine.mock.MockEngine
-import io.ktor.client.engine.mock.MockEngineConfig
-import io.ktor.client.engine.mock.MockRequestHandleScope
-import io.ktor.client.engine.mock.respond
-import io.ktor.client.engine.mock.toByteArray
+import io.ktor.client.engine.HttpClientEngineConfig
 import io.ktor.client.request.HttpRequestData
-import io.ktor.client.request.HttpResponseData
-import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.decodeURLPart
 import kotlinx.coroutines.CoroutineDispatcher
@@ -29,7 +24,7 @@ import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 
 /**
- * The backend the app talks to until the real one exists: a Ktor [MockEngine] that implements `api/openapi.yaml`
+ * The backend the app talks to until the real one exists: an in-process Ktor engine that implements `api/openapi.yaml`
  * with in-memory state. The whole data layer — serialization, headers, token refresh, error mapping, retries — runs
  * for real against it; switching to the real backend means switching the engine and base URL, nothing else.
  *
@@ -52,24 +47,19 @@ public class FakePursuitOfWindServer(
     private val networkRandom = Random(seed.randomSeed + 1)
     private val mutex = Mutex()
 
-    /**
-     * The engine to build the app's `HttpClient` with. Ktor's [MockEngine] keeps every request and response it has
-     * seen, so memory grows with each call: fine for tests and a demo session; the data layer (#6) decides whether
-     * a long-lived app needs a leaner engine or a fresh server per session.
-     */
+    /** The engine to build the app's `HttpClient` with. It keeps no history, so a long-running app does not grow. */
     public val engine: HttpClientEngine =
-        MockEngine(
-            MockEngineConfig().apply {
-                if (dispatcher != null) this.dispatcher = dispatcher
-                addHandler { request -> respond(serve(request)) }
-            },
-        )
+        FakeEngine(HttpClientEngineConfig().apply { if (dispatcher != null) this.dispatcher = dispatcher }) { request, body ->
+            serve(request, body.decodeToString())
+        }
 
-    private suspend fun serve(request: HttpRequestData): FakeResponse {
+    private suspend fun serve(
+        request: HttpRequestData,
+        body: String,
+    ): FakeResponse {
         val mode = networkMode
         if (mode == NetworkMode.OFFLINE) throw IOException("No connection (the fake server is in OFFLINE mode)")
         if (mode == NetworkMode.SLOW) delay(SLOW_RESPONSE)
-        val body = request.body.toByteArray().decodeToString()
         return mutex.withLock {
             if (mode == NetworkMode.FLAKY &&
                 networkRandom.nextDouble() < FLAKY_FAILURE_RATE
@@ -104,17 +94,6 @@ public class FakePursuitOfWindServer(
             )
         return api.handle(call)
     }
-
-    private fun MockRequestHandleScope.respond(response: FakeResponse): HttpResponseData =
-        respond(
-            content = response.body,
-            status = response.status,
-            headers =
-                Headers.build {
-                    response.contentType?.let { append(HttpHeaders.ContentType, it.toString()) }
-                    response.headers.forEach { (name, value) -> append(name, value) }
-                },
-        )
 
     public companion object {
         /** Base URL clients use with [engine]. The host is never resolved. */

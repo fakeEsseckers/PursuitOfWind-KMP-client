@@ -3,8 +3,9 @@
 
 naming:
   FunctionNaming:
-    # Composables are PascalCase by convention.
+    # Composables are PascalCase by convention; test names are sentences in backticks.
     ignoreAnnotated: ['Composable']
+    excludes: ['**/*Test/**', '**/test/**']
   MatchingDeclarationName:
     active: true
 
@@ -14,7 +15,8 @@ style:
     maxLineLength: 140
   MagicNumber:
     # Tests are full of literal vectors; previews and design tokens declare values on purpose.
-    excludes: ['**/commonTest/**', '**/jvmTest/**', '**/androidHostTest/**', '**/iosTest/**', '**/test/**', '**/design/**']
+    # `*Test` covers every test source set, including shared ones such as `sqliteTest`.
+    excludes: ['**/*Test/**', '**/test/**', '**/design/**']
     ignorePropertyDeclaration: true
     ignoreCompanionObjectPropertyDeclaration: true
   UnusedPrivateMember:

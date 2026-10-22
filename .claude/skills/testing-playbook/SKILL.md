@@ -11,7 +11,8 @@ description: How tests are written and run in Pursuit Of Wind — test pyramid, 
 | --- | --- | --- | --- |
 | Engine rules | `:shared:windengine` `commonTest` | kotlin-test, Kotest property testing | highest |
 | Mappers, formatters | `commonTest` of the owning module | kotlin-test | high |
-| Repositories, token refresh, offline | `:shared:data` `commonTest` | `FakePursuitOfWindServer`, coroutines-test | high |
+| Session, retries, error mapping | `:shared:data` `commonTest` | `NetworkHarness` on `FakePursuitOfWindServer`, coroutines-test | high |
+| Repositories, cache, offline, feed sync | `:shared:data` `sqliteTest` (JVM + iOS) | `World` / `DataHarness`: in-memory Room, fake server, test dispatcher | high |
 | Contract | `:shared:data` `jvmTest` | OpenAPI validator against `api/openapi.yaml` | every route |
 | ViewModels | `:shared:app` `commonTest` | Turbine, `StandardTestDispatcher`, `ControllableClock` | per screen |
 | UI critical path | `:shared:app` common UI tests or `androidApp` instrumented | Compose UI test | 1–2 flows |
@@ -49,7 +50,9 @@ fun `a retried seat request does not take a second seat`() =
 - Pass the test dispatcher to `FakePursuitOfWindServer(clock, seed, dispatcher)` (as `fakeDriver()` does) so `SLOW` waits in virtual time.
 - `server.networkMode = NetworkMode.FLAKY` fails about 30% of requests with `503`, in the same order for the same seed; `OFFLINE` throws `IOException`.
 - Move time with `ControllableClock.advanceBy` to expire access tokens (1 h) or idempotency keys (24 h).
-- Repository tests use the same server through the app's real `HttpClient` (`server.engine`, `FakePursuitOfWindServer.BASE_URL`).
+- Repository tests use the same server through the app's real HTTP clients: `world { val alex = device(); … }` in `sqliteTest` gives each device its own in-memory database, settings and token store against one fake server and clock. Two devices are two users.
+- Room and DataStore take the test dispatcher (`PursuitOfWindDatabase.build(builder, dispatcher)`, `LocalSettings.create(path, scope)`), so an optimistic update can be read between virtual-time delays. With the default `Dispatchers.IO`, `runTest` skips delays while the test waits on a database thread.
+- Room tests live in `sqliteTest`, a source set shared by `jvmTest` and `iosTest`: the bundled SQLite driver does not load in Android host tests.
 
 ## Property tests (Kotest)
 
@@ -65,7 +68,7 @@ fun `a retried seat request does not take a second seat`() =
 ./gradlew :shared:windengine:allTests           # engine on all available targets (JVM, Android host, iOS on macOS)
 ./gradlew :shared:windengine:jvmTest            # fastest loop
 ./gradlew :shared:windengine:testAndroidHostTest
-./gradlew :shared:data:jvmTest                  # fake backend tests + contract replay against api/openapi.yaml
+./gradlew :shared:data:jvmTest                  # data layer, fake backend and contract tests (JVM)
 ./gradlew koverHtmlReport                       # coverage report (build/reports/kover/html)
 ./gradlew iosSimulatorArm64Test                 # macOS only
 ```

@@ -9,6 +9,8 @@ plugins {
     alias(libs.plugins.android.kotlin.multiplatform.library) apply false
     alias(libs.plugins.ktlint) apply false
     alias(libs.plugins.detekt) apply false
+    alias(libs.plugins.ksp) apply false
+    alias(libs.plugins.room3) apply false
     alias(libs.plugins.kover)
     id("pursuitofwind.root")
 }
@@ -30,4 +32,5 @@ moduleGraph {
 dependencies {
     kover(projects.shared.windengine)
     kover(projects.shared.contract)
+    kover(projects.shared.data)
 }
