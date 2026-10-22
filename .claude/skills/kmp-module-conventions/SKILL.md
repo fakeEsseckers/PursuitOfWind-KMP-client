@@ -64,3 +64,11 @@ Prefer `internal` for anything not used by another module.
 3. Is there an existing dependency that already does the job?
 4. Does it pull Android or iOS types into `commonMain`? If yes, it belongs in a platform source set.
 5. Mention the new dependency and why in the PR description.
+
+## Same code, different runtimes
+
+Common code runs on three runtimes, and host tests only cover one of them: Android host tests run on the desktop JVM, not on Android's runtime. Known differences that compile and pass on the JVM but fail on a device:
+
+- `Regex` on Android uses ICU, which rejects patterns the JVM accepts, such as an unescaped `}`. Prefer simple string parsing in common code; when a pattern is needed, escape every brace (`\{`, `\}`) and run the app on an emulator before the PR.
+- Anything in `androidMain` (Keystore, file paths, `Context`) only runs on a device or emulator. Say so in the PR when it was not run.
+

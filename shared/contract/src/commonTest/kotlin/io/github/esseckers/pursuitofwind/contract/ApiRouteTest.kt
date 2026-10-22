@@ -22,6 +22,16 @@ class ApiRouteTest {
     }
 
     @Test
+    fun `every parameter is a whole path segment`() {
+        ApiRoute.entries.forEach { route ->
+            assertEquals(route.path.count { it == '{' }, route.pathParameters.size, route.name)
+            assertEquals(route.path.count { it == '}' }, route.pathParameters.size, route.name)
+        }
+        assertEquals(listOf("crewId"), ApiRoute.LIST_CREW_RIDES.pathParameters)
+        assertEquals("/v1/rides/rid_1/seats/me", ApiRoute.RELEASE_SEAT.pathWith("rid_1"))
+    }
+
+    @Test
     fun `only the token endpoints work without a token`() {
         assertFalse(ApiRoute.REFRESH_TOKENS.requiresAuth)
         assertTrue(ApiRoute.entries.filter { it.requiresAuth }.size == ApiRoute.entries.size - 2)

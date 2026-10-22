@@ -45,7 +45,7 @@ public enum class ApiRoute(
 
     /** Names of the path parameters, in order. */
     public val pathParameters: List<String>
-        get() = PATH_PARAMETER.findAll(path).map { it.groupValues[1] }.toList()
+        get() = path.split('/').mapNotNull { it.parameterName() }
 
     /** False only for the two auth calls that hand out tokens. */
     public val requiresAuth: Boolean
@@ -58,10 +58,15 @@ public enum class ApiRoute(
     public fun pathWith(vararg values: String): String {
         require(values.size == pathParameters.size) { "$name needs ${pathParameters.size} path parameters, got ${values.size}" }
         val remaining = values.iterator()
-        return PATH_PARAMETER.replace(path) { remaining.next() }
+        return path.split('/').joinToString("/") { segment -> if (segment.parameterName() == null) segment else remaining.next() }
     }
 
     private companion object {
-        val PATH_PARAMETER = Regex("\\{([^}]+)}")
+        /**
+         * `rideId` for the segment `{rideId}`, null for a literal segment. Parameters are whole segments. Templates are
+         * parsed by hand: a regular expression for braces compiles on the JVM but not with Android's ICU engine, and
+         * host tests run on the JVM, so only a device would notice.
+         */
+        fun String.parameterName(): String? = if (length > 2 && startsWith('{') && endsWith('}')) substring(1, length - 1) else null
     }
 }
