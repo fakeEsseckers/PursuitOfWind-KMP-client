@@ -1,5 +1,123 @@
 <resources>
     <string name="app_name">Pursuit Of Wind</string>
-    <string name="app_tagline">Знай, когда ехать. Знай, кто за рулём.</string>
-    <string name="bootstrap_status">Идёт клиентская фаза. Следующим будет движок решений.</string>
+
+    <!-- Verdicts and confidence (design system) -->
+    <string name="verdict_go">ДА</string>
+    <string name="verdict_marginal">НА ГРАНИ</string>
+    <string name="verdict_no_go">НЕТ</string>
+    <string name="confidence_high">Уверенность высокая</string>
+    <string name="confidence_medium">Уверенность средняя</string>
+    <string name="confidence_low">Уверенность низкая</string>
+    <string name="confidence_unknown">Уверенность неизвестна</string>
+    <string name="confidence_low_hint">Погодные модели расходятся</string>
+    <string name="confidence_unknown_hint">Доступна только одна погодная модель</string>
+    <string name="disclaimer">Pursuit Of Wind помогает принять решение, но не заменяет оценку условий на споте и не является рекомендацией по безопасности.</string>
+    <string name="action_refresh">Обновить</string>
+    <string name="action_retry">Повторить</string>
+
+    <!-- Why a day is not a GO: the copy table in docs/domain-rules.md -->
+    <string name="reason_thunderstorm">Риск грозы</string>
+    <string name="reason_offshore_danger">Отжимной ветер — здесь опасно</string>
+    <string name="reason_dark">Уже темно</string>
+    <string name="reason_too_strong">Слишком сильно для твоего уровня</string>
+    <string name="reason_overpowered_for_quiver">Твои кайты слишком большие</string>
+    <string name="reason_gusty">Слишком порывисто</string>
+    <string name="reason_direction_unrideable">Неподходящее направление для спота</string>
+    <string name="reason_too_light">Слишком слабый ветер</string>
+    <string name="reason_underpowered_for_quiver">Твои кайты слишком маленькие</string>
+    <string name="reason_rain">Дождь</string>
+    <string name="reason_cold">Холодно</string>
+    <string name="reason_too_far">Дальше, чем ты готов ехать</string>
+    <string name="reason_window_too_short">Окно слишком короткое с учётом дороги</string>
+
+    <!-- Days -->
+    <string name="day_today">Сегодня</string>
+    <string name="day_tomorrow">Завтра</string>
+    <string name="weekday_monday">Понедельник</string>
+    <string name="weekday_tuesday">Вторник</string>
+    <string name="weekday_wednesday">Среда</string>
+    <string name="weekday_thursday">Четверг</string>
+    <string name="weekday_friday">Пятница</string>
+    <string name="weekday_saturday">Суббота</string>
+    <string name="weekday_sunday">Воскресенье</string>
+
+    <!-- The same days inside a sentence ("Next good day: Saturday") -->
+    <string name="day_today_inline">сегодня</string>
+    <string name="day_tomorrow_inline">завтра</string>
+    <string name="weekday_monday_inline">понедельник</string>
+    <string name="weekday_tuesday_inline">вторник</string>
+    <string name="weekday_wednesday_inline">среда</string>
+    <string name="weekday_thursday_inline">четверг</string>
+    <string name="weekday_friday_inline">пятница</string>
+    <string name="weekday_saturday_inline">суббота</string>
+    <string name="weekday_sunday_inline">воскресенье</string>
+
+    <!-- Wind units -->
+    <string name="unit_knots">уз</string>
+    <string name="unit_meters_per_second">м/с</string>
+    <string name="unit_kilometers_per_hour">км/ч</string>
+    <string name="unit_beaufort">Бфт</string>
+    <string name="decimal_separator">,</string>
+    <string name="wind_range">%1$d–%2$d %3$s</string>
+    <string name="wind_single">%1$d %2$s</string>
+
+    <!-- Today -->
+    <string name="today_title">Едем?</string>
+    <string name="today_kite">Кайт %1$s м²</string>
+    <string name="today_leave_by">Выезжай до %1$s</string>
+    <string name="today_leave_now">Выезжай сейчас</string>
+    <string name="today_alternative">Ещё вариант: %1$s, %2$s</string>
+    <string name="today_spot_reason">%1$s: %2$s</string>
+    <string name="today_next_go">Ближайший хороший день: %1$s</string>
+    <string name="today_no_next_go">В этом прогнозе хороших дней нет</string>
+    <string name="today_no_rides">Из компании туда пока никто не едет</string>
+    <string name="ride_driver">%1$s едет, выезд в %2$s</string>
+    <string name="ride_you_drive">Ты за рулём, выезд в %1$s</string>
+    <string name="ride_you_ride">Ты едешь</string>
+    <string name="ride_departed">%1$s: выезд был в %2$s</string>
+    <string name="ride_you_departed">Твой выезд был в %1$s</string>
+    <string name="ride_full">Мест нет</string>
+    <string name="ride_pending">Сохраняем…</string>
+    <plurals name="ride_seats_free">
+        <item quantity="one">%1$d свободное место</item>
+        <item quantity="few">%1$d свободных места</item>
+        <item quantity="many">%1$d свободных мест</item>
+        <item quantity="other">%1$d свободного места</item>
+    </plurals>
+    <string name="updated_just_now">Обновлено только что</string>
+    <plurals name="updated_minutes_ago">
+        <item quantity="one">Обновлено %1$d минуту назад</item>
+        <item quantity="few">Обновлено %1$d минуты назад</item>
+        <item quantity="many">Обновлено %1$d минут назад</item>
+        <item quantity="other">Обновлено %1$d минуты назад</item>
+    </plurals>
+    <plurals name="updated_hours_ago">
+        <item quantity="one">Обновлено %1$d час назад</item>
+        <item quantity="few">Обновлено %1$d часа назад</item>
+        <item quantity="many">Обновлено %1$d часов назад</item>
+        <item quantity="other">Обновлено %1$d часа назад</item>
+    </plurals>
+    <plurals name="updated_days_ago">
+        <item quantity="one">Обновлено %1$d день назад</item>
+        <item quantity="few">Обновлено %1$d дня назад</item>
+        <item quantity="many">Обновлено %1$d дней назад</item>
+        <item quantity="other">Обновлено %1$d дня назад</item>
+    </plurals>
+    <string name="banner_stale">Прогноз устаревает.</string>
+    <string name="banner_offline">Нет сети. Показан последний сохранённый прогноз.</string>
+    <string name="banner_crew_failed">Не удалось обновить поездки компании.</string>
+    <string name="banner_refresh_failed">Не удалось обновить. Показан последний сохранённый прогноз.</string>
+    <string name="today_loading">Загружаем прогноз</string>
+    <string name="empty_profile_title">Расскажи о себе</string>
+    <string name="empty_profile_body">Вес, уровень и набор кайтов определяют, какой ветер тебе подходит. Заполни профиль, чтобы получать ответ на каждый день.</string>
+    <string name="empty_spots_title">Выбери споты</string>
+    <string name="empty_spots_body">Отметь хотя бы один спот как избранный и укажи время дороги, чтобы получать ответ на каждый день.</string>
+    <string name="error_title">Не удалось загрузить прогноз</string>
+
+    <!-- Errors -->
+    <string name="error_network">Нет сети. Проверь подключение и попробуй ещё раз.</string>
+    <string name="error_server">На сервере проблемы. Попробуй через несколько минут.</string>
+    <string name="error_unauthorized">Не удалось войти. Попробуй ещё раз.</string>
+    <string name="error_no_forecast">Для твоих спотов пока нет прогноза. Попробуй чуть позже.</string>
+    <string name="error_unknown">Что-то пошло не так. Попробуй ещё раз.</string>
 </resources>

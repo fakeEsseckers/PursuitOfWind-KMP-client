@@ -4,7 +4,7 @@
 
 Kitesurfers who live hours from the water lose whole days to forecasts that looked fine on paper. Pursuit Of Wind turns the raw forecast into one answer — *go or no-go, when, where, with which kite and when to leave* — and shows who from your crew is driving with free seats.
 
-> **Status:** client phase. The decision engine, the API contract, the in-app fake backend and the data layer are done; the screens are next. See the [roadmap](#roadmap).
+> **Status:** client phase. The decision engine, the API contract, the in-app fake backend, the data layer and the Today screen are done; the other screens are next. See the [roadmap](#roadmap).
 
 ## What is in this repository
 
@@ -25,7 +25,7 @@ graph LR
 | `:shared:contract` | Android, iOS, JVM | DTOs mirroring [`api/openapi.yaml`](api/openapi.yaml). Reused by the server. |
 | `:shared:data` | Android, iOS, JVM | Ktor client, offline cache (Room 3, DataStore), repositories, secure token storage, in-app fake backend. |
 | `:testing:openapi` | JVM, tests only | Validates requests and responses against [`api/openapi.yaml`](api/openapi.yaml). |
-| `:shared:app` | Android, iOS | Compose Multiplatform UI, ViewModels, navigation, DI. Exported to iOS as `PursuitOfWindKit`. |
+| `:shared:app` | Android, iOS (JVM for tests) | Compose Multiplatform UI, design system, ViewModels, navigation, DI. Exported to iOS as `PursuitOfWindKit`. |
 | `:androidApp` | Android | Android entry point. |
 | `iosApp/` | iOS | Xcode project hosting the shared UI. |
 
@@ -62,6 +62,18 @@ Screens read from a local cache and never wait for the network: repositories exp
 
 Choices and trade-offs: [ADR 0006](docs/adr/0006-room-3-as-the-offline-cache.md) (Room 3) and [ADR 0007](docs/adr/0007-koin-for-dependency-injection.md) (Koin).
 
+## Today
+
+The first screen answers "go?" for today and the next two days, across the rider's favorite spots.
+
+- **GO** names the spot, the window in the spot's local time, the wind range in the rider's unit, the kite, when to leave (or "leave now"), how much the weather models agree, and who from the crew is driving there that day with how many free seats. The next best windows follow as alternatives.
+- **NO-GO** gives the main reason in plain words, the reason at each spot, and the next good day.
+- Every state is designed: placeholders while the first answer loads, a prompt when the profile or a favorite spot is missing, an error with retry when there is nothing cached, and cached answers with a notice when the device is offline, the forecast is getting old or the crew's rides could not be updated.
+- The screen refreshes when it opens, when it comes back after half an hour or after a failed refresh, and on pull-to-refresh. Decisions are recomputed every minute, so "leave by" stays true while the screen is open; once the time to leave has passed, the card shows only the riding time that is left.
+- Verdicts are an icon, a word and a color, never color alone. Each day reads as one heading item to screen readers, which also get a "Refresh" action instead of the pull gesture. Light and dark themes, English and Russian, and a test that no text is cut off at twice the font size.
+
+The screen is tested on the desktop JVM without an emulator: its ViewModel against the real data layer (fake backend, Room, DataStore), and the UI with Compose UI tests.
+
 ## Build and run
 
 Requirements: JDK 21, Android Studio with the Android SDK (API 37), and Xcode 26.4 or newer on macOS for iOS. Versions of everything else are pinned in [`gradle/libs.versions.toml`](gradle/libs.versions.toml).
@@ -93,10 +105,11 @@ open iosApp/iosApp.xcodeproj            # then Run on an iOS simulator
 2. Decision engine: verdicts, windows, kite sizing — done
 3. API contract and in-app fake backend — done
 4. Data layer: network, cache, offline — done
-5. Screens: Today, Spot detail, Spots, Crew, Settings — next
-6. Demo mode with scripted scenarios
-7. Background evaluation and local notifications
-8. Server phase (separate repository)
+5. Design system and the Today screen — done
+6. Screens: Spot detail with the wind chart, Profile, Spots, Crew, Settings — next
+7. Demo mode with scripted scenarios
+8. Background evaluation and local notifications
+9. Server phase (separate repository)
 
 ## Disclaimer
 

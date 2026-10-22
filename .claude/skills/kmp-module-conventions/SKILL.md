@@ -12,7 +12,7 @@ description: Module layout, source sets, dependency rules and platform-code poli
 | `:shared:windengine` | android, ios (arm64, simulatorArm64), jvm | engine types and pure functions | any I/O, DI, serialization, platform API |
 | `:shared:contract` | android, ios, jvm | `@Serializable` DTOs mirroring `api/openapi.yaml`, error body, enums | business logic, mapping to domain |
 | `:shared:data` | android, ios, jvm (tests only) | Ktor client, `FakePursuitOfWindServer`, Room 3 (KSP), DataStore, repositories, `AppError`, DTO↔domain mappers, platform service interfaces, `dataModule(environment)` | Compose, ViewModels |
-| `:shared:app` | android, ios | ViewModels, Compose UI, navigation, theme, DI graph (`initKoin`), demo mode UI; exports iOS framework `PursuitOfWindKit` | Ktor or Room types in public APIs |
+| `:shared:app` | android, ios, jvm (tests only) | ViewModels, Compose UI, navigation, theme, DI graph (`appModules`, started by `startPursuitOfWind` on Android and `MainViewController` on iOS), demo mode UI; exports iOS framework `PursuitOfWindKit` | Ktor or Room types in public APIs |
 | `:androidApp` | android | `Application`, `MainActivity`, WorkManager workers, notification channel, manifest, deep links, signing | shared business logic |
 | `iosApp/` | — | Xcode project, SwiftUI `App`, `Info.plist`, BG task registration | business logic |
 | `:testing:openapi` | jvm (plain Kotlin/JVM) | `OpenApiSpec`: loads `api/openapi.yaml`, validates JSON against its schemas, checks recorded requests and responses | anything production code needs |
@@ -64,3 +64,11 @@ Prefer `internal` for anything not used by another module.
 3. Is there an existing dependency that already does the job?
 4. Does it pull Android or iOS types into `commonMain`? If yes, it belongs in a platform source set.
 5. Mention the new dependency and why in the PR description.
+
+## Same code, different runtimes
+
+Common code runs on three runtimes, and host tests only cover one of them: Android host tests run on the desktop JVM, not on Android's runtime. Known differences that compile and pass on the JVM but fail on a device:
+
+- `Regex` on Android uses ICU, which rejects patterns the JVM accepts, such as an unescaped `}`. Prefer simple string parsing in common code; when a pattern is needed, escape every brace (`\{`, `\}`) and run the app on an emulator before the PR.
+- Anything in `androidMain` (Keystore, file paths, `Context`) only runs on a device or emulator. Say so in the PR when it was not run.
+

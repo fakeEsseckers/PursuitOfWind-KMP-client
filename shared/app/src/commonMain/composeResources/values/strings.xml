@@ -1,5 +1,115 @@
 <resources>
     <string name="app_name">Pursuit Of Wind</string>
-    <string name="app_tagline">Know when to go. Know who’s driving.</string>
-    <string name="bootstrap_status">Client phase in progress. The decision engine comes next.</string>
+
+    <!-- Verdicts and confidence (design system) -->
+    <string name="verdict_go">GO</string>
+    <string name="verdict_marginal">MARGINAL</string>
+    <string name="verdict_no_go">NO-GO</string>
+    <string name="confidence_high">High confidence</string>
+    <string name="confidence_medium">Medium confidence</string>
+    <string name="confidence_low">Low confidence</string>
+    <string name="confidence_unknown">Confidence unknown</string>
+    <string name="confidence_low_hint">The weather models disagree</string>
+    <string name="confidence_unknown_hint">Only one weather model available</string>
+    <string name="disclaimer">Pursuit Of Wind helps you decide. It does not replace judging the conditions on the spot and is not safety advice.</string>
+    <string name="action_refresh">Refresh</string>
+    <string name="action_retry">Retry</string>
+
+    <!-- Why a day is not a GO: the copy table in docs/domain-rules.md -->
+    <string name="reason_thunderstorm">Thunderstorm risk</string>
+    <string name="reason_offshore_danger">Offshore wind — dangerous here</string>
+    <string name="reason_dark">After dark</string>
+    <string name="reason_too_strong">Too strong for your level</string>
+    <string name="reason_overpowered_for_quiver">Your kites are too big</string>
+    <string name="reason_gusty">Too gusty</string>
+    <string name="reason_direction_unrideable">Wrong direction for this spot</string>
+    <string name="reason_too_light">Not enough wind</string>
+    <string name="reason_underpowered_for_quiver">Your kites are too small</string>
+    <string name="reason_rain">Rain</string>
+    <string name="reason_cold">Cold</string>
+    <string name="reason_too_far">Beyond your max drive</string>
+    <string name="reason_window_too_short">Window too short after the drive</string>
+
+    <!-- Days -->
+    <string name="day_today">Today</string>
+    <string name="day_tomorrow">Tomorrow</string>
+    <string name="weekday_monday">Monday</string>
+    <string name="weekday_tuesday">Tuesday</string>
+    <string name="weekday_wednesday">Wednesday</string>
+    <string name="weekday_thursday">Thursday</string>
+    <string name="weekday_friday">Friday</string>
+    <string name="weekday_saturday">Saturday</string>
+    <string name="weekday_sunday">Sunday</string>
+
+    <!-- The same days inside a sentence ("Next good day: Saturday") -->
+    <string name="day_today_inline">today</string>
+    <string name="day_tomorrow_inline">tomorrow</string>
+    <string name="weekday_monday_inline">Monday</string>
+    <string name="weekday_tuesday_inline">Tuesday</string>
+    <string name="weekday_wednesday_inline">Wednesday</string>
+    <string name="weekday_thursday_inline">Thursday</string>
+    <string name="weekday_friday_inline">Friday</string>
+    <string name="weekday_saturday_inline">Saturday</string>
+    <string name="weekday_sunday_inline">Sunday</string>
+
+    <!-- Wind units -->
+    <string name="unit_knots">kn</string>
+    <string name="unit_meters_per_second">m/s</string>
+    <string name="unit_kilometers_per_hour">km/h</string>
+    <string name="unit_beaufort">Bft</string>
+    <string name="decimal_separator">.</string>
+    <string name="wind_range">%1$d–%2$d %3$s</string>
+    <string name="wind_single">%1$d %2$s</string>
+
+    <!-- Today -->
+    <string name="today_title">Go?</string>
+    <string name="today_kite">Kite %1$s m²</string>
+    <string name="today_leave_by">Leave by %1$s</string>
+    <string name="today_leave_now">Leave now</string>
+    <string name="today_alternative">Also good: %1$s, %2$s</string>
+    <string name="today_spot_reason">%1$s: %2$s</string>
+    <string name="today_next_go">Next good day: %1$s</string>
+    <string name="today_no_next_go">No good day in this forecast</string>
+    <string name="today_no_rides">No one from your crew is driving there yet</string>
+    <string name="ride_driver">%1$s drives, leaves at %2$s</string>
+    <string name="ride_you_drive">You drive, leaving at %1$s</string>
+    <string name="ride_you_ride">You’re in</string>
+    <string name="ride_departed">%1$s: left at %2$s</string>
+    <string name="ride_you_departed">You left at %1$s</string>
+    <string name="ride_full">No seats left</string>
+    <string name="ride_pending">Saving…</string>
+    <plurals name="ride_seats_free">
+        <item quantity="one">%1$d seat free</item>
+        <item quantity="other">%1$d seats free</item>
+    </plurals>
+    <string name="updated_just_now">Updated just now</string>
+    <plurals name="updated_minutes_ago">
+        <item quantity="one">Updated %1$d min ago</item>
+        <item quantity="other">Updated %1$d min ago</item>
+    </plurals>
+    <plurals name="updated_hours_ago">
+        <item quantity="one">Updated %1$d h ago</item>
+        <item quantity="other">Updated %1$d h ago</item>
+    </plurals>
+    <plurals name="updated_days_ago">
+        <item quantity="one">Updated %1$d day ago</item>
+        <item quantity="other">Updated %1$d days ago</item>
+    </plurals>
+    <string name="banner_stale">This forecast is getting old.</string>
+    <string name="banner_offline">No connection. Showing the last saved forecast.</string>
+    <string name="banner_crew_failed">Couldn’t update your crew’s rides.</string>
+    <string name="banner_refresh_failed">Couldn’t update. Showing the last saved forecast.</string>
+    <string name="today_loading">Loading the forecast</string>
+    <string name="empty_profile_title">Tell us about you</string>
+    <string name="empty_profile_body">Your weight, level and kites decide which wind works for you. Set up your profile to get an answer for every day.</string>
+    <string name="empty_spots_title">Pick your spots</string>
+    <string name="empty_spots_body">Mark at least one spot as a favorite, with your drive time, to get an answer for every day.</string>
+    <string name="error_title">Couldn’t load the forecast</string>
+
+    <!-- Errors -->
+    <string name="error_network">No connection. Check your internet and try again.</string>
+    <string name="error_server">The server is having trouble. Try again in a few minutes.</string>
+    <string name="error_unauthorized">Couldn’t sign you in. Try again.</string>
+    <string name="error_no_forecast">There’s no forecast for your spots yet. Try again in a moment.</string>
+    <string name="error_unknown">Something went wrong. Try again.</string>
 </resources>

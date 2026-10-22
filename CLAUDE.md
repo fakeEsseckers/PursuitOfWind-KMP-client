@@ -21,6 +21,7 @@ The full brief for this phase is `docs/prompts/client-phase.ru.md` (Russian). Th
 ./gradlew :shared:windengine:testAndroidHostTest
 ./gradlew :shared:contract:jvmTest          # API contract: spec, examples and DTO parity
 ./gradlew :shared:data:jvmTest              # data layer and fake backend tests, contract validation against api/openapi.yaml
+./gradlew :shared:app:jvmTest               # screens: mappers, ViewModels on the real data layer, Compose UI tests (desktop)
 ./gradlew iosSimulatorArm64Test             # macOS only
 ./gradlew ktlintFormat                      # auto-fix formatting
 ./gradlew checkModuleGraph                  # module dependency rules
