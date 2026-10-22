@@ -20,7 +20,7 @@ kotlin {
     }
 
     android {
-        namespace = appNamespace("ui")
+        namespace = appNamespace("app")
         androidResources {
             enable = true
         }
@@ -44,9 +44,11 @@ kotlin {
             implementation(libs.koin.compose.viewmodel)
             implementation(libs.kermit)
         }
-        jvmTest.dependencies {
+        commonTest.dependencies {
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.turbine)
+        }
+        jvmTest.dependencies {
             implementation(libs.compose.ui.test)
             implementation(compose.desktop.currentOs)
         }
@@ -54,7 +56,7 @@ kotlin {
 }
 
 compose.resources {
-    packageOfResClass = appNamespace("ui.generated.resources")
+    packageOfResClass = appNamespace("core.resources")
     publicResClass = false
 }
 

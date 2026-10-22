@@ -25,7 +25,7 @@ graph LR
 | `:shared:contract` | Android, iOS, JVM | DTOs mirroring [`api/openapi.yaml`](api/openapi.yaml). Reused by the server. |
 | `:shared:data` | Android, iOS, JVM | Ktor client, offline cache (Room 3, DataStore), repositories, secure token storage, in-app fake backend. |
 | `:testing:openapi` | JVM, tests only | Validates requests and responses against [`api/openapi.yaml`](api/openapi.yaml). |
-| `:shared:app` | Android, iOS (JVM for tests) | Compose Multiplatform UI, design system, ViewModels, navigation, DI. Exported to iOS as `PursuitOfWindKit`. |
+| `:shared:app` | Android, iOS (JVM for tests) | Compose Multiplatform UI in feature packages with MVI, the design system, navigation, DI. Exported to iOS as `PursuitOfWindKit`. |
 | `:androidApp` | Android | Android entry point. |
 | `iosApp/` | iOS | Xcode project hosting the shared UI. |
 
@@ -72,6 +72,8 @@ The first screen answers "go?" for today and the next two days, across the rider
 - The screen refreshes when it opens, when it comes back after half an hour or after a failed refresh, and on pull-to-refresh. Decisions are recomputed every minute, so "leave by" stays true while the screen is open; once the time to leave has passed, the card shows only the riding time that is left.
 - Verdicts are an icon, a word and a color, never color alone. Each day reads as one heading item to screen readers, which also get a "Refresh" action instead of the pull gesture. Light and dark themes, English and Russian, and a test that no text is cut off at twice the font size.
 
+Each screen is a feature package with `domain`, `data`, `presentation` and `di` layers, and its ViewModel follows MVI: intents and incoming data become results, a pure reducer folds them into the state the view renders ([ADR 0008](docs/adr/0008-mvi-presentation-in-feature-packages.md)).
+
 The screen is tested on the desktop JVM without an emulator: its ViewModel against the real data layer (fake backend, Room, DataStore), and the UI with Compose UI tests.
 
 ## Build and run
@@ -98,6 +100,7 @@ open iosApp/iosApp.xcodeproj            # then Run on an iOS simulator
 | [0005](docs/adr/0005-contract-first-api-with-in-app-fake-backend.md) | Contract-first API with an in-app fake backend at the HTTP layer |
 | [0006](docs/adr/0006-room-3-as-the-offline-cache.md) | Room 3 as the offline cache |
 | [0007](docs/adr/0007-koin-for-dependency-injection.md) | Koin for dependency injection |
+| [0008](docs/adr/0008-mvi-presentation-in-feature-packages.md) | MVI presentation in feature packages |
 
 ## Roadmap
 

@@ -53,6 +53,8 @@ What we do, stated so someone can check the code against it. 2–5 sentences.
 
 Written in Issue #1: 0001 KMP + Compose Multiplatform for both UIs · 0002 Module structure for AGP 9 and enforced dependency rules · 0003 Stable dependencies inside Kotlin's tested compatibility range.
 
-Still to write: 0004 Decision engine as pure Kotlin for three runtimes · 0005 Fake backend at the HTTP layer and contract-first API · 0006 Room KMP over SQLDelight · 0007 Koin over compile-time DI · 0008 Demo mode with isolated data and a controllable clock · 0009 Local notifications until the server exists · 0010 Sharing the engine and contract with a server in a separate repository.
+Written since: 0004 Decision engine as pure Kotlin for three runtimes · 0005 Fake backend at the HTTP layer and contract-first API · 0006 Room 3 as the offline cache · 0007 Koin for dependency injection · 0008 MVI presentation in feature packages.
+
+Still to write: 0009 Demo mode with isolated data and a controllable clock · 0010 Local notifications until the server exists · 0011 Sharing the engine and contract with a server in a separate repository.
 
 Add each new ADR to the index in `docs/adr/README.md`.

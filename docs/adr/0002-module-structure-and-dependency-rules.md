@@ -27,4 +27,4 @@ Android Gradle Plugin 9 no longer lets the Kotlin Multiplatform plugin share a m
 - Positive: adding a module means one line in `moduleGraph { }`, which makes the new edge visible in review.
 - Negative: four Gradle modules instead of one cost some configuration time.
 - Not covered: third-party dependencies. The rule that `windengine` uses only the standard library and kotlinx-datetime, and `contract` only kotlinx.serialization, is checked in review; extend `moduleGraph { }` with allowed external groups if it is ever broken.
-- Revisit when: the app passes roughly fifteen screens or a second developer joins — then split `:shared:app` into feature modules.
+- Revisit when: the app passes roughly fifteen screens or a second developer joins — then split `:shared:app` into feature modules. Until then `:shared:app` is organised in feature packages ([ADR 0008](0008-mvi-presentation-in-feature-packages.md)), which move into modules unchanged.

@@ -14,7 +14,8 @@ description: How tests are written and run in Pursuit Of Wind — test pyramid, 
 | Session, retries, error mapping | `:shared:data` `commonTest` | `NetworkHarness` on `FakePursuitOfWindServer`, coroutines-test | high |
 | Repositories, cache, offline, feed sync | `:shared:data` `sqliteTest` (JVM + iOS) | `World` / `DataHarness`: in-memory Room, fake server, test dispatcher | high |
 | Contract | `:shared:data` `jvmTest` | OpenAPI validator against `api/openapi.yaml` | every route |
-| Screen mappers (engine → UI models, state rules) | `:shared:app` `commonTest` | kotlin-test, fixtures in `TodayFixtures.kt` | high |
+| Screen mappers (engine → UI models, state rules), reducers, refresh policies | `:shared:app` `commonTest` | kotlin-test, fixtures in `feature/<screen>/<Screen>Fixtures.kt` | high |
+| MVI base (`MviViewModel`) | `:shared:app` `commonTest` | coroutines-test, Turbine, a test ViewModel | once |
 | ViewModels | `:shared:app` `jvmTest` | Turbine, `StandardTestDispatcher`, `ControllableClock`, the real data layer through `appModules(Environment.Fake, clock)` | per screen |
 | Screens | `:shared:app` `jvmTest` | Compose UI test on the desktop runtime (`androidx.compose.ui.test.v2.runComposeUiTest`) | each state, semantics, 200% font |
 | Screenshots | Android/JVM | Roborazzi (optional) | key screens × demo scenarios |
@@ -57,6 +58,9 @@ fun `a retried seat request does not take a second seat`() =
 
 ## ViewModel and screen tests (`:shared:app`)
 
+- Tests sit in the same package as the code they test (`feature/today/presentation/mapper/DayCardsMapperTest`).
+- Reducers are pure: give them a state and a result and compare the next state. Test the rules in the state mapper, and in the reducer only what the reducer itself records (Today: the refresh status and the inputs).
+- `commonTest` has coroutines-test and Turbine, so the MVI base is tested on every runtime: `MviViewModelTest` checks that `bind()` runs only while the state is collected and stops after `STOP_AFTER`, and that effects are delivered once.
 - `:shared:app` has a JVM target for tests only. A ViewModel test builds the app's own Koin modules for `Environment.Fake` with a `ControllableClock`, and overrides `FakePursuitOfWindServer` with a `Seed` whose `ForecastProfile` makes verdicts known (steady wind, no noise). No fake repositories.
 - Create ViewModels through a `ViewModelStore` (`ViewModelProvider.create(store, viewModelFactory { initializer { … } })`) and `store.clear()` in `@AfterTest` before `koin.close()`. Otherwise a ViewModel from the previous test keeps reading a database that is already closed, and `runTest` reports that error in the next test.
 - Room and DataStore run on real IO threads here, so the cache settles after a refresh ends: wait for the state you need (`awaitState { … }` over `awaitItem()`) instead of assuming the order of emissions.

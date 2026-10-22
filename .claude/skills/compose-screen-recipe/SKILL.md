@@ -1,48 +1,76 @@
 ---
 name: compose-screen-recipe
-description: The standard pattern for a Pursuit Of Wind screen in Compose Multiplatform — route, stateless screen, ViewModel with UiState and intents, previews on demo data, strings, accessibility and test tags. Use when creating or changing any screen, reusable component or the custom wind chart in shared/app.
+description: The standard pattern for a Pursuit Of Wind screen in Compose Multiplatform — feature package layers, MVI ViewModel with state, intents, results and a reducer, route, stateless screen, previews on demo data, strings, accessibility and test tags. Use when creating or changing any screen, reusable component or the custom wind chart in shared/app.
 ---
 
 # Compose screen recipe
 
-## Files per screen (`io.github.esseckers.pursuitofwind.ui.<feature>`)
+## Files per screen
+
+Each screen is a package `io.github.esseckers.pursuitofwind.feature.<screen>` in `:shared:app` (`docs/adr/0008-mvi-presentation-in-feature-packages.md`). Today as the example:
 
 ```text
-TodayRoute.kt         // collects state, wires navigation and ViewModel; no layout
-TodayScreen.kt        // stateless: (state, onIntent) -> UI
-TodayCards.kt         // larger pieces of the screen, when TodayScreen would grow too long
-TodayViewModel.kt     // StateFlow<TodayUiState>, fun onIntent(intent)
-TodayUiState.kt       // immutable state, UI models, sealed TodayIntent (and TodayEffect if the screen has one-off events)
-TodaySources.kt       // combines the repositories into one snapshot Flow and runs the refresh
-TodayState.kt         // pure: snapshot + now + refresh status -> TodayUiState
-DayCards.kt           // pure: engine results -> UI models (formatting lives here, not in composables)
-TodayPreviewData.kt   // sample states for previews and UI tests
-TodayPreviews.kt      // one @Preview per state, light and dark
+feature/today/
+  domain/
+    model/TodaySnapshot.kt         // what the screen needs from the data layer, as one value
+    model/RefreshResult.kt         // what a refresh reports (forecast and crew errors kept apart)
+    repository/TodayRepository.kt  // interface: snapshot: Flow, suspend fun refresh()
+  data/
+    repository/TodayRepositoryImpl.kt  // over the :shared:data repositories; catches and logs storage errors
+  presentation/
+    model/TodayState.kt         // the MVI state the view renders
+    model/TodayIntent.kt        // sealed: what the user does
+    model/TodayInputs.kt        // what the state is computed from (data, now, refresh status)
+    model/TodayUiModels.kt      // DayUi, RideUi …, formatted for display
+    mapper/DayCardsMapper.kt    // pure: engine results -> UI models (formatting lives here, not in composables)
+    mapper/TodayStateMapper.kt  // pure: inputs -> TodayState
+    viewmodel/TodayResult.kt    // sealed: what happened (data changed, clock ticked, refresh started / finished)
+    viewmodel/TodayReducer.kt   // pure: (state, result) -> state
+    viewmodel/TodayViewModel.kt // MviViewModel: intents and observed data -> results
+    viewmodel/TodayRefreshPolicy.kt  // when the screen refreshes on its own
+    view/TodayRoute.kt          // collects state (and effects, when the screen has them), wires navigation and ViewModel; no layout
+    view/TodayScreen.kt         // stateless: (state, onIntent) -> UI
+    view/TodayCards.kt          // larger pieces of the screen, when TodayScreen would grow too long
+    view/TodayPreviewData.kt    // sample states for previews and UI tests
+    view/TodayPreviews.kt       // one @Preview per state, light and dark
+  di/TodayModule.kt             // factory<TodayRepository>, viewModel { }; listed in app/di/AppModules.kt
 ```
 
-Everything in a feature package is `internal`: the iOS framework exports only `App()` and `MainViewController()`.
+Add an `Effect` file next to the intent when the screen has one-off events. Everything in a feature package is `internal`: the iOS framework exports only `App()` and `MainViewController()`. A feature never imports another feature; what two features need moves to `core` or to `:shared:data`.
 
-## ViewModel rules
+Shared code next to `feature/`:
 
-- `androidx.lifecycle.ViewModel` (multiplatform), registered in `presentationModule` (`ui/di/AppModules.kt`) and obtained with `koinViewModel()` in the Route. Expose `val state: StateFlow<UiState>` built with `stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), initial)`.
-- Input is one function: `fun onIntent(intent: Intent)`. No public mutable state, no suspend functions in the API.
-- Repositories are the source of truth. The ViewModel combines their cached flows with the refresh status; it never keeps its own copy of the data.
-- Refresh from `onStart` of the state flow when it is due (`shouldRefresh`: never refreshed, older than `REFRESH_AFTER`, or data missing), not from `init`: `WhileSubscribed` restarts the flow when the screen comes back from the background or another screen, so stale data is refreshed then too. One refresh runs at a time.
+- `core/mvi` — `MviViewModel`, `Reducer`.
+- `core/designsystem` — `theme`, `component`, `icon` (see below).
+- `core/ui` — formatting and labels used by several screens (`AppError.message()`, `clockTime`, `windRangeText`).
+- `core/resources` — the generated `Res` (strings live in `composeResources/values` and `values-ru`).
+- `app` — `App()`, `appModules()`, platform entry points.
+
+## MVI rules
+
+- Every screen ViewModel extends `MviViewModel<State, Intent, Result, Effect>` and is obtained with `koinViewModel()` in the Route.
+- The view renders `state` and calls `onIntent(intent)`. No public mutable state, no suspend functions in the API.
+- The ViewModel never sets the state. It turns intents and observed data into `Result`s and calls `dispatch(result)`; the `Reducer` folds each one into the next state. The reducer is pure: no clock, no I/O, no coroutines. It is tested with plain values.
+- Data the screen observes goes in `bind(): Flow<Result>`. It runs while the view collects `state` and stops 5 s after the last collector leaves, so a screen in the background stops observing and coming back starts it again.
+- When the state is derived from several inputs (data, clock, refresh status), keep the inputs in the state (`TodayState.inputs`) and let the reducer recompute the rest with the feature's state mapper. Do not combine flows in the ViewModel. The reducer keeps the previous `content` instance when the new one is equal: the state changes on every tick, and Compose compares unstable UI models by instance, so this is what lets unchanged cards skip recomposition.
+- Effects: `post(effect)` for one-off events (navigate, show a snackbar), collected in the Route with lifecycle awareness. A screen without them declares `Nothing`. A failed refresh on Today is state (a notice above cached data), not an effect.
+- Repositories are the source of truth. The feature's repository interface (in `domain`) exposes cached flows and a `refresh()`; the ViewModel never keeps its own copy of the data.
+- Refresh from `bind()` (`onStart`) when it is due (`TodayRefreshPolicy.isDue`: never refreshed, the last one failed, older than `REFRESH_AFTER`, the clock went back, or data missing), not from `init`. One refresh runs at a time.
 - A refresh never throws into `viewModelScope`: failures come back as `AppError`s (storage exceptions as `AppError.Unknown`, logged with Kermit). Keep errors that only affect part of the screen apart (Today: crew problems do not mark the forecast as failed).
-- One-off events (navigate, show a snackbar) go through a `Channel<Effect>` exposed as `Flow`, collected in the Route with lifecycle awareness. Add one only when a screen has such events: a failed refresh on Today is state (a notice above cached data), not an event.
-- Inject `Clock` and anything time-based (`TodayViewModel(sources, clock, tick)`); never hard-code `Clock.System` or `Dispatchers.IO` (tests use virtual time; demo uses `ControllableClock`).
-- Map `AppError` to text with `AppError.message()` (`ui/common/Formatting.kt`); screens only render string resources.
+- Inject `Clock` and anything time-based (`TodayViewModel(repository, clock, riderZone, tick)`); never hard-code `Clock.System` or `Dispatchers.IO` (tests use virtual time; demo uses `ControllableClock`).
+- Map `AppError` to text with `AppError.message()` (`core/ui/Formatting.kt`); screens only render string resources.
 
-## UiState shape
+## State shape
 
 Every screen models all of these explicitly:
 
 ```kotlin
-internal data class TodayUiState(
+internal data class TodayState(
     val content: Content = Content.Loading,
     val isRefreshing: Boolean = false,
     val updatedAgo: Duration? = null,     // "updated 2 h ago"
     val notice: Notice? = null,           // OFFLINE, REFRESH_FAILED, STALE or CREW_FAILED above cached content
+    val inputs: TodayInputs = TodayInputs(),  // what the reducer computes the rest from; the view does not read it
 ) {
     sealed interface Content {
         data object Loading : Content
@@ -67,11 +95,11 @@ Cached data always wins over an error: the error replaces the content only when 
 - `Modifier.testTag("today.day.2026-10-24")` style tags (`<screen>.<element>`) on elements used in UI tests.
 - Previews: one per state in light and dark, from `<Screen>PreviewData`, which the UI tests use too. Demo scenarios (Issue #10) will replace the sample data.
 
-## Design system (`io.github.esseckers.pursuitofwind.ui.design`)
+## Design system (`io.github.esseckers.pursuitofwind.core.designsystem`)
 
 - `PursuitOfWindTheme` sets Material's color scheme, type scale and shapes, plus `PursuitOfWindTheme.colors` for meaning-bearing colors: `go`, `marginal`, `noGo` (each a `VerdictPalette` of accent and container colors, contrast ≥ 4.5:1 in both themes) and `confidenceHigh/Medium/Low/Unknown`.
-- Tokens: `Spacing.xs … xl`, `Sizes` (icons, border, placeholders). No raw `dp` or color literals outside this package.
-- Components: `VerdictBadge`, `VerdictCard`, `ConfidenceChip`, `StatusBanner`, `MessageState`, `ActionButton`, `Skeleton`, `Disclaimer`, `IconLine`; icons are the app's own line drawings in `AppIcons` (no icon library).
+- `theme`: colors, `PursuitOfWindTheme`, tokens `Spacing.xs … xl` and `Sizes` (icons, border, placeholders). No raw `dp` or color literals outside the design system.
+- `component`: `VerdictBadge`, `VerdictCard`, `ConfidenceChip`, `StatusBanner`, `MessageState`, `ActionButton`, `Skeleton`, `Disclaimer`, `IconLine`; `icon`: the app's own line drawings in `AppIcons` (no icon library).
 
 ## Wind chart (Spot detail)
 
@@ -82,8 +110,9 @@ Cached data always wins over an error: the error replaces the content only when 
 
 ## Done checklist for a screen
 
-- [ ] All UiState branches render and have previews.
-- [ ] Mapper tests in `commonTest`; ViewModel test with Turbine in `jvmTest` on the real data layer covers load, refresh, error, and the main intent.
+- [ ] All state branches render and have previews.
+- [ ] Mapper and reducer tests in `commonTest`; ViewModel test with Turbine in `jvmTest` on the real data layer covers load, refresh, error, and the main intent.
+- [ ] The feature's Koin module is listed in `appModules()`, and a test resolves the ViewModel from the graph.
 - [ ] Screen test in `jvmTest`: each state, intents from buttons, Russian strings, 200% font at phone size.
 - [ ] Strings in EN and RU.
 - [ ] Test tags on interactive elements; critical path covered by a UI test if the screen is on it.
