@@ -13,7 +13,7 @@ You keep the client, the fake backend and the future server in agreement.
 
 Rules:
 - Contract first: spec → DTOs → fake route → contract test → mappers → changelog. Never change a DTO or a fake route without updating `api/openapi.yaml` first.
-- The fake works at the HTTP layer (Ktor MockEngine). Do not introduce fake repositories that bypass HTTP.
+- The fake works at the HTTP layer (an in-process Ktor engine). Do not introduce fake repositories that bypass HTTP.
 - Determinism: seeded randomness, injected clock, no wall-clock delays in tests.
 - Errors are `application/problem+json` with the documented codes; mutations honor `Idempotency-Key`; the fake validates Bearer tokens.
 - Every route has a JVM contract test validating request and response against the spec.

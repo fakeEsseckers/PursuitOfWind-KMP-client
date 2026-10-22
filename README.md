@@ -4,7 +4,7 @@
 
 Kitesurfers who live hours from the water lose whole days to forecasts that looked fine on paper. Pursuit Of Wind turns the raw forecast into one answer — *go or no-go, when, where, with which kite and when to leave* — and shows who from your crew is driving with free seats.
 
-> **Status:** client phase. The decision engine, the API contract and the in-app fake backend are done; the data layer is next. See the [roadmap](#roadmap).
+> **Status:** client phase. The decision engine, the API contract, the in-app fake backend and the data layer are done; the screens are next. See the [roadmap](#roadmap).
 
 ## What is in this repository
 
@@ -23,7 +23,7 @@ graph LR
 | --- | --- | --- |
 | `:shared:windengine` | Android, iOS, JVM | Pure-Kotlin decision engine: verdicts, session windows, kite size, day decisions. Reused by the server. |
 | `:shared:contract` | Android, iOS, JVM | DTOs mirroring [`api/openapi.yaml`](api/openapi.yaml). Reused by the server. |
-| `:shared:data` | Android, iOS, JVM | In-app fake backend. *Planned:* Ktor client, Room, DataStore, repositories. |
+| `:shared:data` | Android, iOS, JVM | Ktor client, offline cache (Room 3, DataStore), repositories, secure token storage, in-app fake backend. |
 | `:testing:openapi` | JVM, tests only | Validates requests and responses against [`api/openapi.yaml`](api/openapi.yaml). |
 | `:shared:app` | Android, iOS | Compose Multiplatform UI, ViewModels, navigation, DI. Exported to iOS as `PursuitOfWindKit`. |
 | `:androidApp` | Android | Android entry point. |
@@ -45,9 +45,22 @@ Contract tests in `:shared:contract` parse the spec, check its conventions (oper
 
 ## Fake backend
 
-Until the server exists, the app talks to `FakePursuitOfWindServer`: a Ktor `MockEngine` that implements every operation of the contract with in-memory state — anonymous sign-in with rotating refresh tokens, profiles, a spot catalog with cursor paging, generated forecasts for three weather models, crews with invite codes, rides with seat counting and versions, a crew feed with paging and `410 FEED_RESET`, and `Idempotency-Key` replay. The app's real HTTP client runs against it, so moving to the real backend means a different engine and base URL ([ADR 0005](docs/adr/0005-contract-first-api-with-in-app-fake-backend.md)).
+Until the server exists, the app talks to `FakePursuitOfWindServer`: an in-process Ktor engine that implements every operation of the contract with in-memory state — anonymous sign-in with rotating refresh tokens, profiles, a spot catalog with cursor paging, generated forecasts for three weather models, crews with invite codes, rides with seat counting and versions, a crew feed with paging and `410 FEED_RESET`, and `Idempotency-Key` replay. The app's real HTTP client runs against it, so moving to the real backend means a different engine and base URL ([ADR 0005](docs/adr/0005-contract-first-api-with-in-app-fake-backend.md)).
 
 Everything is deterministic for a seed and a clock: ids, tokens, forecasts (synoptic swings, an afternoon sea breeze, model spread and a daylight flag from the sunrise equation) and simulated network trouble — `SLOW`, `FLAKY` (`503` with `Retry-After`) and `OFFLINE`. A tour test calls every route with its success and error cases. On the JVM every recorded request (parameters and body) and response is validated against the spec, and the build fails if a documented status or crew event type is never reached, or if the fake accepts a request the spec rejects. The fake enforces no rule that is not in the spec.
+
+## Data and offline
+
+Screens read from a local cache and never wait for the network: repositories expose Room `Flow`s together with the time of the last fetch ("updated 2 h ago"), and `refresh` calls update the cache in the background. Forecasts, spots and the profile come out as the decision engine's own types, so screens and background checks pass them to `DecisionEngine` unchanged.
+
+- **Session:** the app signs in anonymously with an installation id on first use, refreshes the access token on `401` (one refresh for all parallel requests), and signs in again with the same installation id if a refresh is refused. Tokens are encrypted with an AES-GCM key from the Android Keystore, or kept in the iOS Keychain.
+- **Errors:** every failure reaches the UI as one `AppError` (`Network`, `Unauthorized`, `Conflict(code)`, `Rejected(status, code)`, `Server(status)`, `Unknown`); exceptions are mapped in one place.
+- **Retries:** reads, and writes that carry an `Idempotency-Key`, are retried with exponential back-off that honors `Retry-After`; every user action gets its own key, so a retry is never applied twice.
+- **Crew updates:** rides carry a server `version`, and the cache only moves a ride forward. The crew feed is replayed from the last applied event; when the server resets it (`410 FEED_RESET`) the crew is loaded again.
+- **Optimistic seats:** taking or releasing a seat shows the result at once and is rolled back, with the server's state, if the server says no (for example `409 SEATS_FULL`).
+- **Isolation:** each environment (fake backend, demo, real server) has its own database, settings and secure store. In the fake and demo environments no data leaves the device.
+
+Choices and trade-offs: [ADR 0006](docs/adr/0006-room-3-as-the-offline-cache.md) (Room 3) and [ADR 0007](docs/adr/0007-koin-for-dependency-injection.md) (Koin).
 
 ## Build and run
 
@@ -71,14 +84,16 @@ open iosApp/iosApp.xcodeproj            # then Run on an iOS simulator
 | [0003](docs/adr/0003-dependency-version-policy.md) | Stable dependencies inside Kotlin's tested compatibility range |
 | [0004](docs/adr/0004-decision-engine-as-pure-kotlin.md) | Decision engine as pure Kotlin for three runtimes |
 | [0005](docs/adr/0005-contract-first-api-with-in-app-fake-backend.md) | Contract-first API with an in-app fake backend at the HTTP layer |
+| [0006](docs/adr/0006-room-3-as-the-offline-cache.md) | Room 3 as the offline cache |
+| [0007](docs/adr/0007-koin-for-dependency-injection.md) | Koin for dependency injection |
 
 ## Roadmap
 
 1. Bootstrap: build, modules, CI — done
 2. Decision engine: verdicts, windows, kite sizing — done
 3. API contract and in-app fake backend — done
-4. Data layer: network, cache, offline — next
-5. Screens: Today, Spot detail, Spots, Crew, Settings
+4. Data layer: network, cache, offline — done
+5. Screens: Today, Spot detail, Spots, Crew, Settings — next
 6. Demo mode with scripted scenarios
 7. Background evaluation and local notifications
 8. Server phase (separate repository)

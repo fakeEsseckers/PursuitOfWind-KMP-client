@@ -1,6 +1,6 @@
 ---
 name: fake-server-and-demo
-description: How Pursuit Of Wind's in-app fake backend (Ktor MockEngine) and demo mode work — adding fake routes, seeds, demo scenarios, the controllable clock and network simulation. Use when touching FakePursuitOfWindServer, Environment, DemoScenario, ControllableClock or the demo control panel.
+description: How Pursuit Of Wind's in-app fake backend (an in-process Ktor engine) and demo mode work — adding fake routes, seeds, demo scenarios, the controllable clock and network simulation. Use when touching FakePursuitOfWindServer, Environment, DemoScenario, ControllableClock or the demo control panel.
 ---
 
 # Fake server and demo mode
@@ -13,7 +13,7 @@ The whole data layer — serialization, headers, token refresh, error mapping, r
 
 | Piece | Responsibility |
 | --- | --- |
-| `FakePursuitOfWindServer(clock, seed, dispatcher)` | public entry point: `engine` (Ktor `MockEngine`), `BASE_URL`, `networkMode`; handles one request at a time under a `Mutex` |
+| `FakePursuitOfWindServer(clock, seed, dispatcher)` | public entry point: `engine` (`internal/FakeEngine`, keeps no request history), `BASE_URL`, `networkMode`; handles one request at a time under a `Mutex` |
 | `NetworkMode` | `NORMAL`, `SLOW` (2 s on the injected dispatcher), `FLAKY` (30% `503` + `Retry-After: 1`, seeded), `OFFLINE` (throws `kotlinx.io.IOException`) |
 | `ControllableClock` | a `kotlin.time.Clock` with `advanceBy(duration)` and `set(instant)`; used by the fake **and** the engine in demo mode |
 | `Seed`, `SeedSpot`, `SeedCrew`, `SeedMember`, `SeedRide`, `ForecastProfile` | deterministic initial state; `Seed.default(now)` has five spots, the Weekend Crew (`WIND-4KQ7`) and one ride |
@@ -44,7 +44,7 @@ Rules:
 
 ## Environments
 
-`sealed interface Environment { data object Fake; data class Remote(val baseUrl: String); data class Demo(val scenario: DemoScenarioId) }` — chosen in `androidApp` / `iosApp` and passed to `initKoin(environment)`.
+`sealed interface Environment { data object Fake; data class Remote(val baseUrl: String) }` in `:shared:data` (`Demo(scenario)` arrives with demo mode, Issue #10) — chosen in `androidApp` / `iosApp` and passed to `dataModule(environment, clock)`. Each environment has its own `storageName`, so its database, DataStore files and secure store are separate; demo mode passes a `ControllableClock` as `clock`.
 
 Demo isolation: demo mode uses its own Room database name (`pursuitofwind-demo.db`) and DataStore file. Leaving demo deletes both. A persistent **DEMO** badge is shown in the top bar.
 

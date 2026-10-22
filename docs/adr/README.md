@@ -9,3 +9,5 @@ One decision per file, numbered in order, never renumbered. Superseded records s
 | [0003](0003-dependency-version-policy.md) | Stable dependencies inside Kotlin's tested compatibility range | Accepted |
 | [0004](0004-decision-engine-as-pure-kotlin.md) | Decision engine as pure Kotlin for three runtimes | Accepted |
 | [0005](0005-contract-first-api-with-in-app-fake-backend.md) | Contract-first API with an in-app fake backend at the HTTP layer | Accepted |
+| [0006](0006-room-3-as-the-offline-cache.md) | Room 3 as the offline cache | Accepted |
+| [0007](0007-koin-for-dependency-injection.md) | Koin for dependency injection | Accepted |
