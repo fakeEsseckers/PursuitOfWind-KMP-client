@@ -1,0 +1,155 @@
+package io.github.esseckers.pursuitofwind.ui.today
+
+import io.github.esseckers.pursuitofwind.data.model.MySpot
+import io.github.esseckers.pursuitofwind.data.model.Profile
+import io.github.esseckers.pursuitofwind.data.model.Ride
+import io.github.esseckers.pursuitofwind.data.model.RideStatus
+import io.github.esseckers.pursuitofwind.engine.DecisionEngine
+import io.github.esseckers.pursuitofwind.engine.model.DayDecision
+import io.github.esseckers.pursuitofwind.engine.model.ForecastHour
+import io.github.esseckers.pursuitofwind.engine.model.SessionWindow
+import io.github.esseckers.pursuitofwind.engine.model.SpotConfig
+import io.github.esseckers.pursuitofwind.engine.model.SpotForecast
+import io.github.esseckers.pursuitofwind.engine.model.SpotId
+import io.github.esseckers.pursuitofwind.ui.common.clockTime
+import io.github.esseckers.pursuitofwind.ui.common.rounded
+import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.plus
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Instant
+
+/** Today and the next two days. */
+internal const val DAYS_SHOWN = 3
+
+/** A favorite spot with its cached forecast hours. */
+internal data class SpotWithForecast(
+    val spot: MySpot,
+    val hours: List<ForecastHour>,
+)
+
+/** The rides of the rider's crews, and who the rider is, so cards can say "you drive". */
+internal data class CrewRides(
+    val rides: List<Ride>,
+    val hasCrew: Boolean,
+    val userId: String?,
+)
+
+/**
+ * Runs the decision engine on the cached data and formats the first [DAYS_SHOWN] days for display. Session windows are
+ * shown in the spot's local time, because that is where they happen; departures and the "today" label use [riderZone],
+ * where the rider is.
+ */
+internal class DayCards(
+    private val profile: Profile,
+    spots: List<SpotWithForecast>,
+    private val crew: CrewRides,
+    private val now: Instant,
+    private val riderZone: TimeZone,
+) {
+    private val configs: Map<SpotId, SpotConfig> = spots.associate { it.spot.spot.id to it.spot.toSpotConfig() }
+    private val hours: Map<SpotId, List<ForecastHour>> = spots.associate { it.spot.spot.id to it.hours }
+    private val today: LocalDate = now.toLocalDateTime(riderZone).date
+
+    fun build(): List<DayUi> {
+        val forecasts = configs.map { (id, config) -> SpotForecast(config, hours.getValue(id)) }
+        return DecisionEngine
+            .decideDays(forecasts, profile.rider, now)
+            // A spot behind the rider's time zone can still be on the rider's yesterday.
+            .filter { it.date >= today }
+            .take(DAYS_SHOWN)
+            .map { decision ->
+                when (decision) {
+                    is DayDecision.Go -> decision.toUi()
+                    is DayDecision.NoGo -> decision.toUi()
+                }
+            }
+    }
+
+    private fun DayDecision.Go.toUi(): DayUi.Go =
+        DayUi.Go(
+            date = date,
+            label = label(date),
+            spotName = nameOf(window.spotId),
+            window = window.ridingTime(),
+            wind = windRange(window),
+            kiteM2 = recommendedKiteM2,
+            leaveBy = leaveBy.clockTime(riderZone),
+            leaveNow = now >= leaveBy,
+            confidence = confidence,
+            rides = ridesTo(window.spotId, date),
+            hasCrew = crew.hasCrew,
+            alternatives = alternatives.map { AlternativeUi(nameOf(it.spotId), it.ridingTime()) },
+        )
+
+    private fun DayDecision.NoGo.toUi(): DayUi.NoGo =
+        DayUi.NoGo(
+            date = date,
+            label = label(date),
+            reason = primaryReason,
+            // With one spot its reason is the primary reason; listing it again would add nothing.
+            spots = if (details.size > 1) details.map { SpotReasonUi(nameOf(it.spotId), it.reason) } else emptyList(),
+            nextGoDay = nextGoDay?.let(::label),
+        )
+
+    /** The lowest and highest consensus mean wind of the hours the rider can actually ride, in the rider's unit. */
+    private fun windRange(window: SessionWindow): WindRange? {
+        val config = configs.getValue(window.spotId)
+        val speeds =
+            hours
+                .getValue(window.spotId)
+                .filter { it.start < window.end && it.start + 1.hours > window.usableStart }
+                .map {
+                    DecisionEngine
+                        .evaluateHour(it, profile.rider, config)
+                        .wind.mean
+                        .rounded(profile.windUnit)
+                }
+        return if (speeds.isEmpty()) null else WindRange(speeds.min(), speeds.max(), profile.windUnit)
+    }
+
+    /** Scheduled rides of the rider's crews to [spotId] whose window starts on [date] at that spot. */
+    private fun ridesTo(
+        spotId: SpotId,
+        date: LocalDate,
+    ): List<RideUi> {
+        val zone = zoneOf(spotId)
+        return crew.rides
+            .filter { it.spotId == spotId && it.status == RideStatus.SCHEDULED && it.windowStart.toLocalDateTime(zone).date == date }
+            .sortedBy { it.departAt }
+            .map { ride ->
+                RideUi(
+                    id = ride.id,
+                    driverName = ride.driver.displayName,
+                    departAt = ride.departAt.clockTime(riderZone),
+                    departed = ride.departAt <= now,
+                    seatsFree = ride.seatsFree,
+                    youDrive = ride.driver.userId == crew.userId,
+                    youRide = ride.passengers.any { it.userId == crew.userId },
+                    pending = ride.pending,
+                )
+            }
+    }
+
+    /**
+     * When the rider can be on the water: from [SessionWindow.usableStart], which is later than the window's start once
+     * the time to leave has passed, until the end.
+     */
+    private fun SessionWindow.ridingTime(): TimeRange {
+        val zone = zoneOf(spotId)
+        return TimeRange(usableStart.clockTime(zone), end.clockTime(zone))
+    }
+
+    private fun label(date: LocalDate): DayLabel =
+        when (date) {
+            today -> DayLabel.Today
+            today.plus(DatePeriod(days = 1)) -> DayLabel.Tomorrow
+            else -> DayLabel.Weekday(date.dayOfWeek)
+        }
+
+    private fun zoneOf(spotId: SpotId): TimeZone = configs.getValue(spotId).timeZone
+
+    private fun nameOf(spotId: SpotId): String = configs.getValue(spotId).name
+}

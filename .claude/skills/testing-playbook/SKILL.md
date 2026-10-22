@@ -14,8 +14,9 @@ description: How tests are written and run in Pursuit Of Wind — test pyramid, 
 | Session, retries, error mapping | `:shared:data` `commonTest` | `NetworkHarness` on `FakePursuitOfWindServer`, coroutines-test | high |
 | Repositories, cache, offline, feed sync | `:shared:data` `sqliteTest` (JVM + iOS) | `World` / `DataHarness`: in-memory Room, fake server, test dispatcher | high |
 | Contract | `:shared:data` `jvmTest` | OpenAPI validator against `api/openapi.yaml` | every route |
-| ViewModels | `:shared:app` `commonTest` | Turbine, `StandardTestDispatcher`, `ControllableClock` | per screen |
-| UI critical path | `:shared:app` common UI tests or `androidApp` instrumented | Compose UI test | 1–2 flows |
+| Screen mappers (engine → UI models, state rules) | `:shared:app` `commonTest` | kotlin-test, fixtures in `TodayFixtures.kt` | high |
+| ViewModels | `:shared:app` `jvmTest` | Turbine, `StandardTestDispatcher`, `ControllableClock`, the real data layer through `appModules(Environment.Fake, clock)` | per screen |
+| Screens | `:shared:app` `jvmTest` | Compose UI test on the desktop runtime (`androidx.compose.ui.test.v2.runComposeUiTest`) | each state, semantics, 200% font |
 | Screenshots | Android/JVM | Roborazzi (optional) | key screens × demo scenarios |
 
 ## Conventions
@@ -54,6 +55,14 @@ fun `a retried seat request does not take a second seat`() =
 - Room and DataStore take the test dispatcher (`PursuitOfWindDatabase.build(builder, dispatcher)`, `LocalSettings.create(path, scope)`), so an optimistic update can be read between virtual-time delays. With the default `Dispatchers.IO`, `runTest` skips delays while the test waits on a database thread.
 - Room tests live in `sqliteTest`, a source set shared by `jvmTest` and `iosTest`: the bundled SQLite driver does not load in Android host tests.
 
+## ViewModel and screen tests (`:shared:app`)
+
+- `:shared:app` has a JVM target for tests only. A ViewModel test builds the app's own Koin modules for `Environment.Fake` with a `ControllableClock`, and overrides `FakePursuitOfWindServer` with a `Seed` whose `ForecastProfile` makes verdicts known (steady wind, no noise). No fake repositories.
+- Create ViewModels through a `ViewModelStore` (`ViewModelProvider.create(store, viewModelFactory { initializer { … } })`) and `store.clear()` in `@AfterTest` before `koin.close()`. Otherwise a ViewModel from the previous test keeps reading a database that is already closed, and `runTest` reports that error in the next test.
+- Room and DataStore run on real IO threads here, so the cache settles after a refresh ends: wait for the state you need (`awaitState { … }` over `awaitItem()`) instead of assuming the order of emissions.
+- ViewModels that tick (`TodayViewModel(tick = …)`) take `Duration.INFINITE` in tests that do not test time; repeated clock readings are dropped, so a stopped `ControllableClock` costs nothing.
+- Screen tests render the stateless screen with `TodayPreviewData` states: assert merged card text (`hasText`), test tags, intents sent by buttons, custom accessibility actions, and the Russian strings (`Locale.setDefault`, restored after the test). The 200% font check runs at phone size (`runSkikoComposeUiTest(size, density)`) and fails on text that is clipped or pushed off screen.
+
 ## Property tests (Kotest)
 
 - Bearing normalization is idempotent and always in [0, 360).
@@ -69,6 +78,7 @@ fun `a retried seat request does not take a second seat`() =
 ./gradlew :shared:windengine:jvmTest            # fastest loop
 ./gradlew :shared:windengine:testAndroidHostTest
 ./gradlew :shared:data:jvmTest                  # data layer, fake backend and contract tests (JVM)
+./gradlew :shared:app:jvmTest                   # screen mappers, ViewModels on the real data layer, Compose UI tests
 ./gradlew koverHtmlReport                       # coverage report (build/reports/kover/html)
 ./gradlew iosSimulatorArm64Test                 # macOS only
 ```
