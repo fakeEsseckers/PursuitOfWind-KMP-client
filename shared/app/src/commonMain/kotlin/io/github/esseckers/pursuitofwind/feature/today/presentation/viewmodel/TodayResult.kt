@@ -1,5 +1,6 @@
 package io.github.esseckers.pursuitofwind.feature.today.presentation.viewmodel
 
+import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.today.domain.model.RefreshResult
 import io.github.esseckers.pursuitofwind.feature.today.domain.model.TodaySnapshot
 import kotlin.time.Instant
@@ -14,8 +15,10 @@ internal sealed interface TodayResult {
         val now: Instant,
     ) : TodayResult
 
+    /** A refresh started [at], for the [favorites] cached at that moment. */
     data class RefreshStarted(
         val at: Instant,
+        val favorites: Set<SpotId> = emptySet(),
     ) : TodayResult
 
     data class RefreshFinished(

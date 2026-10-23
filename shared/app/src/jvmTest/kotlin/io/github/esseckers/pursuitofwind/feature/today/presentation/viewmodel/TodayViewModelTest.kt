@@ -116,6 +116,21 @@ class TodayViewModelTest {
         }
 
     @Test
+    fun `a favorite chosen while Today is shown gets its forecast at once`() =
+        runTest(dispatcher) {
+            riderWithFavorite(favorite = false)
+
+            viewModel().state.test(timeout = TURBINE_TIMEOUT) {
+                awaitState { it.content == Content.Empty(Missing.FAVORITE_SPOTS) && !it.isRefreshing }
+                // As the spot picker does, while this screen stays observed below it.
+                koin.get<SpotRepository>().follow(SpotId("nordstrand-bay"), 2.hours, favorite = true).value()
+
+                assertEquals(3, awaitState { it.days().size == 3 }.days().size)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
     fun `a favorite spot with wind gives three GO days and the ride of the crew on Saturday`() =
         runTest(dispatcher) {
             riderWithFavorite()
@@ -231,6 +246,20 @@ class TodayViewModelTest {
 
             viewModel.effects.test(timeout = TURBINE_TIMEOUT) {
                 assertEquals(TodayEffect.OpenSpot(SpotId("nordstrand-bay"), SATURDAY), awaitItem())
+                expectNoEvents()
+            }
+        }
+
+    @Test
+    fun `what is missing opens where to add it`() =
+        runTest(dispatcher) {
+            val viewModel = viewModel()
+            viewModel.onIntent(TodayIntent.SetUpProfile)
+            viewModel.onIntent(TodayIntent.PickSpots)
+
+            viewModel.effects.test(timeout = TURBINE_TIMEOUT) {
+                assertEquals(TodayEffect.OpenProfile, awaitItem())
+                assertEquals(TodayEffect.PickSpots, awaitItem())
                 expectNoEvents()
             }
         }

@@ -10,4 +10,10 @@ internal sealed interface TodayEffect {
         val spotId: SpotId,
         val date: LocalDate,
     ) : TodayEffect
+
+    /** Navigate to the profile. */
+    data object OpenProfile : TodayEffect
+
+    /** Navigate to the spot picker. */
+    data object PickSpots : TodayEffect
 }

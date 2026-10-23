@@ -48,6 +48,7 @@ import io.github.esseckers.pursuitofwind.core.resources.spot_loading
 import io.github.esseckers.pursuitofwind.core.resources.spot_missing_body
 import io.github.esseckers.pursuitofwind.core.resources.spot_missing_title
 import io.github.esseckers.pursuitofwind.core.resources.spot_unverified
+import io.github.esseckers.pursuitofwind.core.ui.driveText
 import io.github.esseckers.pursuitofwind.core.ui.updatedText
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailIntent
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState

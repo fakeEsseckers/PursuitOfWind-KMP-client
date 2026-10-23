@@ -64,6 +64,24 @@ internal fun ScreenTopBar(
     }
 }
 
+/** The title above a tab's screen: a heading with no back button, clear of the status bar and display cutouts. */
+@Composable
+internal fun TabTitle(
+    title: String,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.headlineMedium,
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
+                .padding(horizontal = Spacing.m, vertical = Spacing.s)
+                .semantics { heading() },
+    )
+}
+
 /** An icon button for a top bar; [label] is what screen readers say. */
 @Composable
 internal fun BarIconButton(

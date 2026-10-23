@@ -12,9 +12,6 @@ import io.github.esseckers.pursuitofwind.core.resources.compass_s_long
 import io.github.esseckers.pursuitofwind.core.resources.compass_se_long
 import io.github.esseckers.pursuitofwind.core.resources.compass_sw_long
 import io.github.esseckers.pursuitofwind.core.resources.compass_w_long
-import io.github.esseckers.pursuitofwind.core.resources.spot_drive_hours
-import io.github.esseckers.pursuitofwind.core.resources.spot_drive_hours_minutes
-import io.github.esseckers.pursuitofwind.core.resources.spot_drive_minutes
 import io.github.esseckers.pursuitofwind.core.resources.wind_single
 import io.github.esseckers.pursuitofwind.core.ui.dayLabel
 import io.github.esseckers.pursuitofwind.core.ui.windUnitLabel
@@ -22,9 +19,7 @@ import io.github.esseckers.pursuitofwind.data.model.WindUnit
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.ChartHourUi
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.Compass
 import org.jetbrains.compose.resources.StringResource
-import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
-import kotlin.time.Duration
 
 /** `18 kn`. */
 @Composable
@@ -49,18 +44,6 @@ internal fun hourDescription(
         stringResource(verdictLabel(hour.verdict)),
     )
 
-/** `1 h 30 min drive`, `45 min drive`. */
-@Composable
-internal fun driveText(drive: Duration): String {
-    val hours = drive.inWholeHours.toInt()
-    val minutes = (drive.inWholeMinutes % MINUTES_PER_HOUR).toInt()
-    return when {
-        hours == 0 -> stringResource(Res.string.spot_drive_minutes, minutes)
-        minutes == 0 -> pluralStringResource(Res.plurals.spot_drive_hours, hours, hours)
-        else -> stringResource(Res.string.spot_drive_hours_minutes, hours, minutes)
-    }
-}
-
 /** `from the northwest`, for screen readers. */
 internal fun compassWords(compass: Compass): StringResource =
     when (compass) {
@@ -73,5 +56,3 @@ internal fun compassWords(compass: Compass): StringResource =
         Compass.W -> Res.string.compass_w_long
         Compass.NW -> Res.string.compass_nw_long
     }
-
-private const val MINUTES_PER_HOUR = 60

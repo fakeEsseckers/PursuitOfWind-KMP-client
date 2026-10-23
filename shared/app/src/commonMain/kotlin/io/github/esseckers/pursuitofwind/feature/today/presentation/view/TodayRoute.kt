@@ -14,10 +14,15 @@ import io.github.esseckers.pursuitofwind.feature.today.presentation.viewmodel.To
 import kotlinx.datetime.LocalDate
 import org.koin.compose.viewmodel.koinViewModel
 
-/** Connects [TodayScreen] to its [TodayViewModel]; [onOpenSpot] navigates to a spot's forecast. No layout here. */
+/**
+ * Connects [TodayScreen] to its [TodayViewModel]. [onOpenSpot] navigates to a spot's forecast, [onOpenProfile] to the
+ * profile and [onPickSpots] to the spot picker. No layout here.
+ */
 @Composable
 internal fun TodayRoute(
     onOpenSpot: (SpotId, LocalDate) -> Unit,
+    onOpenProfile: () -> Unit,
+    onPickSpots: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: TodayViewModel = koinViewModel(),
 ) {
@@ -25,6 +30,8 @@ internal fun TodayRoute(
     CollectEffects(viewModel.effects) { effect ->
         when (effect) {
             is TodayEffect.OpenSpot -> onOpenSpot(effect.spotId, effect.date)
+            TodayEffect.OpenProfile -> onOpenProfile()
+            TodayEffect.PickSpots -> onPickSpots()
         }
     }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -32,7 +39,7 @@ internal fun TodayRoute(
         state = state,
         onIntent = { intent ->
             // A second tap while the screen is already leaving would wait in the ViewModel and navigate again after back.
-            if (intent !is TodayIntent.OpenSpot || lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) viewModel.onIntent(intent)
+            if (intent == TodayIntent.Refresh || lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) viewModel.onIntent(intent)
         },
         modifier = modifier,
     )

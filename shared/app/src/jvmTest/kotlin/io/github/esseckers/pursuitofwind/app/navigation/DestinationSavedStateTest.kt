@@ -40,16 +40,22 @@ class DestinationSavedStateTest {
     @Test
     fun `a back stack survives saving and restoring`() {
         val serializer = NavBackStackSerializer(PolymorphicSerializer(NavKey::class))
-        val stack =
-            NavBackStack<NavKey>(
-                Destination.Today,
-                Destination.SpotDetail("nordstrand-bay", LocalDate(2026, 10, 24)),
-                Destination.SpotDetail("salt-lagoon"),
+        val stacks =
+            listOf(
+                NavBackStack<NavKey>(
+                    Destination.Today,
+                    Destination.SpotDetail("nordstrand-bay", LocalDate(2026, 10, 24)),
+                    Destination.SpotDetail("salt-lagoon"),
+                ),
+                NavBackStack<NavKey>(Destination.Welcome, Destination.SetUpProfile, Destination.PickSpots),
+                NavBackStack<NavKey>(Destination.Today, Destination.Profile),
             )
 
-        val saved = encodeToSavedState(serializer, stack, navigationConfiguration)
-        val restored = decodeFromSavedState(serializer, saved, navigationConfiguration)
+        stacks.forEach { stack ->
+            val saved = encodeToSavedState(serializer, stack, navigationConfiguration)
+            val restored = decodeFromSavedState(serializer, saved, navigationConfiguration)
 
-        assertEquals(stack.toList(), restored.toList())
+            assertEquals(stack.toList(), restored.toList())
+        }
     }
 }

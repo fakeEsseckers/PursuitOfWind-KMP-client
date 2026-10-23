@@ -119,14 +119,14 @@
     <!-- Spot detail -->
     <string name="action_back">Назад</string>
     <string name="spot_loading">Загружаем прогноз</string>
-    <plurals name="spot_drive_hours">
+    <plurals name="drive_hours">
         <item quantity="one">%1$d час в дороге</item>
         <item quantity="few">%1$d часа в дороге</item>
         <item quantity="many">%1$d часов в дороге</item>
         <item quantity="other">%1$d часа в дороге</item>
     </plurals>
-    <string name="spot_drive_hours_minutes">%1$d ч %2$d мин в дороге</string>
-    <string name="spot_drive_minutes">%1$d мин в дороге</string>
+    <string name="drive_hours_minutes">%1$d ч %2$d мин в дороге</string>
+    <string name="drive_minutes">%1$d мин в дороге</string>
     <string name="spot_unverified">Сектора ветра на этом споте ещё не проверил местный райдер. Вердикты могут ошибаться.</string>
     <string name="spot_missing_title">Этого спота нет в твоих</string>
     <string name="spot_missing_body">Добавь спот в свои и укажи время дороги, чтобы видеть его прогноз.</string>
@@ -155,6 +155,92 @@
     <string name="compass_sw_long">юго-западный</string>
     <string name="compass_w_long">западный</string>
     <string name="compass_nw_long">северо-западный</string>
+
+    <!-- Today: what to do when something is missing -->
+    <string name="action_set_up_profile">Заполнить профиль</string>
+    <string name="action_pick_spots">Выбрать споты</string>
+
+    <!-- Tabs -->
+    <string name="tab_today">Сегодня</string>
+    <string name="tab_profile">Профиль</string>
+
+    <!-- Durations -->
+    <string name="duration_minutes">%1$d мин</string>
+    <plurals name="duration_hours">
+        <item quantity="one">%1$d ч</item>
+        <item quantity="few">%1$d ч</item>
+        <item quantity="many">%1$d ч</item>
+        <item quantity="other">%1$d ч</item>
+    </plurals>
+    <string name="duration_hours_minutes">%1$d ч %2$d мин</string>
+
+    <!-- Shared actions and states -->
+    <string name="action_continue">Продолжить</string>
+    <string name="action_save">Сохранить</string>
+    <string name="action_done">Готово</string>
+    <string name="action_skip">Пока пропустить</string>
+    <string name="state_expanded">Развёрнуто</string>
+    <string name="state_collapsed">Свёрнуто</string>
+
+    <!-- Welcome -->
+    <string name="welcome_tagline">Знай, когда ехать. Знай, кто едет.</string>
+    <string name="welcome_point_decision">Чёткое «едем» или «не едем» по твоим спотам на сегодня и два дня вперёд</string>
+    <string name="welcome_point_kite">Окно, нужный кайт и когда выезжать</string>
+    <string name="welcome_point_crew">Кто из компании едет и есть ли место в машине</string>
+    <string name="action_get_started">Начать</string>
+
+    <!-- Profile -->
+    <string name="profile_title">Профиль</string>
+    <string name="profile_setup_title">О тебе</string>
+    <string name="profile_setup_intro">Вес, уровень и набор кайтов определяют, какой ветер тебе подходит.</string>
+    <string name="profile_name">Имя</string>
+    <string name="profile_weight">Вес</string>
+    <string name="unit_kg">кг</string>
+    <string name="profile_level">Уровень</string>
+    <string name="profile_level_hint">От него зависят подходящий ветер и то, какие порывы уже слишком.</string>
+    <string name="level_beginner">Новичок</string>
+    <string name="level_intermediate">Средний</string>
+    <string name="level_advanced">Продвинутый</string>
+    <string name="profile_kites">Твои кайты</string>
+    <string name="profile_kites_hint">Отметь размеры, которые у тебя есть, не больше %1$d. К каждому окну приложение подберёт нужный.</string>
+    <string name="kite_size">%1$s м²</string>
+    <string name="profile_unit">Единицы ветра</string>
+    <string name="unit_name_knots">Узлы</string>
+    <string name="unit_name_meters_per_second">м/с</string>
+    <string name="unit_name_kilometers_per_hour">км/ч</string>
+    <string name="unit_name_beaufort">Бофорт</string>
+    <string name="profile_more">Дополнительно</string>
+    <string name="profile_min_session">Самая короткая сессия, ради которой стоит ехать</string>
+    <string name="profile_min_session_shorter">Короче</string>
+    <string name="profile_min_session_longer">Дольше</string>
+    <string name="profile_max_drive">Самая долгая дорога до спота</string>
+    <string name="profile_max_drive_shorter">Меньше дороги</string>
+    <string name="profile_max_drive_longer">Больше дороги</string>
+    <string name="profile_wind_range">Твой диапазон ветра</string>
+    <string name="profile_wind_range_hint">Оставь пустым, чтобы взять диапазон твоего уровня.</string>
+    <string name="profile_min_wind">Минимальный ветер</string>
+    <string name="profile_max_wind">Максимальный ветер</string>
+    <string name="profile_error_name">Введи имя</string>
+    <string name="profile_error_weight">Введи вес</string>
+    <string name="profile_error_weight_range">От 30 до 200 кг</string>
+    <string name="profile_error_wind_number">Введи число или оставь пустым</string>
+    <string name="profile_error_wind_order">Должен быть больше минимального</string>
+    <string name="profile_fix_fields">Проверь отмеченные поля выше.</string>
+    <string name="profile_saved">Профиль сохранён</string>
+
+    <!-- Spot picker -->
+    <string name="spots_title">Твои споты</string>
+    <string name="spots_intro">Выбери споты, на которых катаешься, и укажи, сколько до них ехать от дома. По каждому будет ответ на каждый день.</string>
+    <string name="spots_unverified">Сектора ветра ещё не проверены</string>
+    <string name="spots_drive">Дорога от дома</string>
+    <string name="spots_drive_shorter">Меньше дороги до %1$s</string>
+    <string name="spots_drive_longer">Больше дороги до %1$s</string>
+    <string name="spots_loading">Загружаем споты</string>
+    <string name="spots_error_title">Не удалось загрузить споты</string>
+    <string name="spots_empty_title">Спотов пока нет</string>
+    <string name="spots_empty_body">Выбирать пока не из чего. Попробуй позже.</string>
+    <string name="banner_spots_offline">Нет сети. Показан сохранённый список спотов.</string>
+    <string name="banner_spots_failed">Не удалось обновить список спотов.</string>
 
     <!-- Errors -->
     <string name="error_network">Нет сети. Проверь подключение и попробуй ещё раз.</string>

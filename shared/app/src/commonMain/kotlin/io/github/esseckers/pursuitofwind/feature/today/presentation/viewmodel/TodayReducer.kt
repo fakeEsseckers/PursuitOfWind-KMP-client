@@ -28,7 +28,7 @@ internal class TodayReducer(
                 }
 
                 is TodayResult.RefreshStarted -> {
-                    inputs.copy(refresh = inputs.refresh.copy(refreshing = true, startedAt = result.at))
+                    inputs.copy(refresh = inputs.refresh.copy(refreshing = true, startedAt = result.at, favorites = result.favorites))
                 }
 
                 is TodayResult.RefreshFinished -> {

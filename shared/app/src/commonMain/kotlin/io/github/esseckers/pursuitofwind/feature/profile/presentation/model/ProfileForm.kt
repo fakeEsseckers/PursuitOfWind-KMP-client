@@ -1,0 +1,124 @@
+package io.github.esseckers.pursuitofwind.feature.profile.presentation.model
+
+import io.github.esseckers.pursuitofwind.data.model.Profile
+import io.github.esseckers.pursuitofwind.data.model.WindUnit
+import io.github.esseckers.pursuitofwind.engine.model.RiderProfile
+import io.github.esseckers.pursuitofwind.engine.model.SkillLevel
+import io.github.esseckers.pursuitofwind.engine.model.WindSpeed
+
+/**
+ * The profile as the rider edits it: text exactly as typed, choices as values. It becomes a [Profile] only through
+ * validation (`ProfileFormMapper.check`), so a half-typed weight never reaches the data layer.
+ *
+ * @property minWind the personal lower wind limit as typed, in the form's limit unit (`limitUnit`); empty means the
+ *   level's default. [maxWind] likewise.
+ * @property minWindSpeed the exact speed [minWind] was written from (the saved profile, or a conversion to another
+ *   unit); null once the rider types. Checking and converting use it, so switching units back and forth or saving an
+ *   untouched limit never rounds it. [maxWindSpeed] likewise.
+ */
+internal data class ProfileForm(
+    val name: String = "",
+    val weightKg: String = "",
+    val level: SkillLevel = SkillLevel.INTERMEDIATE,
+    val unit: WindUnit = WindUnit.KNOTS,
+    val kitesM2: Set<Double> = emptySet(),
+    val minSessionMinutes: Int = ProfileLimits.DEFAULT_MIN_SESSION_MINUTES,
+    val maxDriveMinutes: Int = ProfileLimits.DEFAULT_MAX_DRIVE_MINUTES,
+    val minWind: String = "",
+    val maxWind: String = "",
+    val minWindSpeed: WindSpeed? = null,
+    val maxWindSpeed: WindSpeed? = null,
+)
+
+/** One change the rider makes to the form. */
+internal sealed interface ProfileEdit {
+    data class Name(
+        val text: String,
+    ) : ProfileEdit
+
+    data class Weight(
+        val text: String,
+    ) : ProfileEdit
+
+    data class Level(
+        val level: SkillLevel,
+    ) : ProfileEdit
+
+    /** Wind shown in [unit]; personal wind limits already typed are converted. */
+    data class Units(
+        val unit: WindUnit,
+    ) : ProfileEdit
+
+    /** The rider owns, or no longer owns, a kite of [sizeM2]. */
+    data class Kite(
+        val sizeM2: Double,
+        val owned: Boolean,
+    ) : ProfileEdit
+
+    data class MinSession(
+        val minutes: Int,
+    ) : ProfileEdit
+
+    data class MaxDrive(
+        val minutes: Int,
+    ) : ProfileEdit
+
+    data class MinWind(
+        val text: String,
+    ) : ProfileEdit
+
+    data class MaxWind(
+        val text: String,
+    ) : ProfileEdit
+}
+
+/** The fields that can be wrong. Choices (level, unit, kites, steppers) can only hold valid values. */
+internal enum class ProfileField {
+    NAME,
+    WEIGHT,
+    MIN_WIND,
+    MAX_WIND,
+}
+
+internal enum class ProfileError {
+    NAME_MISSING,
+    WEIGHT_MISSING,
+    WEIGHT_OUT_OF_RANGE,
+    WIND_NOT_A_NUMBER,
+    WIND_NOT_ABOVE_MIN,
+}
+
+/** The result of checking a [ProfileForm]: the profile to save, or what to fix. */
+internal sealed interface ProfileCheck {
+    data class Valid(
+        val profile: Profile,
+    ) : ProfileCheck
+
+    data class Invalid(
+        val errors: Map<ProfileField, ProfileError>,
+    ) : ProfileCheck
+}
+
+/** A kite size offered in the form, and whether the rider owns it. [enabled] is false once the quiver is full. */
+internal data class KiteChoice(
+    val sizeM2: Double,
+    val owned: Boolean,
+    val enabled: Boolean,
+)
+
+/** The limits of `api/openapi.yaml` (`RiderProfile`), and the steps the form moves in. */
+internal object ProfileLimits {
+    const val NAME_MAX_LENGTH = 40
+    const val WEIGHT_MIN_KG = 30.0
+    const val WEIGHT_MAX_KG = 200.0
+    const val MAX_KITES = 10
+    const val MIN_SESSION_MIN_MINUTES = 30
+    const val MIN_SESSION_MAX_MINUTES = 720
+    const val MAX_DRIVE_MAX_MINUTES = 720
+    const val STEP_MINUTES = 30
+    val DEFAULT_MIN_SESSION_MINUTES = RiderProfile.DEFAULT_MIN_SESSION.inWholeMinutes.toInt()
+    val DEFAULT_MAX_DRIVE_MINUTES = RiderProfile.DEFAULT_MAX_DRIVE.inWholeMinutes.toInt()
+
+    /** Common kite sizes, offered as chips; sizes the rider already owns are added to them. */
+    val KITE_SIZES_M2: List<Double> = listOf(5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 17.0)
+}

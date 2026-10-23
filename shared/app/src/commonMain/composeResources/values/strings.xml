@@ -111,12 +111,12 @@
     <!-- Spot detail -->
     <string name="action_back">Back</string>
     <string name="spot_loading">Loading the forecast</string>
-    <plurals name="spot_drive_hours">
+    <plurals name="drive_hours">
         <item quantity="one">%1$d h drive</item>
         <item quantity="other">%1$d h drive</item>
     </plurals>
-    <string name="spot_drive_hours_minutes">%1$d h %2$d min drive</string>
-    <string name="spot_drive_minutes">%1$d min drive</string>
+    <string name="drive_hours_minutes">%1$d h %2$d min drive</string>
+    <string name="drive_minutes">%1$d min drive</string>
     <string name="spot_unverified">The wind sectors of this spot haven’t been checked by a local rider yet. Verdicts may be off.</string>
     <string name="spot_missing_title">Not one of your spots</string>
     <string name="spot_missing_body">Follow this spot, with your drive time, to see its forecast.</string>
@@ -145,6 +145,90 @@
     <string name="compass_sw_long">from the southwest</string>
     <string name="compass_w_long">from the west</string>
     <string name="compass_nw_long">from the northwest</string>
+
+    <!-- Today: what to do when something is missing -->
+    <string name="action_set_up_profile">Set up your profile</string>
+    <string name="action_pick_spots">Pick spots</string>
+
+    <!-- Tabs -->
+    <string name="tab_today">Today</string>
+    <string name="tab_profile">Profile</string>
+
+    <!-- Durations -->
+    <string name="duration_minutes">%1$d min</string>
+    <plurals name="duration_hours">
+        <item quantity="one">%1$d h</item>
+        <item quantity="other">%1$d h</item>
+    </plurals>
+    <string name="duration_hours_minutes">%1$d h %2$d min</string>
+
+    <!-- Shared actions and states -->
+    <string name="action_continue">Continue</string>
+    <string name="action_save">Save</string>
+    <string name="action_done">Done</string>
+    <string name="action_skip">Skip for now</string>
+    <string name="state_expanded">Expanded</string>
+    <string name="state_collapsed">Collapsed</string>
+
+    <!-- Welcome -->
+    <string name="welcome_tagline">Know when to go. Know who’s driving.</string>
+    <string name="welcome_point_decision">A clear GO or NO-GO for your spots, today and the next two days</string>
+    <string name="welcome_point_kite">The window, the kite to take and when to leave</string>
+    <string name="welcome_point_crew">Who from your crew is driving, and whether there’s a seat</string>
+    <string name="action_get_started">Get started</string>
+
+    <!-- Profile -->
+    <string name="profile_title">Profile</string>
+    <string name="profile_setup_title">About you</string>
+    <string name="profile_setup_intro">Your weight, level and kites decide which wind works for you.</string>
+    <string name="profile_name">Name</string>
+    <string name="profile_weight">Weight</string>
+    <string name="unit_kg">kg</string>
+    <string name="profile_level">Level</string>
+    <string name="profile_level_hint">Sets the wind range that suits you and how gusty is too gusty.</string>
+    <string name="level_beginner">Beginner</string>
+    <string name="level_intermediate">Intermediate</string>
+    <string name="level_advanced">Advanced</string>
+    <string name="profile_kites">Your kites</string>
+    <string name="profile_kites_hint">Tap the sizes you own, up to %1$d. Every window comes with the one to take.</string>
+    <string name="kite_size">%1$s m²</string>
+    <string name="profile_unit">Show wind in</string>
+    <string name="unit_name_knots">Knots</string>
+    <string name="unit_name_meters_per_second">m/s</string>
+    <string name="unit_name_kilometers_per_hour">km/h</string>
+    <string name="unit_name_beaufort">Beaufort</string>
+    <string name="profile_more">More settings</string>
+    <string name="profile_min_session">Shortest session worth the drive</string>
+    <string name="profile_min_session_shorter">Shorter session</string>
+    <string name="profile_min_session_longer">Longer session</string>
+    <string name="profile_max_drive">Longest drive to a spot</string>
+    <string name="profile_max_drive_shorter">Shorter drive</string>
+    <string name="profile_max_drive_longer">Longer drive</string>
+    <string name="profile_wind_range">Your wind range</string>
+    <string name="profile_wind_range_hint">Leave empty to use the range of your level.</string>
+    <string name="profile_min_wind">Lowest wind</string>
+    <string name="profile_max_wind">Highest wind</string>
+    <string name="profile_error_name">Enter your name</string>
+    <string name="profile_error_weight">Enter your weight</string>
+    <string name="profile_error_weight_range">Between 30 and 200 kg</string>
+    <string name="profile_error_wind_number">Enter a number, or leave it empty</string>
+    <string name="profile_error_wind_order">Must be above your lowest wind</string>
+    <string name="profile_fix_fields">Check the fields marked above.</string>
+    <string name="profile_saved">Profile saved</string>
+
+    <!-- Spot picker -->
+    <string name="spots_title">Your spots</string>
+    <string name="spots_intro">Pick the spots you ride and how long the drive from home is. Each of them gets an answer every day.</string>
+    <string name="spots_unverified">Wind sectors not checked yet</string>
+    <string name="spots_drive">Drive from home</string>
+    <string name="spots_drive_shorter">Shorter drive to %1$s</string>
+    <string name="spots_drive_longer">Longer drive to %1$s</string>
+    <string name="spots_loading">Loading the spots</string>
+    <string name="spots_error_title">Couldn’t load the spots</string>
+    <string name="spots_empty_title">No spots yet</string>
+    <string name="spots_empty_body">There are no spots to pick from. Try again later.</string>
+    <string name="banner_spots_offline">No connection. Showing the saved list of spots.</string>
+    <string name="banner_spots_failed">Couldn’t update the list of spots.</string>
 
     <!-- Errors -->
     <string name="error_network">No connection. Check your internet and try again.</string>

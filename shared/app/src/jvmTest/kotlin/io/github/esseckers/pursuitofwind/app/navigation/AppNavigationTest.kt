@@ -105,6 +105,77 @@ class AppNavigationTest {
             onNodeWithTag("today.header").assertIsDisplayed()
         }
 
+    @Test
+    fun `the Profile tab shows the saved profile and the Today tab comes back`() =
+        runComposeUiTest {
+            setContent {
+                KoinIsolatedContext(graph) {
+                    CompositionLocalProvider(LocalViewModelStoreOwner provides owner) { PursuitOfWindTheme { AppNavigation() } }
+                }
+            }
+
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("today.header")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("tab.today").assertIsSelected()
+            onNodeWithTag("tab.profile").performClick()
+
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("profile.form")).fetchSemanticsNodes().isNotEmpty() }
+            onNode(isHeading() and hasText("Profile")).assertIsDisplayed()
+            onNodeWithTag("profile.name").assert(hasText("Alex"))
+            onNodeWithTag("tab.profile").assertIsSelected()
+
+            onNodeWithTag("tab.today").performClick()
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("today.header")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("tab.today").assertIsSelected()
+        }
+
+    @Test
+    fun `a rider without a favorite picks one from Today and gets an answer`() =
+        runComposeUiTest {
+            runBlocking {
+                graph.koin
+                    .get<SpotRepository>()
+                    .follow(NORDSTRAND, 2.hours, favorite = false)
+                    .value()
+            }
+            setContent {
+                KoinIsolatedContext(graph) {
+                    CompositionLocalProvider(LocalViewModelStoreOwner provides owner) { PursuitOfWindTheme { AppNavigation() } }
+                }
+            }
+
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("today.pickSpots")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("today.pickSpots").performClick()
+
+            val nordstrand = "spots.toggle.nordstrand-bay"
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag(nordstrand)).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("spots.list").performScrollToNode(hasTestTag(nordstrand))
+            onNodeWithTag(nordstrand).performClick()
+            onNodeWithTag("spots.done").performClick()
+
+            val saturday = "today.day.$SATURDAY"
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag(saturday)).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("tab.today").assertIsSelected()
+        }
+
+    @Test
+    fun `a screen opened from a tab hides the tabs`() =
+        runComposeUiTest {
+            setContent {
+                KoinIsolatedContext(graph) {
+                    CompositionLocalProvider(LocalViewModelStoreOwner provides owner) { PursuitOfWindTheme { AppNavigation() } }
+                }
+            }
+
+            val saturday = "today.day.$SATURDAY"
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag(saturday)).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("tabs").assertIsDisplayed()
+            onNodeWithTag("today.days").performScrollToNode(hasTestTag(saturday))
+            onNodeWithTag(saturday).performClick()
+
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("spot.ready")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("tabs").assertDoesNotExist()
+        }
+
     private companion object {
         /** Room, DataStore and the HTTP engine run on real threads here; leave room for a cold JVM on CI. */
         const val TIMEOUT_MS = 10_000L
