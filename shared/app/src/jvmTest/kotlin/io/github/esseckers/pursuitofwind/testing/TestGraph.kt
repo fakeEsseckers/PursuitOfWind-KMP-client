@@ -8,16 +8,22 @@ import io.github.esseckers.pursuitofwind.data.fake.ForecastProfile
 import io.github.esseckers.pursuitofwind.data.fake.Seed
 import io.github.esseckers.pursuitofwind.data.model.Outcome
 import org.koin.core.KoinApplication
+import org.koin.core.module.Module
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
 
 /**
  * The app's own Koin graph for [Environment.Fake] at [clock], with the fake backend seeded by [steadyBreeze]: the real
  * data layer (HTTP to the in-app server, in-memory Room, DataStore), so screen tests need no fake repositories.
+ * [overrides] replace definitions of the graph, such as the HTTP engine with [HeldRequests.engine].
  */
-internal fun testGraph(clock: ControllableClock): KoinApplication =
+internal fun testGraph(
+    clock: ControllableClock,
+    vararg overrides: Module,
+): KoinApplication =
     koinApplication {
-        modules(appModules(Environment.Fake, clock) + module { single { FakePursuitOfWindServer(get(), steadyBreeze(clock)) } })
+        val server = module { single { FakePursuitOfWindServer(get(), steadyBreeze(clock)) } }
+        modules(appModules(Environment.Fake, clock) + server + overrides)
     }
 
 /** The default seed (spots, Weekend Crew, Andrei's Saturday ride) with 18 kn from 240° everywhere, so verdicts are known. */

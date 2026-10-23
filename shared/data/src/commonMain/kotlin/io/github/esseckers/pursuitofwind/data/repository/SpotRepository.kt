@@ -22,6 +22,8 @@ import io.github.esseckers.pursuitofwind.data.model.Spot
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
@@ -34,6 +36,12 @@ public class SpotRepository internal constructor(
 ) {
     private val spots = database.spots()
     private val sync = database.syncState()
+
+    /**
+     * One change to the followed spots at a time, request and cache write together. [refreshMySpots] replaces them all
+     * with the server's list, so a refresh answered before a change but written after it would bring the old list back.
+     */
+    private val mySpotsChanges = Mutex()
 
     /** Every known spot, by name. Complete after [refreshCatalog]; before that, at least the followed spots. */
     public val catalog: Flow<Cached<List<Spot>>> = sync.cached(SyncKeys.CATALOG, spots.spots().map { list -> list.map { it.toSpot() } })
@@ -64,15 +72,17 @@ public class SpotRepository internal constructor(
 
     public suspend fun refreshMySpots(): Outcome<Unit> =
         outcome {
-            val fetched = api.mySpots().items
-            val valid = validEntities(fetched.map { it.spot })
-            val ids = valid.map { it.id }.toSet()
-            val items = fetched.filter { it.spot.id in ids }
-            database.withWriteTransaction {
-                spots.upsertSpots(valid)
-                spots.deleteMySpots()
-                spots.upsertMySpots(items.map { MySpotEntity(it.spot.id, it.driveMinutes, it.favorite) })
-                sync.markUpdated(SyncKeys.MY_SPOTS, clock.now())
+            mySpotsChanges.withLock {
+                val fetched = api.mySpots().items
+                val valid = validEntities(fetched.map { it.spot })
+                val ids = valid.map { it.id }.toSet()
+                val items = fetched.filter { it.spot.id in ids }
+                database.withWriteTransaction {
+                    spots.upsertSpots(valid)
+                    spots.deleteMySpots()
+                    spots.upsertMySpots(items.map { MySpotEntity(it.spot.id, it.driveMinutes, it.favorite) })
+                    sync.markUpdated(SyncKeys.MY_SPOTS, clock.now())
+                }
             }
         }
 
@@ -83,19 +93,23 @@ public class SpotRepository internal constructor(
         favorite: Boolean,
     ): Outcome<MySpot> =
         outcome {
-            val saved = api.putMySpot(spotId.value, MySpotUpdateDto(drive.inWholeMinutes.toInt(), favorite), newIdempotencyKey())
-            val spot = saved.spot.toEntity()
-            database.withWriteTransaction {
-                spots.upsertSpots(listOf(spot))
-                spots.upsertMySpots(listOf(MySpotEntity(spot.id, saved.driveMinutes, saved.favorite)))
+            mySpotsChanges.withLock {
+                val saved = api.putMySpot(spotId.value, MySpotUpdateDto(drive.inWholeMinutes.toInt(), favorite), newIdempotencyKey())
+                val spot = saved.spot.toEntity()
+                database.withWriteTransaction {
+                    spots.upsertSpots(listOf(spot))
+                    spots.upsertMySpots(listOf(MySpotEntity(spot.id, saved.driveMinutes, saved.favorite)))
+                }
+                MySpot(spot.toSpot(), saved.driveMinutes.minutes, saved.favorite)
             }
-            MySpot(spot.toSpot(), saved.driveMinutes.minutes, saved.favorite)
         }
 
     public suspend fun unfollow(spotId: SpotId): Outcome<Unit> =
         outcome {
-            api.deleteMySpot(spotId.value, newIdempotencyKey())
-            spots.deleteMySpot(spotId.value)
+            mySpotsChanges.withLock {
+                api.deleteMySpot(spotId.value, newIdempotencyKey())
+                spots.deleteMySpot(spotId.value)
+            }
         }
 
     private companion object {

@@ -66,6 +66,9 @@ internal object Sizes {
     /** Height of a placeholder row while a list of spots loads. */
     val rowPlaceholder = 64.dp
 
+    /** Room left below a list for a floating action button, so the last item can scroll above it. */
+    val fabClearance = 88.dp
+
     /** Height of a placeholder card while a day's answer loads. */
     val cardPlaceholder = 196.dp
 

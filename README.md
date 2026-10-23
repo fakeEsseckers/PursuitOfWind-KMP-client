@@ -4,7 +4,7 @@
 
 Kitesurfers who live hours from the water lose whole days to forecasts that looked fine on paper. Pursuit Of Wind turns the raw forecast into one answer — *go or no-go, when, where, with which kite and when to leave* — and shows who from your crew is driving with free seats.
 
-> **Status:** client phase. The decision engine, the API contract, the in-app fake backend, the data layer, onboarding with the profile and the spot picker, the Today screen and the spot's hourly wind chart are done; Spots, Crew and Settings are next. See the [roadmap](#roadmap).
+> **Status:** client phase. The decision engine, the API contract, the in-app fake backend, the data layer, onboarding with the profile and the spot picker, the app language, the Today screen, the Spots tab and the spot's hourly wind chart are done; Crew and Settings are next. See the [roadmap](#roadmap).
 
 ## What is in this repository
 
@@ -73,9 +73,18 @@ A new rider starts at a welcome screen that says what the app answers, then sets
 
 The app speaks English and Russian. It follows the phone, and the profile has a language choice (each language by its own name) that applies at once and stays on the device. Strings come from Compose Multiplatform resources, which read the platform's locale, so a new language composes the screens again; the back stack and every screen's ViewModel live above that, and the rider stays where they were, with what they typed.
 
-After that the app opens on Today, with Today and Profile as tabs. The Profile tab is the same form, saved in place: "Save" is on only when something changed, and a failed save says why and keeps what was typed. Today's empty states lead to the profile or the spot picker.
+After that the app opens on Today, with Today, Spots and Profile as tabs. The Profile tab is the same form, saved in place: "Save" is on only when something changed, and a failed save says why and keeps what was typed. Today's empty states lead to the profile or the spot picker.
 
 Text fields keep their own text and cursor while the form lives in the ViewModel's state, so typing never waits for the state to come back; a form filled or rewritten from outside (the saved profile arriving, wind limits converted to a new unit) resets them.
+
+## Spots
+
+The Spots tab lists the spots the rider follows. Each card says whether its wind sectors are checked, and has a favorite switch (favorites get an answer on Today every day), the drive from home in 15-minute steps, a link to the hourly forecast and "Remove". "Add spots" opens the spot picker, which returns to the tab.
+
+- **Saved as you go:** there is no "Save" button. A change shows at once with "Saving…" until its save ends, so the card never jumps back to an older value; the save ends with the cache read after it, so nothing stays behind when the tab was hidden meanwhile. A spot gets one request at a time: taps made while one runs are sent together when it is done.
+- **Writes finish:** a write the rider asked for completes even if they leave the tab meanwhile. The writes of one spot (saves, a removal, its undo) run in the order they were made. "Undo" leaves a spot alone that was followed again meanwhile, from the picker for example.
+- **Failures:** a write that fails puts the spot back as it was and says why in a snackbar. "Remove" hides the spot at once, with "Undo" in the snackbar to follow it again with the same drive and favorite flag.
+- **Refresh:** the tab refreshes when it opens and on pull-to-refresh. `SpotRepository` runs refreshes and writes of the followed spots one at a time, from any screen, so a refresh never brings back the list from before a change.
 
 ## Today
 
@@ -138,7 +147,7 @@ open iosApp/iosApp.xcodeproj            # then Run on an iOS simulator
 4. Data layer: network, cache, offline — done
 5. Design system and the Today screen — done
 6. Spot detail with the hourly wind chart, and navigation — done
-7. Screens: onboarding and Profile — done; Spots, Crew, Settings — next
+7. Screens: onboarding, Profile with the app language, Spots — done; Crew, Settings — next
 8. Background evaluation and local notifications
 9. Server phase (separate repository), with guided tours and spotlight hints
 

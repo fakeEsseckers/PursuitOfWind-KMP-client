@@ -235,6 +235,24 @@
     <string name="banner_spots_offline">No connection. Showing the saved list of spots.</string>
     <string name="banner_spots_failed">Couldn’t update the list of spots.</string>
 
+    <!-- Spots tab -->
+    <string name="tab_spots">Spots</string>
+    <string name="my_spots_intro">Favorites get an answer on Today every day. Changes save as you make them.</string>
+    <string name="my_spots_favorite">Favorite</string>
+    <string name="my_spots_favorite_hint">An answer on Today every day</string>
+    <string name="my_spots_forecast">Hourly forecast</string>
+    <string name="action_remove">Remove</string>
+    <string name="my_spots_remove">Remove %1$s</string>
+    <string name="my_spots_removed">%1$s removed</string>
+    <string name="action_undo">Undo</string>
+    <string name="action_add_spots">Add spots</string>
+    <string name="my_spots_saving">Saving…</string>
+    <string name="my_spots_save_failed">Couldn’t save the change.</string>
+    <string name="my_spots_loading">Loading your spots</string>
+    <string name="my_spots_error_title">Couldn’t load your spots</string>
+    <string name="my_spots_empty_title">No spots yet</string>
+    <string name="my_spots_empty_body">Add the spots you ride, with the drive from home, to get an answer every day.</string>
+
     <!-- Errors -->
     <string name="error_network">No connection. Check your internet and try again.</string>
     <string name="error_server">The server is having trouble. Try again in a few minutes.</string>

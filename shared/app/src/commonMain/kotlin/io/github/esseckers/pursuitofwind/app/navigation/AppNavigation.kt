@@ -28,6 +28,7 @@ import io.github.esseckers.pursuitofwind.core.designsystem.icon.AppIcons
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Sizes
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.tab_profile
+import io.github.esseckers.pursuitofwind.core.resources.tab_spots
 import io.github.esseckers.pursuitofwind.core.resources.tab_today
 import io.github.esseckers.pursuitofwind.data.model.AppLanguage
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
@@ -35,6 +36,7 @@ import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.Prof
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.view.ProfileRoute
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.view.SpotDetailRoute
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.view.SpotPickerRoute
+import io.github.esseckers.pursuitofwind.feature.spots.presentation.view.SpotsRoute
 import io.github.esseckers.pursuitofwind.feature.today.presentation.view.TodayRoute
 import io.github.esseckers.pursuitofwind.feature.welcome.presentation.view.WelcomeScreen
 import org.jetbrains.compose.resources.StringResource
@@ -42,8 +44,8 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * The app's screens and how they connect (Navigation 3). A rider without a profile starts at Welcome and goes through
- * onboarding (profile, then spots) to Today; everyone else starts at Today. Today and Profile are tabs in a bottom bar,
- * shown while one of them is on top. Everything shows in the rider's language (`AppLanguage`).
+ * onboarding (profile, then spots) to Today; everyone else starts at Today. Today, Spots and Profile are tabs in a
+ * bottom bar, shown while one of them is on top. Everything shows in the rider's language (`AppLanguage`).
  *
  * The back stack is a list of [Destination]s in saved state; every entry gets its own ViewModel store, so a screen's
  * ViewModel lives exactly as long as the screen is on the stack. Features do not know each other: this is the only
@@ -102,12 +104,18 @@ private fun entries(navigator: Navigator): (NavKey) -> NavEntry<NavKey> =
                 onBack = navigator::back,
             )
         }
-        entry<Destination.PickSpots> { SpotPickerRoute(onFinished = navigator::finishSetup, onBack = navigator::back) }
+        entry<Destination.PickSpots> { SpotPickerRoute(onFinished = navigator::finishPicking, onBack = navigator::back) }
         entry<Destination.Today> {
             TodayRoute(
                 onOpenSpot = { spotId, date -> navigator.open(Destination.SpotDetail(spotId.value, date)) },
                 onOpenProfile = { navigator.selectTab(Destination.Profile) },
                 onPickSpots = { navigator.open(Destination.PickSpots) },
+            )
+        }
+        entry<Destination.Spots> {
+            SpotsRoute(
+                onOpenSpot = { spotId -> navigator.open(Destination.SpotDetail(spotId.value)) },
+                onAddSpots = { navigator.open(Destination.PickSpots) },
             )
         }
         entry<Destination.Profile> { ProfileRoute(mode = ProfileMode.TAB) }
@@ -137,8 +145,14 @@ private fun TabBar(
 
 private fun tabLook(tab: Destination): Pair<ImageVector, StringResource> =
     when (tab) {
+        Destination.Spots -> AppIcons.Pin to Res.string.tab_spots
         Destination.Profile -> AppIcons.Person to Res.string.tab_profile
         else -> AppIcons.Wind to Res.string.tab_today
     }
 
-private fun tabName(tab: Destination): String = if (tab == Destination.Profile) "profile" else "today"
+private fun tabName(tab: Destination): String =
+    when (tab) {
+        Destination.Spots -> "spots"
+        Destination.Profile -> "profile"
+        else -> "today"
+    }

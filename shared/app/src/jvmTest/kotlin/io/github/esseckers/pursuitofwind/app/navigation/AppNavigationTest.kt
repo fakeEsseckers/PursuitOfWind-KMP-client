@@ -183,6 +183,39 @@ class AppNavigationTest {
         }
 
     @Test
+    fun `spots added from the Spots tab show there and a spot's forecast returns to the tab`() =
+        runComposeUiTest {
+            setContent {
+                KoinIsolatedContext(graph) {
+                    CompositionLocalProvider(LocalViewModelStoreOwner provides owner) { PursuitOfWindTheme { AppNavigation() } }
+                }
+            }
+
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("today.header")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("tab.spots").performClick()
+            waitUntil(
+                timeoutMillis = TIMEOUT_MS,
+            ) { onAllNodes(hasTestTag("myspots.card.nordstrand-bay")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("myspots.add").performClick()
+
+            val salt = "spots.toggle.salt-lagoon"
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag(salt)).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("spots.list").performScrollToNode(hasTestTag(salt))
+            onNodeWithTag(salt).performClick()
+            onNodeWithTag("spots.done").performClick()
+
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("myspots.card.salt-lagoon")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("tab.spots").assertIsSelected()
+            onNodeWithTag("myspots.list").performScrollToNode(hasTestTag("myspots.open.nordstrand-bay"))
+            onNodeWithTag("myspots.open.nordstrand-bay").performClick()
+
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("spot.ready")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithContentDescription("Back").performClick()
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("myspots.list")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("tab.spots").assertIsSelected()
+        }
+
+    @Test
     fun `a screen opened from a tab hides the tabs`() =
         runComposeUiTest {
             setContent {
