@@ -106,6 +106,46 @@
     <string name="empty_spots_body">Mark at least one spot as a favorite, with your drive time, to get an answer for every day.</string>
     <string name="error_title">Couldn’t load the forecast</string>
 
+    <string name="open_spot">Open the forecast for %1$s</string>
+
+    <!-- Spot detail -->
+    <string name="action_back">Back</string>
+    <string name="spot_loading">Loading the forecast</string>
+    <plurals name="spot_drive_hours">
+        <item quantity="one">%1$d h drive</item>
+        <item quantity="other">%1$d h drive</item>
+    </plurals>
+    <string name="spot_drive_hours_minutes">%1$d h %2$d min drive</string>
+    <string name="spot_drive_minutes">%1$d min drive</string>
+    <string name="spot_unverified">The wind sectors of this spot haven’t been checked by a local rider yet. Verdicts may be off.</string>
+    <string name="spot_missing_title">Not one of your spots</string>
+    <string name="spot_missing_body">Follow this spot, with your drive time, to see its forecast.</string>
+    <string name="spot_no_forecast">There’s no forecast for this spot yet. Try again in a moment.</string>
+    <string name="chart_title">Hour by hour</string>
+    <string name="chart_now">Now</string>
+    <string name="chart_legend">Bars: mean wind. Ticks: gusts. Band: range of the weather models. Shaded: dark.</string>
+    <string name="chart_hour">%1$s %2$s: %3$s, gusts %4$s, wind %5$s, %6$s</string>
+    <string name="chart_show_details">Show details</string>
+    <string name="details_wind">%1$s, gusts %2$s</string>
+    <string name="details_direction">Wind %1$s, %2$d°</string>
+    <string name="details_models">Models: %1$s</string>
+    <string name="details_temperature">%1$d °C</string>
+    <string name="details_all_good">Everything fits this hour.</string>
+    <string name="windows_title">Windows</string>
+    <string name="windows_none">No window worth the drive in this forecast.</string>
+    <string name="window_show">Show on the chart</string>
+    <string name="window_day_time">%1$s, %2$s</string>
+
+    <!-- Where the wind comes from -->
+    <string name="compass_n_long">from the north</string>
+    <string name="compass_ne_long">from the northeast</string>
+    <string name="compass_e_long">from the east</string>
+    <string name="compass_se_long">from the southeast</string>
+    <string name="compass_s_long">from the south</string>
+    <string name="compass_sw_long">from the southwest</string>
+    <string name="compass_w_long">from the west</string>
+    <string name="compass_nw_long">from the northwest</string>
+
     <!-- Errors -->
     <string name="error_network">No connection. Check your internet and try again.</string>
     <string name="error_server">The server is having trouble. Try again in a few minutes.</string>

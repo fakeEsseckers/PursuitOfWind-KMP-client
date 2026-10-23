@@ -114,6 +114,48 @@
     <string name="empty_spots_body">Отметь хотя бы один спот как избранный и укажи время дороги, чтобы получать ответ на каждый день.</string>
     <string name="error_title">Не удалось загрузить прогноз</string>
 
+    <string name="open_spot">Открыть прогноз: %1$s</string>
+
+    <!-- Spot detail -->
+    <string name="action_back">Назад</string>
+    <string name="spot_loading">Загружаем прогноз</string>
+    <plurals name="spot_drive_hours">
+        <item quantity="one">%1$d час в дороге</item>
+        <item quantity="few">%1$d часа в дороге</item>
+        <item quantity="many">%1$d часов в дороге</item>
+        <item quantity="other">%1$d часа в дороге</item>
+    </plurals>
+    <string name="spot_drive_hours_minutes">%1$d ч %2$d мин в дороге</string>
+    <string name="spot_drive_minutes">%1$d мин в дороге</string>
+    <string name="spot_unverified">Сектора ветра на этом споте ещё не проверил местный райдер. Вердикты могут ошибаться.</string>
+    <string name="spot_missing_title">Этого спота нет в твоих</string>
+    <string name="spot_missing_body">Добавь спот в свои и укажи время дороги, чтобы видеть его прогноз.</string>
+    <string name="spot_no_forecast">Прогноза для этого спота пока нет. Попробуй чуть позже.</string>
+    <string name="chart_title">По часам</string>
+    <string name="chart_now">Сейчас</string>
+    <string name="chart_legend">Столбцы — средний ветер, засечки — порывы, полоса — разброс моделей, тень — темнота.</string>
+    <string name="chart_hour">%1$s %2$s: %3$s, порывы %4$s, ветер %5$s, %6$s</string>
+    <string name="chart_show_details">Показать подробности</string>
+    <string name="details_wind">%1$s, порывы %2$s</string>
+    <string name="details_direction">Ветер %1$s, %2$d°</string>
+    <string name="details_models">Модели: %1$s</string>
+    <string name="details_temperature">%1$d °C</string>
+    <string name="details_all_good">В этот час всё подходит.</string>
+    <string name="windows_title">Окна</string>
+    <string name="windows_none">В этом прогнозе нет окна, ради которого стоит ехать.</string>
+    <string name="window_show">Показать на графике</string>
+    <string name="window_day_time">%1$s, %2$s</string>
+
+    <!-- Where the wind comes from -->
+    <string name="compass_n_long">северный</string>
+    <string name="compass_ne_long">северо-восточный</string>
+    <string name="compass_e_long">восточный</string>
+    <string name="compass_se_long">юго-восточный</string>
+    <string name="compass_s_long">южный</string>
+    <string name="compass_sw_long">юго-западный</string>
+    <string name="compass_w_long">западный</string>
+    <string name="compass_nw_long">северо-западный</string>
+
     <!-- Errors -->
     <string name="error_network">Нет сети. Проверь подключение и попробуй ещё раз.</string>
     <string name="error_server">На сервере проблемы. Попробуй через несколько минут.</string>

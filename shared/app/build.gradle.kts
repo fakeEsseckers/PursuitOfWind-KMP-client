@@ -4,6 +4,8 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 // Shared UI (Compose Multiplatform), presentation and DI. Exported to iOS as the PursuitOfWindKit framework.
 plugins {
     id("pursuitofwind.compose.multiplatform")
+    // Navigation keys are @Serializable, so the back stack survives process death on every platform.
+    alias(libs.plugins.kotlin.serialization)
 }
 
 kotlin {
@@ -41,6 +43,9 @@ kotlin {
             implementation(libs.compose.ui.tooling.preview)
             implementation(libs.androidx.lifecycle.viewmodel.compose)
             implementation(libs.androidx.lifecycle.runtime.compose)
+            implementation(libs.androidx.navigation3.ui)
+            implementation(libs.androidx.lifecycle.viewmodel.navigation3)
+            implementation(libs.kotlinx.serialization.core)
             implementation(libs.koin.compose.viewmodel)
             implementation(libs.kermit)
         }

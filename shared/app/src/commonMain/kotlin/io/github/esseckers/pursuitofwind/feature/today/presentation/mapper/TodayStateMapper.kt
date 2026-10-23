@@ -2,6 +2,7 @@ package io.github.esseckers.pursuitofwind.feature.today.presentation.mapper
 
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.error_no_forecast
+import io.github.esseckers.pursuitofwind.core.ui.Freshness
 import io.github.esseckers.pursuitofwind.core.ui.message
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Cached
@@ -16,11 +17,7 @@ import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayS
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState.Notice
 import kotlinx.datetime.TimeZone
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
-
-/** A forecast older than this gets the "getting old" notice; the server updates forecasts every hour. */
-internal val STALE_AFTER: Duration = 3.hours
 
 /**
  * Computes what Today shows from its [TodayInputs]; day labels and departures use the rider's zone. Cached data always
@@ -96,7 +93,7 @@ internal object TodayStateMapper {
         when {
             last?.forecastError == AppError.Network -> Notice.OFFLINE
             last?.forecastError != null -> Notice.REFRESH_FAILED
-            age != null && age > STALE_AFTER -> Notice.STALE
+            age != null && age > Freshness.STALE_AFTER -> Notice.STALE
             last?.crewError != null -> Notice.CREW_FAILED
             else -> null
         }

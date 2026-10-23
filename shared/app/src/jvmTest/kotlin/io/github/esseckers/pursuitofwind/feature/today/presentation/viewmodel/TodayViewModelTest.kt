@@ -6,16 +6,12 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
-import io.github.esseckers.pursuitofwind.app.di.appModules
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.error_network
-import io.github.esseckers.pursuitofwind.data.Environment
+import io.github.esseckers.pursuitofwind.core.ui.DayLabel
 import io.github.esseckers.pursuitofwind.data.fake.ControllableClock
 import io.github.esseckers.pursuitofwind.data.fake.FakePursuitOfWindServer
-import io.github.esseckers.pursuitofwind.data.fake.ForecastProfile
 import io.github.esseckers.pursuitofwind.data.fake.NetworkMode
-import io.github.esseckers.pursuitofwind.data.fake.Seed
-import io.github.esseckers.pursuitofwind.data.model.Outcome
 import io.github.esseckers.pursuitofwind.data.repository.CrewRepository
 import io.github.esseckers.pursuitofwind.data.repository.ProfileRepository
 import io.github.esseckers.pursuitofwind.data.repository.SpotRepository
@@ -29,15 +25,17 @@ import io.github.esseckers.pursuitofwind.feature.today.THURSDAY_8AM
 import io.github.esseckers.pursuitofwind.feature.today.alex
 import io.github.esseckers.pursuitofwind.feature.today.at
 import io.github.esseckers.pursuitofwind.feature.today.hour
-import io.github.esseckers.pursuitofwind.feature.today.presentation.model.DayLabel
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.DayUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.RideUi
+import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayEffect
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayIntent
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState.Content
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState.Missing
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState.Notice
 import io.github.esseckers.pursuitofwind.feature.today.ride
+import io.github.esseckers.pursuitofwind.testing.testGraph
+import io.github.esseckers.pursuitofwind.testing.value
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -46,8 +44,6 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.koin.core.Koin
-import org.koin.dsl.koinApplication
-import org.koin.dsl.module
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -68,10 +64,7 @@ import kotlin.time.Duration.Companion.seconds
 class TodayViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val clock = ControllableClock(THURSDAY_8AM)
-    private val koin: Koin =
-        koinApplication {
-            modules(appModules(Environment.Fake, clock) + module { single { FakePursuitOfWindServer(get(), steadyBreeze()) } })
-        }.koin
+    private val koin: Koin = testGraph(clock).koin
     private val server get() = koin.get<FakePursuitOfWindServer>()
 
     /** Owns the view models, so each test can clear its own before the database closes. */
@@ -231,6 +224,18 @@ class TodayViewModelTest {
         }
 
     @Test
+    fun `opening a spot asks the app to navigate there once`() =
+        runTest(dispatcher) {
+            val viewModel = viewModel()
+            viewModel.onIntent(TodayIntent.OpenSpot(SpotId("nordstrand-bay"), SATURDAY))
+
+            viewModel.effects.test(timeout = TURBINE_TIMEOUT) {
+                assertEquals(TodayEffect.OpenSpot(SpotId("nordstrand-bay"), SATURDAY), awaitItem())
+                expectNoEvents()
+            }
+        }
+
+    @Test
     fun `the app graph creates the view model of the Today screen`() =
         runTest(dispatcher) {
             val fromGraph = ViewModelProvider.create(viewModels, viewModelFactory { initializer { koin.get<TodayViewModel>() } })
@@ -250,27 +255,5 @@ class TodayViewModelTest {
     private companion object {
         /** Room, DataStore and the HTTP engine run on real threads here; leave room for a cold JVM on CI. */
         val TURBINE_TIMEOUT = 10.seconds
-    }
-
-    private fun <T> Outcome<T>.value(): T = (this as? Outcome.Success)?.value ?: error("Expected a success, got $this")
-
-    /** The default seed (spots, Weekend Crew, Andrei's Saturday ride) with 18 kn from 240° everywhere. */
-    private fun steadyBreeze(): Seed {
-        val seed = Seed.default(clock.now())
-        val steady =
-            ForecastProfile(
-                meanKn = 18.0,
-                swingKn = 0.0,
-                swingPeriodHours = 24,
-                seaBreezeKn = 0.0,
-                bearingDeg = 240.0,
-                bearingSwingDeg = 0.0,
-                gustFactor = 0.1,
-                modelSpreadKn = 1.0,
-                noiseKn = 0.0,
-                rainyShare = 0.0,
-                temperatureC = 18.0,
-            )
-        return seed.copy(spots = seed.spots.map { it.copy(forecast = steady) })
     }
 }

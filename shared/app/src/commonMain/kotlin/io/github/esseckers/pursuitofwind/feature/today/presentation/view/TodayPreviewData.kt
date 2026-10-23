@@ -2,15 +2,16 @@ package io.github.esseckers.pursuitofwind.feature.today.presentation.view
 
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.error_network
+import io.github.esseckers.pursuitofwind.core.ui.DayLabel
+import io.github.esseckers.pursuitofwind.core.ui.TimeRange
 import io.github.esseckers.pursuitofwind.data.model.WindUnit
 import io.github.esseckers.pursuitofwind.engine.model.Confidence
 import io.github.esseckers.pursuitofwind.engine.model.Reason
+import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.AlternativeUi
-import io.github.esseckers.pursuitofwind.feature.today.presentation.model.DayLabel
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.DayUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.RideUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.SpotReasonUi
-import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TimeRange
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState.Content
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.WindRange
@@ -33,8 +34,8 @@ internal object TodayPreviewData {
             reason = Reason.GUSTY,
             spots =
                 listOf(
-                    SpotReasonUi("Lake Weiss", Reason.GUSTY),
-                    SpotReasonUi("Nordstrand Bay", Reason.OFFSHORE_DANGER),
+                    SpotReasonUi(SpotId("lake-weiss"), "Lake Weiss", Reason.GUSTY),
+                    SpotReasonUi(SpotId("nordstrand-bay"), "Nordstrand Bay", Reason.OFFSHORE_DANGER),
                 ),
             nextGoDay = saturday,
         )
@@ -44,7 +45,7 @@ internal object TodayPreviewData {
             date = LocalDate(2026, 10, 23),
             label = DayLabel.Tomorrow,
             reason = Reason.WINDOW_TOO_SHORT,
-            spots = emptyList(),
+            spots = listOf(SpotReasonUi(SpotId("nordstrand-bay"), "Nordstrand Bay", Reason.WINDOW_TOO_SHORT)),
             nextGoDay = saturday,
         )
 
@@ -52,6 +53,7 @@ internal object TodayPreviewData {
         DayUi.Go(
             date = LocalDate(2026, 10, 24),
             label = saturday,
+            spotId = SpotId("nordstrand-bay"),
             spotName = "Nordstrand Bay",
             window = TimeRange("13:00", "17:00"),
             wind = WindRange(18, 22, WindUnit.KNOTS),
@@ -73,11 +75,12 @@ internal object TodayPreviewData {
                     ),
                 ),
             hasCrew = true,
-            alternatives = listOf(AlternativeUi("Lake Weiss", TimeRange("14:00", "17:00"))),
+            alternatives = listOf(AlternativeUi(SpotId("lake-weiss"), "Lake Weiss", TimeRange("14:00", "17:00"))),
         )
 
     val modelsDisagree =
         saturdayOn.copy(
+            spotId = SpotId("salt-lagoon"),
             spotName = "Salt Lagoon",
             wind = WindRange(14, 18, WindUnit.KNOTS),
             kiteM2 = 12.0,

@@ -2,6 +2,7 @@ package io.github.esseckers.pursuitofwind.app.di
 
 import io.github.esseckers.pursuitofwind.data.Environment
 import io.github.esseckers.pursuitofwind.data.di.dataModule
+import io.github.esseckers.pursuitofwind.feature.spotdetail.di.spotDetailModule
 import io.github.esseckers.pursuitofwind.feature.today.di.todayModule
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
@@ -12,7 +13,7 @@ import kotlin.time.Clock
 internal fun appModules(
     environment: Environment,
     clock: Clock = Clock.System,
-): List<Module> = listOf(dataModule(environment, clock), todayModule)
+): List<Module> = listOf(dataModule(environment, clock), todayModule, spotDetailModule)
 
 /**
  * Starts Koin once per process with [platform] bindings. The app talks to the in-app fake backend until a server

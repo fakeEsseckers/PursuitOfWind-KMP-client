@@ -38,7 +38,7 @@ Toolchain versions and why: `gradle/libs.versions.toml` and `docs/adr/0003-depen
 | `:shared:contract` | API DTOs mirroring `api/openapi.yaml` (android, ios, jvm) |
 | `:shared:data` | Ktor client, `FakePursuitOfWindServer`, Room, DataStore, repositories, `AppError` |
 | `:testing:openapi` | JVM, test-only: validates requests and responses against `api/openapi.yaml` |
-| `:shared:app` | screens as `feature.<name>` packages (domain / data / presentation with MVI / di), `core` (MVI base, design system), `app` (root composable, Koin graph); iOS framework `PursuitOfWindKit` |
+| `:shared:app` | screens as `feature.<name>` packages (domain / data / presentation with MVI / di), `core` (MVI base, design system), `app` (root composable, Navigation 3, Koin graph); iOS framework `PursuitOfWindKit` |
 | `:androidApp` | Android entry point, WorkManager, notifications, deep links |
 | `iosApp/` | Xcode project, SwiftUI host, BG tasks, URL scheme |
 
