@@ -20,6 +20,7 @@ feature/today/
   presentation/
     model/TodayState.kt         // the MVI state the view renders
     model/TodayIntent.kt        // sealed: what the user does
+    model/TodayEffect.kt        // sealed: one-off events for the app (OpenSpot)
     model/TodayInputs.kt        // what the state is computed from (data, now, refresh status)
     model/TodayUiModels.kt      // DayUi, RideUi …, formatted for display
     mapper/DayCardsMapper.kt    // pure: engine results -> UI models (formatting lives here, not in composables)
@@ -28,7 +29,7 @@ feature/today/
     viewmodel/TodayReducer.kt   // pure: (state, result) -> state
     viewmodel/TodayViewModel.kt // MviViewModel: intents and observed data -> results
     viewmodel/TodayRefreshPolicy.kt  // when the screen refreshes on its own
-    view/TodayRoute.kt          // collects state (and effects, when the screen has them), wires navigation and ViewModel; no layout
+    view/TodayRoute.kt          // collects state and effects, takes navigation lambdas (onOpenSpot); no layout
     view/TodayScreen.kt         // stateless: (state, onIntent) -> UI
     view/TodayCards.kt          // larger pieces of the screen, when TodayScreen would grow too long
     view/TodayPreviewData.kt    // sample states for previews and UI tests
@@ -36,15 +37,15 @@ feature/today/
   di/TodayModule.kt             // factory<TodayRepository>, viewModel { }; listed in app/di/AppModules.kt
 ```
 
-Add an `Effect` file next to the intent when the screen has one-off events. Everything in a feature package is `internal`: the iOS framework exports only `App()` and `MainViewController()`. A feature never imports another feature; what two features need moves to `core` or to `:shared:data`.
+A screen without one-off events has no `Effect` file and declares `Nothing`. Everything in a feature package is `internal`: the iOS framework exports only `App()` and `MainViewController()`. A feature never imports another feature; what two features need moves to `core` or to `:shared:data`.
 
 Shared code next to `feature/`:
 
-- `core/mvi` — `MviViewModel`, `Reducer`.
+- `core/mvi` — `MviViewModel`, `Reducer`, `CollectEffects`.
 - `core/designsystem` — `theme`, `component`, `icon` (see below).
-- `core/ui` — formatting and labels used by several screens (`AppError.message()`, `clockTime`, `windRangeText`).
+- `core/ui` — formatting and labels used by several screens (`AppError.message()`, `clockTime`, `windRangeText`, `DayLabel`, `TimeRange`, `updatedText`, `Freshness`).
 - `core/resources` — the generated `Res` (strings live in `composeResources/values` and `values-ru`).
-- `app` — `App()`, `appModules()`, platform entry points.
+- `app` — `App()`, `appModules()`, `navigation` (destinations, `AppNavigation`, `Navigator`), platform entry points.
 
 ## MVI rules
 
@@ -89,7 +90,8 @@ Cached data always wins over an error: the error replaces the content only when 
 - Strings only from Compose Multiplatform resources, EN + RU, including plurals (`pluralStringResource`). Reason copy follows the table in `docs/domain-rules.md`.
 - Verdict display: icon + label + color, never color alone: `VerdictBadge`, `VerdictCard`, `ConfidenceChip`.
 - Accessibility: meaningful `contentDescription` (or `null` for decorative icons next to text), merged semantics for cards and banners, headings (cards too, so screen readers can jump between them), live regions for messages that replace content, minimum touch target 48 dp, layouts that wrap (`FlowRow`) and survive 200% font scale.
-- Where pull-to-refresh is the only way to refresh, add a custom "Refresh" action to nodes screen readers focus (the merged title and each card); an action on an unfocusable container is never offered.
+- Where pull-to-refresh is the only way to refresh, add a custom "Refresh" action to nodes screen readers focus (the merged title and each card); an action on an unfocusable container is never offered. A screen opened from another one has a refresh button in its `ScreenTopBar` instead.
+- Something tappable inside a merged card (`LinkRow`, a window) is its own node: screen readers reach it after the card, and UI tests find it by its own tag, not in the card's text.
 - Times: where something happens (a session at the spot) in that place's time zone; when the rider has to act (leave, a ride departing) and the "today" label in the rider's zone.
 - Lazy list keys are strings (Android saves them in a `Bundle`).
 - `Modifier.testTag("today.day.2026-10-24")` style tags (`<screen>.<element>`) on elements used in UI tests.
@@ -99,14 +101,25 @@ Cached data always wins over an error: the error replaces the content only when 
 
 - `PursuitOfWindTheme` sets Material's color scheme, type scale and shapes, plus `PursuitOfWindTheme.colors` for meaning-bearing colors: `go`, `marginal`, `noGo` (each a `VerdictPalette` of accent and container colors, contrast ≥ 4.5:1 in both themes) and `confidenceHigh/Medium/Low/Unknown`.
 - `theme`: colors, `PursuitOfWindTheme`, tokens `Spacing.xs … xl` and `Sizes` (icons, border, placeholders). No raw `dp` or color literals outside the design system.
-- `component`: `VerdictBadge`, `VerdictCard`, `ConfidenceChip`, `StatusBanner`, `MessageState`, `ActionButton`, `Skeleton`, `Disclaimer`, `IconLine`; `icon`: the app's own line drawings in `AppIcons` (no icon library).
+- `component`: `VerdictBadge`, `VerdictCard` (optionally one button: `onClick`, `onClickLabel`), `ConfidenceChip`, `StatusBanner`, `MessageState`, `ActionButton`, `Skeleton`, `Disclaimer`, `IconLine`, `ScreenTopBar` and `BarIconButton` for screens opened from another one, `LinkRow` for a line that opens something; `icon`: the app's own line drawings in `AppIcons` (no icon library).
+- `WindChartColors` (`windChartColors()`) and the `Sizes.chart*` tokens are the wind chart's.
 
-## Wind chart (Spot detail)
+## Navigation
 
-- Custom `Canvas` composable `WindTimeline(hours, windows, units, onHourClick)`; no chart library.
-- Draw: speed bars colored by verdict, gust ticks above bars, direction arrows on a lane below, model-spread band, highlighted windows, local time axis with day separators (DST-aware labels from the mapper).
-- Performance: precompute geometry in `remember(hours, size)`; hit-testing via `pointerInput` maps x to hour index; no allocations inside `DrawScope` loops.
-- Accessibility: expose a semantic list of hours (time, speed, verdict) so screen readers do not rely on the drawing.
+- Navigation 3 (`docs/adr/0009-navigation-3.md`). Destinations are the sealed `Destination` in `app.navigation`, with plain serializable values. A new screen adds a destination, registers it in `navigationConfiguration` (iOS has no reflection) and adds an `entry<…>` in `AppNavigation`.
+- Features never see destinations or the back stack. A Route takes lambdas (`onOpenSpot`, `onBack`); `AppNavigation` connects them through the `Navigator`.
+- When the ViewModel decides to navigate (it depends on state or an intent's data), it posts an `Effect`, and the Route handles it with `CollectEffects(viewModel.effects) { … }`, which collects only while the screen is started. A plain view event with nothing to decide (back) calls the lambda directly.
+- A ViewModel that needs arguments gets them from Koin: `viewModel { (spotId: SpotId, date: LocalDate?) -> … }` and `koinViewModel { parametersOf(spotId, date) }` in the Route. Each back stack entry has its own ViewModel store.
+
+## Wind chart (spot detail)
+
+- `WindChart(chart, days, selected, onSelectHour)` in `feature/spotdetail/presentation/view`; no chart library. The mapper (`SpotForecastMapper`) gives it everything in m/s and spot-local labels (`localHourLabel` from the engine, so both hours of a clock change differ); the grid comes from `chartScale` in round values of the rider's unit.
+- It shows today and the next two days at the spot (`CHART_DAYS`). A last day the cache does not cover until midnight is left out, so no window ends where the data ends; windows the rider can no longer reach stay tinted on the chart but leave the list.
+- Layers, back to front: night and window tints, grid and day separators, bars in verdict colors, gust stems and ticks, the models' band, direction arrows (pointing where the wind blows), day names and time labels (labels that would overlap are left out, so 200% font works). The dashed line at the current time and the selection frame are layers of their own.
+- Performance: all geometry, paths, strokes and measured text are built in `drawWithCache` and only rebuilt when the chart, the size or the theme changes. The current time (`Ready.nowOffset`) lives outside `WindChartUi`, so the minute tick does not rebuild the chart; the reducer keeps the chart's instance while it is equal; each hour cell is its own composable, so a tap recomposes two cells, not 72.
+- Accessibility and taps: one invisible cell per hour lies over the drawing, with a content description ("Saturday 13:00: 20 kn, gusts 25 kn, wind from the west, GO"), `Role.Tab`, a selected state and a click label. Screen readers never depend on the drawing, and hit-testing needs no pointer math. Cells are 28 dp wide: under Android's 48 dp guideline, above WCAG's 24 px minimum, a deliberate trade for seeing a day at a glance; the day chips and window cards are the large targets.
+- Time runs left to right in every language: the chart forces `LayoutDirection.Ltr`.
+- The chart scrolls sideways; the wind scale stays on the left. The selected hour is scrolled into view (a jump the first time, a glide after a day chip or a window, also when that day or window is already selected).
 
 ## Done checklist for a screen
 
@@ -116,4 +129,5 @@ Cached data always wins over an error: the error replaces the content only when 
 - [ ] Screen test in `jvmTest`: each state, intents from buttons, Russian strings, 200% font at phone size.
 - [ ] Strings in EN and RU.
 - [ ] Test tags on interactive elements; critical path covered by a UI test if the screen is on it.
+- [ ] A screen reached by navigation is in `navigationConfiguration` and in the navigation test.
 - [ ] Looks right in dark theme and at 200% font scale.

@@ -1,5 +1,7 @@
 package io.github.esseckers.pursuitofwind.feature.today.presentation.mapper
 
+import io.github.esseckers.pursuitofwind.core.ui.DayLabel
+import io.github.esseckers.pursuitofwind.core.ui.TimeRange
 import io.github.esseckers.pursuitofwind.data.model.Person
 import io.github.esseckers.pursuitofwind.data.model.RideStatus
 import io.github.esseckers.pursuitofwind.data.model.WindUnit
@@ -20,11 +22,9 @@ import io.github.esseckers.pursuitofwind.feature.today.domain.model.CrewRides
 import io.github.esseckers.pursuitofwind.feature.today.hour
 import io.github.esseckers.pursuitofwind.feature.today.mySpot
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.AlternativeUi
-import io.github.esseckers.pursuitofwind.feature.today.presentation.model.DayLabel
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.DayUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.RideUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.SpotReasonUi
-import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TimeRange
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.WindRange
 import io.github.esseckers.pursuitofwind.feature.today.ride
 import io.github.esseckers.pursuitofwind.feature.today.saturdayOn
@@ -62,6 +62,7 @@ class DayCardsMapperTest {
 
         assertEquals(DayLabel.Weekday(DayOfWeek.SATURDAY), saturday.label)
         assertEquals("Nordstrand Bay", saturday.spotName)
+        assertEquals(SpotId("nordstrand-bay"), saturday.spotId)
         assertEquals(TimeRange("13:00", "17:00"), saturday.window)
         assertEquals(WindRange(18, 22, WindUnit.KNOTS), saturday.wind)
         assertEquals(9.0, saturday.kiteM2)
@@ -75,19 +76,28 @@ class DayCardsMapperTest {
         val (today, tomorrow) = cards()
 
         assertEquals(
-            DayUi.NoGo(THURSDAY, DayLabel.Today, Reason.TOO_LIGHT, spots = emptyList(), nextGoDay = DayLabel.Weekday(DayOfWeek.SATURDAY)),
+            DayUi.NoGo(
+                THURSDAY,
+                DayLabel.Today,
+                Reason.TOO_LIGHT,
+                spots = listOf(SpotReasonUi(SpotId("nordstrand-bay"), "Nordstrand Bay", Reason.TOO_LIGHT)),
+                nextGoDay = DayLabel.Weekday(DayOfWeek.SATURDAY),
+            ),
             today,
         )
         assertEquals(DayLabel.Tomorrow, tomorrow.label)
     }
 
     @Test
-    fun `the reason of each spot is listed when there is more than one spot`() {
+    fun `the reason of each spot is listed`() {
         val offshore = day(THURSDAY, bearingDeg = 100.0) { 18.0 }
         val today = cards(forecasts = mapOf("nordstrand-bay" to day(THURSDAY) { 6.0 }, "salt-lagoon" to offshore)).first()
 
         assertEquals(
-            listOf(SpotReasonUi("Nordstrand Bay", Reason.TOO_LIGHT), SpotReasonUi("Salt Lagoon", Reason.DIRECTION_UNRIDEABLE)),
+            listOf(
+                SpotReasonUi(SpotId("nordstrand-bay"), "Nordstrand Bay", Reason.TOO_LIGHT),
+                SpotReasonUi(SpotId("salt-lagoon"), "Salt Lagoon", Reason.DIRECTION_UNRIDEABLE),
+            ),
             assertIs<DayUi.NoGo>(today).spots,
         )
     }
@@ -97,7 +107,10 @@ class DayCardsMapperTest {
         val weaker = day(THURSDAY) { 6.0 } + day(FRIDAY) { 6.0 } + day(SATURDAY) { if (it in 14..15) 20.0 else 6.0 }
         val saturday = cards(forecasts = mapOf("nordstrand-bay" to saturdayOn(), "salt-lagoon" to weaker))[2]
 
-        assertEquals(listOf(AlternativeUi("Salt Lagoon", TimeRange("14:00", "16:00"))), assertIs<DayUi.Go>(saturday).alternatives)
+        assertEquals(
+            listOf(AlternativeUi(SpotId("salt-lagoon"), "Salt Lagoon", TimeRange("14:00", "16:00"))),
+            assertIs<DayUi.Go>(saturday).alternatives,
+        )
     }
 
     @Test

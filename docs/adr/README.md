@@ -12,3 +12,4 @@ One decision per file, numbered in order, never renumbered. Superseded records s
 | [0006](0006-room-3-as-the-offline-cache.md) | Room 3 as the offline cache | Accepted |
 | [0007](0007-koin-for-dependency-injection.md) | Koin for dependency injection | Accepted |
 | [0008](0008-mvi-presentation-in-feature-packages.md) | MVI presentation in feature packages | Accepted |
+| [0009](0009-navigation-3.md) | Navigation 3 for moving between screens | Accepted |

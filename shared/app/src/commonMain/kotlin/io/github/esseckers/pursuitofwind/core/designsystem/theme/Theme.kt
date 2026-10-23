@@ -47,15 +47,30 @@ internal object Spacing {
     val xl = 32.dp
 }
 
-/** Sizes that are not spacing: icons, borders and placeholders. */
+/** Sizes that are not spacing: icons, borders, touch targets, the wind chart and placeholders. */
 internal object Sizes {
     val iconSmall = 16.dp
     val icon = 20.dp
     val iconLarge = 48.dp
     val border = 1.dp
 
+    /** Minimum width and height of anything that can be tapped. */
+    val touchTarget = 48.dp
+
     /** Height of a placeholder card while a day's answer loads. */
     val cardPlaceholder = 196.dp
+
+    /** Width of one hour on the wind chart: wide enough to tap, 72 hours scroll sideways. */
+    val chartHour = 28.dp
+
+    /** Height of the wind chart's bars area. */
+    val chartPlot = 168.dp
+
+    /** Height of the wind chart's lane of direction arrows. */
+    val chartArrowLane = 28.dp
+
+    /** Height of the placeholder while the wind chart loads. */
+    val chartPlaceholder = 280.dp
 }
 
 // Material's type scale with heavier titles, so a verdict and a spot name read at a glance.

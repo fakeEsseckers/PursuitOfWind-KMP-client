@@ -46,13 +46,25 @@ internal object AppIcons {
             "M14.5 9.5a2.5 2.5 0 1 1-5 0a2.5 2.5 0 1 1 5 0",
         )
 
+    // Back and forward point the other way in right-to-left languages.
+    val Back: ImageVector = icon("Back", "M20 12H4", "M10 6l-6 6l6 6", autoMirror = true)
+    val Forward: ImageVector = icon("Forward", "M9.5 5.5l6.5 6.5l-6.5 6.5", autoMirror = true)
+    val Refresh: ImageVector = icon("Refresh", "M20 12a8 8 0 1 1-2.35-5.65", "M20 4.5v5h-5")
+
     private fun icon(
         name: String,
         vararg paths: String,
+        autoMirror: Boolean = false,
     ): ImageVector =
         ImageVector
-            .Builder(name = name, defaultWidth = 24.dp, defaultHeight = 24.dp, viewportWidth = 24f, viewportHeight = 24f)
-            .apply {
+            .Builder(
+                name = name,
+                defaultWidth = 24.dp,
+                defaultHeight = 24.dp,
+                viewportWidth = 24f,
+                viewportHeight = 24f,
+                autoMirror = autoMirror,
+            ).apply {
                 paths.forEach { path ->
                     addPath(
                         pathData = addPathNodes(path),

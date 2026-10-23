@@ -1,6 +1,9 @@
 package io.github.esseckers.pursuitofwind.feature.today.presentation.mapper
 
+import io.github.esseckers.pursuitofwind.core.ui.DayLabel
+import io.github.esseckers.pursuitofwind.core.ui.TimeRange
 import io.github.esseckers.pursuitofwind.core.ui.clockTime
+import io.github.esseckers.pursuitofwind.core.ui.dayLabelOf
 import io.github.esseckers.pursuitofwind.core.ui.rounded
 import io.github.esseckers.pursuitofwind.data.model.MySpot
 import io.github.esseckers.pursuitofwind.data.model.Profile
@@ -14,16 +17,12 @@ import io.github.esseckers.pursuitofwind.engine.model.SpotForecast
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.today.domain.model.CrewRides
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.AlternativeUi
-import io.github.esseckers.pursuitofwind.feature.today.presentation.model.DayLabel
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.DayUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.RideUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.SpotReasonUi
-import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TimeRange
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.WindRange
-import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
@@ -72,6 +71,7 @@ internal class DayCardsMapper(
         DayUi.Go(
             date = date,
             label = label(date),
+            spotId = window.spotId,
             spotName = nameOf(window.spotId),
             window = window.ridingTime(),
             wind = windRange(window),
@@ -81,7 +81,7 @@ internal class DayCardsMapper(
             confidence = confidence,
             rides = ridesTo(window.spotId, date),
             hasCrew = crew.hasCrew,
-            alternatives = alternatives.map { AlternativeUi(nameOf(it.spotId), it.ridingTime()) },
+            alternatives = alternatives.map { AlternativeUi(it.spotId, nameOf(it.spotId), it.ridingTime()) },
         )
 
     private fun DayDecision.NoGo.toUi(): DayUi.NoGo =
@@ -89,8 +89,7 @@ internal class DayCardsMapper(
             date = date,
             label = label(date),
             reason = primaryReason,
-            // With one spot its reason is the primary reason; listing it again would add nothing.
-            spots = if (details.size > 1) details.map { SpotReasonUi(nameOf(it.spotId), it.reason) } else emptyList(),
+            spots = details.map { SpotReasonUi(it.spotId, nameOf(it.spotId), it.reason) },
             nextGoDay = nextGoDay?.let(::label),
         )
 
@@ -142,12 +141,7 @@ internal class DayCardsMapper(
         return TimeRange(usableStart.clockTime(zone), end.clockTime(zone))
     }
 
-    private fun label(date: LocalDate): DayLabel =
-        when (date) {
-            today -> DayLabel.Today
-            today.plus(DatePeriod(days = 1)) -> DayLabel.Tomorrow
-            else -> DayLabel.Weekday(date.dayOfWeek)
-        }
+    private fun label(date: LocalDate): DayLabel = dayLabelOf(date, today)
 
     private fun zoneOf(spotId: SpotId): TimeZone = configs.getValue(spotId).timeZone
 

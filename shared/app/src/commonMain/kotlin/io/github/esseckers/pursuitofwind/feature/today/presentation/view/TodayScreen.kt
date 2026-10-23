@@ -51,10 +51,7 @@ import io.github.esseckers.pursuitofwind.core.resources.empty_spots_title
 import io.github.esseckers.pursuitofwind.core.resources.error_title
 import io.github.esseckers.pursuitofwind.core.resources.today_loading
 import io.github.esseckers.pursuitofwind.core.resources.today_title
-import io.github.esseckers.pursuitofwind.core.resources.updated_days_ago
-import io.github.esseckers.pursuitofwind.core.resources.updated_hours_ago
-import io.github.esseckers.pursuitofwind.core.resources.updated_just_now
-import io.github.esseckers.pursuitofwind.core.resources.updated_minutes_ago
+import io.github.esseckers.pursuitofwind.core.ui.updatedText
 import io.github.esseckers.pursuitofwind.feature.today.presentation.mapper.DAYS_SHOWN
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.DayUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayIntent
@@ -63,12 +60,8 @@ import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayS
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState.Missing
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState.Notice
 import org.jetbrains.compose.resources.StringResource
-import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.days
-import kotlin.time.Duration.Companion.hours
-import kotlin.time.Duration.Companion.minutes
 
 /**
  * "Go?": the answer for today and the next two days. Stateless; [TodayRoute] connects it to [TodayViewModel].
@@ -93,7 +86,7 @@ internal fun TodayScreen(
                 Content.Loading -> LoadingDays()
                 is Content.Empty -> EmptyContent(content.missing)
                 is Content.Error -> ErrorContent(content.message, refresh)
-                is Content.Ready -> ReadyDays(content.days, state.notice, refresh, refreshAction)
+                is Content.Ready -> ReadyDays(content.days, state.notice, onIntent, refreshAction)
             }
         }
     }
@@ -144,21 +137,13 @@ private fun TodayHeader(
 }
 
 @Composable
-private fun updatedText(age: Duration): String =
-    when {
-        age < 1.minutes -> stringResource(Res.string.updated_just_now)
-        age < 1.hours -> age.inWholeMinutes.toInt().let { pluralStringResource(Res.plurals.updated_minutes_ago, it, it) }
-        age < 1.days -> age.inWholeHours.toInt().let { pluralStringResource(Res.plurals.updated_hours_ago, it, it) }
-        else -> age.inWholeDays.toInt().let { pluralStringResource(Res.plurals.updated_days_ago, it, it) }
-    }
-
-@Composable
 private fun ReadyDays(
     days: List<DayUi>,
     notice: Notice?,
-    onRefresh: () -> Unit,
+    onIntent: (TodayIntent) -> Unit,
     refreshAction: List<CustomAccessibilityAction>,
 ) {
+    val onRefresh = { onIntent(TodayIntent.Refresh) }
     LazyColumn(
         modifier = Modifier.fillMaxSize().testTag("today.days"),
         contentPadding = PaddingValues(Spacing.m),
@@ -167,7 +152,11 @@ private fun ReadyDays(
         notice?.let { item(key = "notice") { NoticeBanner(it, onRefresh) } }
         // String keys: Android saves lazy-list keys in a Bundle, which cannot hold a LocalDate.
         items(days, key = { it.date.toString() }) { day ->
-            DayCard(day = day, modifier = Modifier.semantics { customActions = refreshAction })
+            DayCard(
+                day = day,
+                onOpenSpot = { spotId -> onIntent(TodayIntent.OpenSpot(spotId, day.date)) },
+                modifier = Modifier.semantics { customActions = refreshAction },
+            )
         }
         item(key = "disclaimer") { Disclaimer(modifier = Modifier.padding(top = Spacing.s)) }
     }

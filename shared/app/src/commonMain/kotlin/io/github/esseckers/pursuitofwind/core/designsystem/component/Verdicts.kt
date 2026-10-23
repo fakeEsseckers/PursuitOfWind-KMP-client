@@ -1,6 +1,7 @@
 package io.github.esseckers.pursuitofwind.core.designsystem.component
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -16,7 +17,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
 import io.github.esseckers.pursuitofwind.core.designsystem.icon.AppIcons
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.PursuitOfWindTheme
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Sizes
@@ -80,17 +83,26 @@ internal fun VerdictBadge(
     }
 }
 
-/** A card tinted with the colors of [verdict], for one decision. */
+/** A card tinted with the colors of [verdict], for one decision. With [onClick] the whole card is one button. */
 @Composable
 internal fun VerdictCard(
     verdict: Verdict,
     modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    onClickLabel: String? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val palette = verdictPalette(verdict)
+    val shape = MaterialTheme.shapes.large
+    val clickable =
+        if (onClick == null) {
+            Modifier
+        } else {
+            Modifier.clip(shape).clickable(onClickLabel = onClickLabel, role = Role.Button, onClick = onClick)
+        }
     Surface(
-        modifier = modifier,
-        shape = MaterialTheme.shapes.large,
+        modifier = modifier.then(clickable),
+        shape = shape,
         color = palette.container,
         contentColor = palette.onContainer,
         border = BorderStroke(Sizes.border, palette.accent.copy(alpha = BORDER_ALPHA)),

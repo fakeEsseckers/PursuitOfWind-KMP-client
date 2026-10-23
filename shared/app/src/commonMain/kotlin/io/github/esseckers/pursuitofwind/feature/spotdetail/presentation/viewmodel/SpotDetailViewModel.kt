@@ -1,0 +1,87 @@
+package io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.viewmodel
+
+import androidx.lifecycle.viewModelScope
+import io.github.esseckers.pursuitofwind.core.mvi.MviViewModel
+import io.github.esseckers.pursuitofwind.data.model.AppError
+import io.github.esseckers.pursuitofwind.engine.model.SpotId
+import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.repository.SpotDetailRepository
+import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.Selection
+import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailInputs
+import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailIntent
+import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlin.time.Clock
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Instant
+
+/**
+ * One spot's hourly forecast in MVI. Opened at [date] (local to the spot), it shows that day's best window first;
+ * without a date, the first window worth riding. While the screen is shown, the cached data and the ticking [clock]
+ * come in as results, so passed hours leave the chart. The forecast is refreshed as the screen appears when
+ * [SpotDetailRefreshPolicy] says so, and on [SpotDetailIntent.Refresh]. No one-off effects: going back is the view's.
+ */
+internal class SpotDetailViewModel(
+    private val spotId: SpotId,
+    date: LocalDate?,
+    private val repository: SpotDetailRepository,
+    private val clock: Clock,
+    riderZone: TimeZone,
+    private val tick: Duration = 1.minutes,
+) : MviViewModel<SpotDetailState, SpotDetailIntent, SpotDetailResult, Nothing>(
+        initialState = SpotDetailState(SpotDetailInputs(spotId, selection = date?.let(Selection::Day) ?: Selection.First)),
+        reducer = SpotDetailReducer(riderZone),
+    ) {
+    override fun onIntent(intent: SpotDetailIntent) {
+        when (intent) {
+            SpotDetailIntent.Refresh -> refresh()
+            is SpotDetailIntent.SelectHour -> dispatch(SpotDetailResult.Selected(Selection.Hour(intent.start)))
+            is SpotDetailIntent.SelectDay -> dispatch(SpotDetailResult.Selected(Selection.Day(intent.date)))
+        }
+    }
+
+    override fun bind(): Flow<SpotDetailResult> =
+        merge(
+            repository.snapshot(spotId).map { SpotDetailResult.DataChanged(it) },
+            ticks().map { SpotDetailResult.ClockTicked(it) },
+        ).onStart { refreshIfDue() }
+
+    private suspend fun refreshIfDue() {
+        if (SpotDetailRefreshPolicy.isDue(repository.snapshot(spotId).first(), currentState.inputs.refresh, clock.now())) refresh()
+    }
+
+    /** One refresh at a time; a pull while one runs joins it. */
+    private fun refresh() {
+        if (currentState.inputs.refresh.refreshing) return
+        // Cache stamps are stored in milliseconds; a finer start would never count as reflected in them.
+        dispatch(SpotDetailResult.RefreshStarted(at = Instant.fromEpochMilliseconds(clock.now().toEpochMilliseconds())))
+        viewModelScope.launch {
+            // Ends the refresh whatever happens, so a cancelled one never blocks the next.
+            var error: AppError? = AppError.Unknown("Refresh did not finish")
+            try {
+                error = repository.refresh(spotId)
+            } finally {
+                dispatch(SpotDetailResult.RefreshFinished(error))
+            }
+        }
+    }
+
+    /** The clock's time now and after every [tick]. Repeated readings are dropped, so a stopped clock costs nothing. */
+    private fun ticks(): Flow<Instant> =
+        flow {
+            while (true) {
+                emit(clock.now())
+                delay(tick)
+            }
+        }.distinctUntilChanged()
+}

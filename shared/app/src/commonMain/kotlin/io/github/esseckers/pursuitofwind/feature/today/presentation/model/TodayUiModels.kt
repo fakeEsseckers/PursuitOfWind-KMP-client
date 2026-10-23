@@ -1,9 +1,11 @@
 package io.github.esseckers.pursuitofwind.feature.today.presentation.model
 
+import io.github.esseckers.pursuitofwind.core.ui.DayLabel
+import io.github.esseckers.pursuitofwind.core.ui.TimeRange
 import io.github.esseckers.pursuitofwind.data.model.WindUnit
 import io.github.esseckers.pursuitofwind.engine.model.Confidence
 import io.github.esseckers.pursuitofwind.engine.model.Reason
-import kotlinx.datetime.DayOfWeek
+import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import kotlinx.datetime.LocalDate
 
 // UI models of the Today screen: formatted for display, with no domain logic left to run in composables.
@@ -16,6 +18,7 @@ internal sealed interface DayUi {
     data class Go(
         override val date: LocalDate,
         override val label: DayLabel,
+        val spotId: SpotId,
         val spotName: String,
         /** When the rider can ride: the window, starting later if the time to leave has passed. */
         val window: TimeRange,
@@ -29,6 +32,7 @@ internal sealed interface DayUi {
         val alternatives: List<AlternativeUi>,
     ) : DayUi
 
+    /** [spots] holds the reason of every favorite spot; with one spot that is the main [reason] again. */
     data class NoGo(
         override val date: LocalDate,
         override val label: DayLabel,
@@ -36,25 +40,6 @@ internal sealed interface DayUi {
         val spots: List<SpotReasonUi>,
         val nextGoDay: DayLabel?,
     ) : DayUi
-}
-
-/** "Today", "Tomorrow" or a weekday. */
-internal sealed interface DayLabel {
-    data object Today : DayLabel
-
-    data object Tomorrow : DayLabel
-
-    data class Weekday(
-        val day: DayOfWeek,
-    ) : DayLabel
-}
-
-/** Local wall-clock times such as `13:00` and `17:00`. */
-internal data class TimeRange(
-    val start: String,
-    val end: String,
-) {
-    override fun toString(): String = "$start–$end"
 }
 
 /** Mean wind across a window, rounded, in [unit]. */
@@ -76,11 +61,13 @@ internal data class RideUi(
 )
 
 internal data class AlternativeUi(
+    val spotId: SpotId,
     val spotName: String,
     val window: TimeRange,
 )
 
 internal data class SpotReasonUi(
+    val spotId: SpotId,
     val spotName: String,
     val reason: Reason,
 )

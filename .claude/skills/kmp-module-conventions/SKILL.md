@@ -60,13 +60,13 @@ io.github.esseckers.pursuitofwind.<module>/
 
 ```text
 io.github.esseckers.pursuitofwind/
-  app/                      # App(), appModules(), platform entry points (androidMain, iosMain)
+  app/                      # App(), di/appModules(), navigation/ (Navigation 3), platform entry points
   core/
-    mvi/                    # MviViewModel, Reducer
+    mvi/                    # MviViewModel, Reducer, CollectEffects
     designsystem/           # theme/, component/, icon/
     ui/                     # formatting and labels shared by screens
     resources/              # generated Res (packageOfResClass)
-  feature/<screen>/         # today, spot, profile, spots, crew, settings, demo
+  feature/<screen>/         # today, spotdetail, profile, spots, crew, settings, demo
     domain/model/           # the feature's models
     domain/repository/      # the repository interface the feature needs
     data/repository/        # its implementation over the :shared:data repositories

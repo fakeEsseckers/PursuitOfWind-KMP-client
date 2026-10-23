@@ -4,7 +4,7 @@
 
 Kitesurfers who live hours from the water lose whole days to forecasts that looked fine on paper. Pursuit Of Wind turns the raw forecast into one answer — *go or no-go, when, where, with which kite and when to leave* — and shows who from your crew is driving with free seats.
 
-> **Status:** client phase. The decision engine, the API contract, the in-app fake backend, the data layer and the Today screen are done; the other screens are next. See the [roadmap](#roadmap).
+> **Status:** client phase. The decision engine, the API contract, the in-app fake backend, the data layer, the Today screen and the spot's hourly wind chart are done; the other screens are next. See the [roadmap](#roadmap).
 
 ## What is in this repository
 
@@ -76,6 +76,17 @@ Each screen is a feature package with `domain`, `data`, `presentation` and `di` 
 
 The screen is tested on the desktop JVM without an emulator: its ViewModel against the real data layer (fake backend, Room, DataStore), and the UI with Compose UI tests.
 
+## Spot detail
+
+Tapping a day on Today opens that spot's forecast for today and the next two days, hour by hour, scrolled to the window of that day.
+
+- The wind chart is drawn on a canvas, without a chart library. Each hour gets a bar of mean wind in the color of its verdict, a tick at the gusts, and an arrow for the direction. A band shows how far apart the weather models are. Session windows and night are tinted, and the time axis uses the spot's time zone; both hours of a clock change keep their own label. The chart scrolls sideways, and chips jump to a day.
+- Tapping an hour shows it in words: wind, gusts, direction, each model, the kite, and every reason it is not a GO. Below the chart, the windows are listed with the riding time, the kite and when to leave.
+- The drawing is for the eye only. On top of it, one invisible cell per hour is read by screen readers ("Saturday 13:00: 20 kn, gusts 25 kn, wind from the west, GO") and takes taps, so the chart works without seeing it. Back and refresh are buttons in the top bar, not only gestures. Time runs left to right in right-to-left languages too.
+- The states are the same as on Today: loading, an error with retry, cached data with a notice, and a message when the rider no longer follows the spot.
+
+Screens are connected with Navigation 3 in one place, `app.navigation`. The back stack is a list of serializable destinations, each with its own ViewModel; Today asks for a spot through an MVI effect and does not know the spot screen ([ADR 0009](docs/adr/0009-navigation-3.md)).
+
 ## Build and run
 
 Requirements: JDK 21, Android Studio with the Android SDK (API 37), and Xcode 26.4 or newer on macOS for iOS. Versions of everything else are pinned in [`gradle/libs.versions.toml`](gradle/libs.versions.toml).
@@ -101,6 +112,7 @@ open iosApp/iosApp.xcodeproj            # then Run on an iOS simulator
 | [0006](docs/adr/0006-room-3-as-the-offline-cache.md) | Room 3 as the offline cache |
 | [0007](docs/adr/0007-koin-for-dependency-injection.md) | Koin for dependency injection |
 | [0008](docs/adr/0008-mvi-presentation-in-feature-packages.md) | MVI presentation in feature packages |
+| [0009](docs/adr/0009-navigation-3.md) | Navigation 3 for moving between screens |
 
 ## Roadmap
 
@@ -109,10 +121,11 @@ open iosApp/iosApp.xcodeproj            # then Run on an iOS simulator
 3. API contract and in-app fake backend — done
 4. Data layer: network, cache, offline — done
 5. Design system and the Today screen — done
-6. Screens: Spot detail with the wind chart, Profile, Spots, Crew, Settings — next
-7. Demo mode with scripted scenarios
-8. Background evaluation and local notifications
-9. Server phase (separate repository)
+6. Spot detail with the hourly wind chart, and navigation — done
+7. Screens: Profile, Spots, Crew, Settings, onboarding — next
+8. Demo mode with scripted scenarios
+9. Background evaluation and local notifications
+10. Server phase (separate repository)
 
 ## Disclaimer
 

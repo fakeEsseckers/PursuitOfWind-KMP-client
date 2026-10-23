@@ -1,4 +1,4 @@
-package io.github.esseckers.pursuitofwind.feature.today.presentation.view
+package io.github.esseckers.pursuitofwind.core.ui
 
 import androidx.compose.runtime.Composable
 import io.github.esseckers.pursuitofwind.core.resources.Res
@@ -20,7 +20,6 @@ import io.github.esseckers.pursuitofwind.core.resources.weekday_tuesday
 import io.github.esseckers.pursuitofwind.core.resources.weekday_tuesday_inline
 import io.github.esseckers.pursuitofwind.core.resources.weekday_wednesday
 import io.github.esseckers.pursuitofwind.core.resources.weekday_wednesday_inline
-import io.github.esseckers.pursuitofwind.feature.today.presentation.model.DayLabel
 import kotlinx.datetime.DayOfWeek
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource

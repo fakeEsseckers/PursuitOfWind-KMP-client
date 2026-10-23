@@ -18,6 +18,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import io.github.esseckers.pursuitofwind.core.designsystem.component.ConfidenceChip
 import io.github.esseckers.pursuitofwind.core.designsystem.component.IconLine
+import io.github.esseckers.pursuitofwind.core.designsystem.component.LinkRow
 import io.github.esseckers.pursuitofwind.core.designsystem.component.VerdictBadge
 import io.github.esseckers.pursuitofwind.core.designsystem.component.VerdictCard
 import io.github.esseckers.pursuitofwind.core.designsystem.component.verdictPalette
@@ -28,6 +29,7 @@ import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.confidence_low_hint
 import io.github.esseckers.pursuitofwind.core.resources.confidence_unknown_hint
 import io.github.esseckers.pursuitofwind.core.resources.decimal_separator
+import io.github.esseckers.pursuitofwind.core.resources.open_spot
 import io.github.esseckers.pursuitofwind.core.resources.ride_departed
 import io.github.esseckers.pursuitofwind.core.resources.ride_driver
 import io.github.esseckers.pursuitofwind.core.resources.ride_full
@@ -44,12 +46,14 @@ import io.github.esseckers.pursuitofwind.core.resources.today_next_go
 import io.github.esseckers.pursuitofwind.core.resources.today_no_next_go
 import io.github.esseckers.pursuitofwind.core.resources.today_no_rides
 import io.github.esseckers.pursuitofwind.core.resources.today_spot_reason
+import io.github.esseckers.pursuitofwind.core.ui.DayLabel
+import io.github.esseckers.pursuitofwind.core.ui.dayLabel
 import io.github.esseckers.pursuitofwind.core.ui.formatKiteSize
 import io.github.esseckers.pursuitofwind.core.ui.reasonLabel
 import io.github.esseckers.pursuitofwind.core.ui.windRangeText
 import io.github.esseckers.pursuitofwind.engine.model.Confidence
+import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.engine.model.Verdict
-import io.github.esseckers.pursuitofwind.feature.today.presentation.model.DayLabel
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.DayUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.RideUi
 import org.jetbrains.compose.resources.pluralStringResource
@@ -57,10 +61,13 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * The answer for one day. Screen readers read the whole card as one item, and can jump between days as headings.
+ * [onOpenSpot] opens the hourly forecast of a spot: tapping a GO card opens its spot, the spots listed on a card open
+ * their own.
  */
 @Composable
 internal fun DayCard(
     day: DayUi,
+    onOpenSpot: (SpotId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val cardModifier =
@@ -69,17 +76,23 @@ internal fun DayCard(
             .semantics(mergeDescendants = true) { heading() }
             .testTag("today.day.${day.date}")
     when (day) {
-        is DayUi.Go -> GoCard(day, cardModifier)
-        is DayUi.NoGo -> NoGoCard(day, cardModifier)
+        is DayUi.Go -> GoCard(day, onOpenSpot, cardModifier)
+        is DayUi.NoGo -> NoGoCard(day, onOpenSpot, cardModifier)
     }
 }
 
 @Composable
 private fun GoCard(
     day: DayUi.Go,
+    onOpenSpot: (SpotId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    VerdictCard(verdict = Verdict.GO, modifier = modifier) {
+    VerdictCard(
+        verdict = Verdict.GO,
+        modifier = modifier,
+        onClick = { onOpenSpot(day.spotId) },
+        onClickLabel = stringResource(Res.string.open_spot, day.spotName),
+    ) {
         CardHeader(verdict = Verdict.GO, label = day.label)
         Column {
             Text(text = day.spotName, style = MaterialTheme.typography.titleLarge)
@@ -103,9 +116,11 @@ private fun GoCard(
             HorizontalDivider(color = LocalContentColor.current.copy(alpha = DIVIDER_ALPHA))
             Rides(day)
             day.alternatives.forEach { alternative ->
-                Text(
+                LinkRow(
                     text = stringResource(Res.string.today_alternative, alternative.spotName, alternative.window.toString()),
-                    style = MaterialTheme.typography.bodyMedium,
+                    onClickLabel = stringResource(Res.string.open_spot, alternative.spotName),
+                    onClick = { onOpenSpot(alternative.spotId) },
+                    modifier = Modifier.testTag("today.alternative.${alternative.spotId.value}"),
                 )
             }
         }
@@ -158,20 +173,31 @@ private fun RideLine(ride: RideUi) {
     }
 }
 
+/** With one favorite spot the whole card opens it; with several, each spot's line opens that spot. */
 @Composable
 private fun NoGoCard(
     day: DayUi.NoGo,
+    onOpenSpot: (SpotId) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    VerdictCard(verdict = Verdict.NO_GO, modifier = modifier) {
+    val single = day.spots.singleOrNull()
+    VerdictCard(
+        verdict = Verdict.NO_GO,
+        modifier = modifier,
+        onClick = single?.let { { onOpenSpot(it.spotId) } },
+        onClickLabel = single?.let { stringResource(Res.string.open_spot, it.spotName) },
+    ) {
         CardHeader(verdict = Verdict.NO_GO, label = day.label)
         Text(text = stringResource(reasonLabel(day.reason)), style = MaterialTheme.typography.titleMedium)
-        if (day.spots.isNotEmpty()) {
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        // One spot's reason is the main reason; listing it again would add nothing.
+        if (day.spots.size > 1) {
+            Column {
                 day.spots.forEach { spot ->
-                    Text(
+                    LinkRow(
                         text = stringResource(Res.string.today_spot_reason, spot.spotName, stringResource(reasonLabel(spot.reason))),
-                        style = MaterialTheme.typography.bodyMedium,
+                        onClickLabel = stringResource(Res.string.open_spot, spot.spotName),
+                        onClick = { onOpenSpot(spot.spotId) },
+                        modifier = Modifier.testTag("today.spot.${day.date}.${spot.spotId.value}"),
                     )
                 }
             }

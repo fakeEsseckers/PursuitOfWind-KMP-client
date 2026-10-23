@@ -59,6 +59,9 @@ fun `a retried seat request does not take a second seat`() =
 ## ViewModel and screen tests (`:shared:app`)
 
 - Tests sit in the same package as the code they test (`feature/today/presentation/mapper/DayCardsMapperTest`).
+- `testGraph(clock)` in `jvmTest/.../testing/TestGraph.kt` is the app's Koin graph for the fake environment with a steady 18 kn seed; ViewModel and navigation tests start from it instead of building their own.
+- Navigation rules are tested without UI: `Navigator` works on a plain `MutableList<NavKey>` (`NavigatorTest`). `DestinationSavedStateTest` (`jvmTest`: saved state on Android is a `Bundle`, which host tests lack) checks that every subclass of the sealed `Destination` is registered in `navigationConfiguration` and that a back stack survives saving and restoring.
+- A UI test with real ViewModels and navigation (`AppNavigationTest`) wraps the content in `KoinIsolatedContext(testGraph(clock))` and a `LocalViewModelStoreOwner`, and sets `Dispatchers.setMain(Dispatchers.Unconfined)`: the desktop test runtime has no main dispatcher, and lifecycle checks that entries move on the main thread. Wait for screens with `waitUntil(timeoutMillis = …)`, because Room and HTTP run on real threads.
 - Reducers are pure: give them a state and a result and compare the next state. Test the rules in the state mapper, and in the reducer only what the reducer itself records (Today: the refresh status and the inputs).
 - `commonTest` has coroutines-test and Turbine, so the MVI base is tested on every runtime: `MviViewModelTest` checks that `bind()` runs only while the state is collected and stops after `STOP_AFTER`, and that effects are delivered once.
 - `:shared:app` has a JVM target for tests only. A ViewModel test builds the app's own Koin modules for `Environment.Fake` with a `ControllableClock`, and overrides `FakePursuitOfWindServer` with a `Seed` whose `ForecastProfile` makes verdicts known (steady wind, no noise). No fake repositories.

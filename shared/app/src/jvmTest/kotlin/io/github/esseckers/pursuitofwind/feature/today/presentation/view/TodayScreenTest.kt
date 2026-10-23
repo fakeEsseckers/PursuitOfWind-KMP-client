@@ -14,6 +14,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
@@ -28,11 +29,13 @@ import androidx.compose.ui.test.v2.runSkikoComposeUiTest
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.PursuitOfWindTheme
+import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.today.at
 import io.github.esseckers.pursuitofwind.feature.today.day
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayIntent
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState
 import io.github.esseckers.pursuitofwind.feature.today.ride
+import kotlinx.datetime.LocalDate
 import java.util.Locale
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -89,7 +92,44 @@ class TodayScreenTest {
                 .assert(hasText("High confidence"))
                 .assert(hasText("Andrei drives, leaves at 08:30"))
                 .assert(hasText("2 seats free"))
-                .assert(hasText("Also good: Lake Weiss, 14:00–17:00"))
+            // The alternative is a button of its own, so screen readers reach it after the card.
+            onNodeWithTag("today.alternative.lake-weiss").assert(hasText("Also good: Lake Weiss, 14:00–17:00"))
+        }
+
+    @Test
+    fun `a GO card opens its spot on that day and an alternative opens its own spot`() =
+        runComposeUiTest {
+            show(TodayPreviewData.ready)
+            scrollTo("today.day.2026-10-24")
+
+            onNodeWithTag("today.day.2026-10-24").assert(hasClickAction()).performClick()
+            onNodeWithTag("today.alternative.lake-weiss").performClick()
+
+            assertEquals(
+                listOf<TodayIntent>(
+                    TodayIntent.OpenSpot(SpotId("nordstrand-bay"), LocalDate(2026, 10, 24)),
+                    TodayIntent.OpenSpot(SpotId("lake-weiss"), LocalDate(2026, 10, 24)),
+                ),
+                intents,
+            )
+        }
+
+    @Test
+    fun `a NO-GO card with several spots opens each spot from its line and with one spot as a whole`() =
+        runComposeUiTest {
+            show(TodayPreviewData.ready)
+
+            onNodeWithTag("today.day.2026-10-22").assert(hasClickAction().not())
+            onNodeWithTag("today.spot.2026-10-22.nordstrand-bay").performClick()
+            onNodeWithTag("today.day.2026-10-23").performClick()
+
+            assertEquals(
+                listOf<TodayIntent>(
+                    TodayIntent.OpenSpot(SpotId("nordstrand-bay"), LocalDate(2026, 10, 22)),
+                    TodayIntent.OpenSpot(SpotId("nordstrand-bay"), LocalDate(2026, 10, 23)),
+                ),
+                intents,
+            )
         }
 
     @Test
@@ -101,9 +141,9 @@ class TodayScreenTest {
                 .assert(hasText("NO-GO"))
                 .assert(hasText("Today"))
                 .assert(hasText("Too gusty"))
-                .assert(hasText("Lake Weiss: Too gusty"))
-                .assert(hasText("Nordstrand Bay: Offshore wind — dangerous here"))
                 .assert(hasText("Next good day: Saturday"))
+            onNodeWithTag("today.spot.2026-10-22.lake-weiss").assert(hasText("Lake Weiss: Too gusty"))
+            onNodeWithTag("today.spot.2026-10-22.nordstrand-bay").assert(hasText("Nordstrand Bay: Offshore wind — dangerous here"))
         }
 
     @Test
