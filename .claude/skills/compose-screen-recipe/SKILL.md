@@ -37,13 +37,13 @@ feature/today/
   di/TodayModule.kt             // factory<TodayRepository>, viewModel { }; listed in app/di/AppModules.kt
 ```
 
-A screen without one-off events has no `Effect` file and declares `Nothing`. Everything in a feature package is `internal`: the iOS framework exports only `App()` and `MainViewController()`. A feature never imports another feature; what two features need moves to `core` or to `:shared:data`.
+A screen without one-off events has no `Effect` file and declares `Nothing`. A screen with no state at all (Welcome: text and one button) has only `view/` and calls its navigation lambda directly; it has no ViewModel. Everything in a feature package is `internal`: the iOS framework exports only `App()` and `MainViewController()`. A feature never imports another feature; what two features need moves to `core` or to `:shared:data`.
 
 Shared code next to `feature/`:
 
 - `core/mvi` — `MviViewModel`, `Reducer`, `CollectEffects`.
 - `core/designsystem` — `theme`, `component`, `icon` (see below).
-- `core/ui` — formatting and labels used by several screens (`AppError.message()`, `clockTime`, `windRangeText`, `DayLabel`, `TimeRange`, `updatedText`, `Freshness`).
+- `core/ui` — formatting and labels used by several screens (`AppError.message()`, `clockTime`, `windRangeText`, `durationText`, `driveText`, `formatTenths`, `DayLabel`, `TimeRange`, `updatedText`, `Freshness`).
 - `core/resources` — the generated `Res` (strings live in `composeResources/values` and `values-ru`).
 - `app` — `App()`, `appModules()`, `navigation` (destinations, `AppNavigation`, `Navigator`), platform entry points.
 
@@ -56,7 +56,7 @@ Shared code next to `feature/`:
 - When the state is derived from several inputs (data, clock, refresh status), keep the inputs in the state (`TodayState.inputs`) and let the reducer recompute the rest with the feature's state mapper. Do not combine flows in the ViewModel. The reducer keeps the previous `content` instance when the new one is equal: the state changes on every tick, and Compose compares unstable UI models by instance, so this is what lets unchanged cards skip recomposition.
 - Effects: `post(effect)` for one-off events (navigate, show a snackbar), collected in the Route with lifecycle awareness. A screen without them declares `Nothing`. A failed refresh on Today is state (a notice above cached data), not an effect.
 - Repositories are the source of truth. The feature's repository interface (in `domain`) exposes cached flows and a `refresh()`; the ViewModel never keeps its own copy of the data.
-- Refresh from `bind()` (`onStart`) when it is due (`TodayRefreshPolicy.isDue`: never refreshed, the last one failed, older than `REFRESH_AFTER`, the clock went back, or data missing), not from `init`. One refresh runs at a time.
+- Refresh from `bind()` (`onStart`) when it is due (`TodayRefreshPolicy.isDue`: never refreshed, the last one failed, older than `REFRESH_AFTER`, the clock went back, or data missing), not from `init`. One refresh runs at a time. While the screen is shown, data that needs fetching at once (a favorite chosen in the picker while Today stayed below it: `TodayRefreshPolicy.hasNewFavorite`) starts a refresh from the observed flow; remember what the last refresh covered, so a failure offline does not loop.
 - A refresh never throws into `viewModelScope`: failures come back as `AppError`s (storage exceptions as `AppError.Unknown`, logged with Kermit). Keep errors that only affect part of the screen apart (Today: crew problems do not mark the forecast as failed).
 - Inject `Clock` and anything time-based (`TodayViewModel(repository, clock, riderZone, tick)`); never hard-code `Clock.System` or `Dispatchers.IO` (tests use virtual time and `ControllableClock`).
 - Map `AppError` to text with `AppError.message()` (`core/ui/Formatting.kt`); screens only render string resources.
@@ -101,13 +101,25 @@ Cached data always wins over an error: the error replaces the content only when 
 
 - `PursuitOfWindTheme` sets Material's color scheme, type scale and shapes, plus `PursuitOfWindTheme.colors` for meaning-bearing colors: `go`, `marginal`, `noGo` (each a `VerdictPalette` of accent and container colors, contrast ≥ 4.5:1 in both themes) and `confidenceHigh/Medium/Low/Unknown`.
 - `theme`: colors, `PursuitOfWindTheme`, tokens `Spacing.xs … xl` and `Sizes` (icons, border, placeholders). No raw `dp` or color literals outside the design system.
-- `component`: `VerdictBadge`, `VerdictCard` (optionally one button: `onClick`, `onClickLabel`), `ConfidenceChip`, `StatusBanner`, `MessageState`, `ActionButton`, `Skeleton`, `Disclaimer`, `IconLine`, `ScreenTopBar` and `BarIconButton` for screens opened from another one, `LinkRow` for a line that opens something; `icon`: the app's own line drawings in `AppIcons` (no icon library).
+- `component`: `VerdictBadge`, `VerdictCard` (optionally one button: `onClick`, `onClickLabel`), `ConfidenceChip`, `StatusBanner`, `MessageState`, `ActionButton`, `PrimaryButton` (full width, with a busy state), `Skeleton`, `Disclaimer`, `IconLine`, `ScreenTopBar` and `BarIconButton` for screens opened from another one, `TabTitle` for a tab's screen, `LinkRow` for a line that opens something; for forms `SectionTitle`, `DraftTextField`, `ChoiceChip` and `Stepper`; `icon`: the app's own line drawings in `AppIcons` (no icon library).
 - `WindChartColors` (`windChartColors()`) and the `Sizes.chart*` tokens are the wind chart's.
+
+## Forms (profile, spot picker)
+
+- The draft lives in the state (`ProfileState.form`), as typed: text fields hold strings, choices hold values. It becomes a domain object only through a pure check in the mapper (`ProfileFormMapper.check` → `Valid(profile)` or `Invalid(errors)`), which applies the limits of `api/openapi.yaml`. Steppers and chips can only hold valid values; text is filtered as it is typed (`acceptsNumber`, `acceptsName`).
+- Errors show once the rider has tried to save (`inputs.submitted`) and go as fields are fixed. A hidden group with an error opens by itself.
+- Text fields are `DraftTextField`s: each keeps its own text and cursor, so typing never waits for the state to come back through the flow, and starts over from the state when `formVersion` changes. The reducer bumps `formVersion` only when it rewrites text from outside (the saved profile arriving, wind limits converted to a new unit), never for the rider's own typing.
+- Text written from a value (a saved wind limit, or one converted to another unit) keeps the exact value next to it (`minWindSpeed`), cleared once the rider types, so rounding for display never reaches the saved profile.
+- The first cached value fills the form; later ones only update what the draft is compared with, so a save elsewhere never overwrites typing. "Nothing changed" compares meaning, not text (`62,5` is the saved 62.5 kg), and saving an unchanged form confirms without a request.
+- A save is one coroutine that always ends with a `SaveFinished` result (`finally`) carrying the error or the saved value, which counts at once (the cache follows a moment later); success is an effect (`Saved`, `Finished`) the Route turns into navigation or a snackbar. Writes that replace the same cached data (the picker's refresh and save) run one after the other.
+- Errors sit under their fields, and a line next to the button says to check them, because the first field with an error may be scrolled away. Single-choice chips are radio buttons in a `selectableGroup`; chips for a set are checkboxes.
 
 ## Navigation
 
 - Navigation 3 (`docs/adr/0009-navigation-3.md`). Destinations are the sealed `Destination` in `app.navigation`, with plain serializable values. A new screen adds a destination, registers it in `navigationConfiguration` (iOS has no reflection) and adds an `entry<…>` in `AppNavigation`.
 - Features never see destinations or the back stack. A Route takes lambdas (`onOpenSpot`, `onBack`); `AppNavigation` connects them through the `Navigator`.
+- One back stack. A fresh launch starts at `Welcome` when no profile is cached and at `Today` otherwise (`startDestination`); onboarding is `Welcome → SetUpProfile → PickSpots`, and `finishSetup()` leaves Today as the only entry. Tabs (`tabDestinations`: Today, Profile) sit on top of Today: `selectTab` keeps Today as the root and closes screens opened on the old tab, so back from a tab returns to Today. The bottom bar shows only while a tab is on top, and `AppNavigation` consumes its insets so screens do not pad for the system bars twice.
+- One form can serve two places with a mode (`ProfileMode.SET_UP` in onboarding, `TAB` as a tab): each back stack entry gets its own ViewModel, and only the Route and the top bar differ.
 - When the ViewModel decides to navigate (it depends on state or an intent's data), it posts an `Effect`, and the Route handles it with `CollectEffects(viewModel.effects) { … }`, which collects only while the screen is started. A plain view event with nothing to decide (back) calls the lambda directly.
 - A ViewModel that needs arguments gets them from Koin: `viewModel { (spotId: SpotId, date: LocalDate?) -> … }` and `koinViewModel { parametersOf(spotId, date) }` in the Route. Each back stack entry has its own ViewModel store.
 
@@ -126,7 +138,7 @@ Cached data always wins over an error: the error replaces the content only when 
 - [ ] All state branches render and have previews.
 - [ ] Mapper and reducer tests in `commonTest`; ViewModel test with Turbine in `jvmTest` on the real data layer covers load, refresh, error, and the main intent.
 - [ ] The feature's Koin module is listed in `appModules()`, and a test resolves the ViewModel from the graph.
-- [ ] Screen test in `jvmTest`: each state, intents from buttons, Russian strings, 200% font at phone size.
+- [ ] Screen test in `jvmTest`: each state, intents from buttons, Russian strings, 200% font at phone size (`checkTexts()` in `jvmTest/.../testing/TextFit.kt`).
 - [ ] Strings in EN and RU.
 - [ ] Test tags on interactive elements; critical path covered by a UI test if the screen is on it.
 - [ ] A screen reached by navigation is in `navigationConfiguration` and in the navigation test.

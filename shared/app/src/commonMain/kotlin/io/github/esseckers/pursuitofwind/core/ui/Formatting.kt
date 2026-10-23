@@ -26,8 +26,14 @@ private fun Int.twoDigits(): String = toString().padStart(2, '0')
 internal fun formatKiteSize(
     squareMeters: Double,
     decimalSeparator: Char = '.',
+): String = formatTenths(squareMeters, decimalSeparator)
+
+/** A non-negative [value] rounded to tenths, without a needless fraction: `80`, `62.5`. */
+internal fun formatTenths(
+    value: Double,
+    decimalSeparator: Char = '.',
 ): String {
-    val tenths = (squareMeters * TENTHS).roundToInt()
+    val tenths = (value * TENTHS).roundToInt()
     return if (tenths % TENTHS == 0) (tenths / TENTHS).toString() else "${tenths / TENTHS}$decimalSeparator${tenths % TENTHS}"
 }
 

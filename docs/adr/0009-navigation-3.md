@@ -30,3 +30,9 @@ Two libraries are paired with Compose Multiplatform 1.12: Navigation Compose 2.1
 - Negative: every new destination must be added to `navigationConfiguration` by hand; the test over the sealed class catches a missing one.
 - Negative: Navigation 3 is younger than Navigation Compose, so fewer examples exist, especially for Compose Multiplatform.
 - Revisit when: screens need adaptive layouts (list and detail side by side on tablets), which Navigation 3 supports through scene strategies.
+
+## Update: onboarding and tabs (Issue #9)
+
+- **Start.** The back stack starts at `Welcome` when no profile is cached and at `Today` otherwise (`startDestination`). The answer is read once and saved with the screen, so a restored back stack shows without waiting. Onboarding is `Welcome → SetUpProfile → PickSpots`; `finishSetup()` leaves Today as the only entry, so back from Today still leaves the app.
+- **Tabs on one back stack.** Today and Profile are tabs in a bottom bar, shown while one of them is on top. Today is the root and any other tab sits on top of it (`selectTab`), so back from a tab returns to Today, as Android expects for a bottom bar. A stack per tab was considered: it keeps a tab's screens and drafts while another tab is shown, but needs several saved stacks, rules for back across them and tests for each; with two tabs and short flows, one stack is enough. The cost: choosing another tab closes screens opened on the old one, and the profile form's unsaved edits with them. Revisit when a tab gets deep flows of its own.
+

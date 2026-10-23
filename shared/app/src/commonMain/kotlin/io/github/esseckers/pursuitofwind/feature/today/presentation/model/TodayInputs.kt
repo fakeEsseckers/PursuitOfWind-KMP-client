@@ -1,5 +1,6 @@
 package io.github.esseckers.pursuitofwind.feature.today.presentation.model
 
+import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.today.domain.model.RefreshResult
 import io.github.esseckers.pursuitofwind.feature.today.domain.model.TodaySnapshot
 import kotlin.time.Instant
@@ -16,10 +17,12 @@ internal data class TodayInputs(
 
 /**
  * Where the refresh is: [refreshing] now, and how the last one ended ([last] is null before the first one ends).
- * [startedAt] is when the latest refresh started, so the state can tell whether the cache already shows it.
+ * [startedAt] is when the latest refresh started, so the state can tell whether the cache already shows it, and
+ * [favorites] the favorite spots it was for, so a spot chosen since then is fetched at once.
  */
 internal data class RefreshStatus(
     val refreshing: Boolean = false,
     val last: RefreshResult? = null,
     val startedAt: Instant? = null,
+    val favorites: Set<SpotId> = emptySet(),
 )

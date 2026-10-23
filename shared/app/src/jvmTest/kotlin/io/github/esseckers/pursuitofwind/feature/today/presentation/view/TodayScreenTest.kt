@@ -189,14 +189,18 @@ class TodayScreenTest {
         }
 
     @Test
-    fun `a new rider is asked for a profile and a rider without favorites for spots`() =
+    fun `a new rider is asked for a profile and a rider without favorites for spots with a button to each`() =
         runComposeUiTest {
             var state by mutableStateOf(TodayPreviewData.noProfile)
-            setContent { PursuitOfWindTheme(darkTheme = false) { TodayScreen(state = state, onIntent = {}) } }
+            setContent { PursuitOfWindTheme(darkTheme = false) { TodayScreen(state = state, onIntent = { intents += it }) } }
 
             onNodeWithText("Tell us about you").assertIsDisplayed()
+            onNodeWithTag("today.setUpProfile").assert(hasText("Set up your profile")).performClick()
             state = TodayPreviewData.noSpots
             onNodeWithText("Pick your spots").assertIsDisplayed()
+            onNodeWithTag("today.pickSpots").assert(hasText("Pick spots")).performClick()
+
+            assertEquals(listOf(TodayIntent.SetUpProfile, TodayIntent.PickSpots), intents)
         }
 
     @Test

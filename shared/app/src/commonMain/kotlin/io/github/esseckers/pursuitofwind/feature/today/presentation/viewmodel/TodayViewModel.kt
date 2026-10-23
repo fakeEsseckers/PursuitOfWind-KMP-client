@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import io.github.esseckers.pursuitofwind.core.mvi.MviViewModel
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.feature.today.domain.model.RefreshResult
+import io.github.esseckers.pursuitofwind.feature.today.domain.model.TodaySnapshot
 import io.github.esseckers.pursuitofwind.feature.today.domain.repository.TodayRepository
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayEffect
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayIntent
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
@@ -27,7 +29,7 @@ import kotlin.time.Instant
  * Today's decisions in MVI. While the screen is shown, the cached data and the ticking [clock] come in as results;
  * the screen refreshes as it appears when [TodayRefreshPolicy] says so, and on [TodayIntent.Refresh]. Decisions are
  * recomputed every [tick], so "leave by" and "updated 5 min ago" stay true; tests pass a controllable clock.
- * Opening a spot is a [TodayEffect]; a failed refresh is part of the state, not an effect.
+ * Navigating (a spot, the profile, the spot picker) is a [TodayEffect]; a failed refresh is part of the state, not an effect.
  */
 internal class TodayViewModel(
     private val repository: TodayRepository,
@@ -39,24 +41,31 @@ internal class TodayViewModel(
         when (intent) {
             TodayIntent.Refresh -> refresh()
             is TodayIntent.OpenSpot -> post(TodayEffect.OpenSpot(intent.spotId, intent.date))
+            TodayIntent.SetUpProfile -> post(TodayEffect.OpenProfile)
+            TodayIntent.PickSpots -> post(TodayEffect.PickSpots)
         }
     }
 
     override fun bind(): Flow<TodayResult> =
         merge(
-            repository.snapshot.map { TodayResult.DataChanged(it) },
+            repository.snapshot
+                // A spot chosen in the spot picker while this screen stayed below it has no forecast yet.
+                .onEach { if (TodayRefreshPolicy.hasNewFavorite(it, currentState.inputs.refresh)) refresh(it) }
+                .map { TodayResult.DataChanged(it) },
             ticks().map { TodayResult.ClockTicked(it) },
         ).onStart { refreshIfDue() }
 
     private suspend fun refreshIfDue() {
-        if (TodayRefreshPolicy.isDue(repository.snapshot.first(), currentState.inputs.refresh, clock.now())) refresh()
+        val snapshot = repository.snapshot.first()
+        if (TodayRefreshPolicy.isDue(snapshot, currentState.inputs.refresh, clock.now())) refresh(snapshot)
     }
 
     /** One refresh at a time; a pull while one runs joins it. */
-    private fun refresh() {
+    private fun refresh(snapshot: TodaySnapshot? = currentState.inputs.snapshot) {
         if (currentState.inputs.refresh.refreshing) return
         // Cache stamps are stored in milliseconds; a finer start would never count as reflected in them.
-        dispatch(TodayResult.RefreshStarted(at = Instant.fromEpochMilliseconds(clock.now().toEpochMilliseconds())))
+        val at = Instant.fromEpochMilliseconds(clock.now().toEpochMilliseconds())
+        dispatch(TodayResult.RefreshStarted(at = at, favorites = TodayRefreshPolicy.favorites(snapshot)))
         viewModelScope.launch {
             // Ends the refresh whatever happens, so a cancelled one never blocks the next.
             var result = RefreshResult(forecastError = AppError.Unknown("Refresh did not finish"))

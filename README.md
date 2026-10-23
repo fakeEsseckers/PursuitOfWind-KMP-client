@@ -4,7 +4,7 @@
 
 Kitesurfers who live hours from the water lose whole days to forecasts that looked fine on paper. Pursuit Of Wind turns the raw forecast into one answer — *go or no-go, when, where, with which kite and when to leave* — and shows who from your crew is driving with free seats.
 
-> **Status:** client phase. The decision engine, the API contract, the in-app fake backend, the data layer, the Today screen and the spot's hourly wind chart are done; the other screens are next. See the [roadmap](#roadmap).
+> **Status:** client phase. The decision engine, the API contract, the in-app fake backend, the data layer, onboarding with the profile and the spot picker, the Today screen and the spot's hourly wind chart are done; Spots, Crew and Settings are next. See the [roadmap](#roadmap).
 
 ## What is in this repository
 
@@ -64,6 +64,17 @@ Screens read from a local cache and never wait for the network: repositories exp
 
 Choices and trade-offs: [ADR 0006](docs/adr/0006-room-3-as-the-offline-cache.md) (Room 3) and [ADR 0007](docs/adr/0007-koin-for-dependency-injection.md) (Koin).
 
+## Onboarding and profile
+
+A new rider starts at a welcome screen that says what the app answers, then sets it up in two steps:
+
+- **About you:** name, weight, level, the kites they own (chips, up to ten) and the unit for wind. "More settings" holds the shortest session worth the drive, the longest drive and a personal wind range; the defaults suit most riders. Fields are checked against the limits in the API contract, and errors appear under their fields once the rider tries to continue.
+- **Your spots:** the spot catalog, each spot with a checkbox and, once chosen, the drive from home in 15-minute steps. Spots whose wind sectors no local rider has checked yet say so. "Done" follows the chosen spots as favorites; with nothing chosen, the button reads "Skip for now".
+
+After that the app opens on Today, with Today and Profile as tabs. The Profile tab is the same form, saved in place: "Save" is on only when something changed, and a failed save says why and keeps what was typed. Today's empty states lead to the profile or the spot picker.
+
+Text fields keep their own text and cursor while the form lives in the ViewModel's state, so typing never waits for the state to come back; a form filled or rewritten from outside (the saved profile arriving, wind limits converted to a new unit) resets them.
+
 ## Today
 
 The first screen answers "go?" for today and the next two days, across the rider's favorite spots.
@@ -71,7 +82,7 @@ The first screen answers "go?" for today and the next two days, across the rider
 - **GO** names the spot, the window in the spot's local time, the wind range in the rider's unit, the kite, when to leave (or "leave now"), how much the weather models agree, and who from the crew is driving there that day with how many free seats. The next best windows follow as alternatives.
 - **NO-GO** gives the main reason in plain words, the reason at each spot, and the next good day.
 - Every state is designed: placeholders while the first answer loads, a prompt when the profile or a favorite spot is missing, an error with retry when there is nothing cached, and cached answers with a notice when the device is offline, the forecast is getting old or the crew's rides could not be updated.
-- The screen refreshes when it opens, when it comes back after half an hour or after a failed refresh, and on pull-to-refresh. Decisions are recomputed every minute, so "leave by" stays true while the screen is open; once the time to leave has passed, the card shows only the riding time that is left.
+- The screen refreshes when it opens, when it comes back after half an hour or after a failed refresh, as soon as a new favorite spot is chosen, and on pull-to-refresh. Decisions are recomputed every minute, so "leave by" stays true while the screen is open; once the time to leave has passed, the card shows only the riding time that is left.
 - Verdicts are an icon, a word and a color, never color alone. Each day reads as one heading item to screen readers, which also get a "Refresh" action instead of the pull gesture. Light and dark themes, English and Russian, and a test that no text is cut off at twice the font size.
 
 Each screen is a feature package with `domain`, `data`, `presentation` and `di` layers, and its ViewModel follows MVI: intents and incoming data become results, a pure reducer folds them into the state the view renders ([ADR 0008](docs/adr/0008-mvi-presentation-in-feature-packages.md)).
@@ -87,7 +98,7 @@ Tapping a day on Today opens that spot's forecast for today and the next two day
 - The drawing is for the eye only. On top of it, one invisible cell per hour is read by screen readers ("Saturday 13:00: 20 kn, gusts 25 kn, wind from the west, GO") and takes taps, so the chart works without seeing it. Back and refresh are buttons in the top bar, not only gestures. Time runs left to right in right-to-left languages too.
 - The states are the same as on Today: loading, an error with retry, cached data with a notice, and a message when the rider no longer follows the spot.
 
-Screens are connected with Navigation 3 in one place, `app.navigation`. The back stack is a list of serializable destinations, each with its own ViewModel; Today asks for a spot through an MVI effect and does not know the spot screen ([ADR 0009](docs/adr/0009-navigation-3.md)).
+Screens are connected with Navigation 3 in one place, `app.navigation`. The back stack is a list of serializable destinations, each with its own ViewModel; Today asks for a spot through an MVI effect and does not know the spot screen ([ADR 0009](docs/adr/0009-navigation-3.md)). There is one back stack: Today is its root once the rider is set up, other tabs sit on top of it, so back from a tab returns to Today, and the tab bar shows only while a tab is on top. Where the app starts depends on whether a profile is cached.
 
 ## Build and run
 
@@ -125,9 +136,9 @@ open iosApp/iosApp.xcodeproj            # then Run on an iOS simulator
 4. Data layer: network, cache, offline — done
 5. Design system and the Today screen — done
 6. Spot detail with the hourly wind chart, and navigation — done
-7. Screens: Profile, Spots, Crew, Settings, onboarding — next
+7. Screens: onboarding and Profile — done; Spots, Crew, Settings — next
 8. Background evaluation and local notifications
-9. Server phase (separate repository), with onboarding and spotlight hints
+9. Server phase (separate repository), with guided tours and spotlight hints
 
 ## Disclaimer
 

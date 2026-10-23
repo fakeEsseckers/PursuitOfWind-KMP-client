@@ -38,8 +38,10 @@ import io.github.esseckers.pursuitofwind.core.designsystem.icon.AppIcons
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Sizes
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Spacing
 import io.github.esseckers.pursuitofwind.core.resources.Res
+import io.github.esseckers.pursuitofwind.core.resources.action_pick_spots
 import io.github.esseckers.pursuitofwind.core.resources.action_refresh
 import io.github.esseckers.pursuitofwind.core.resources.action_retry
+import io.github.esseckers.pursuitofwind.core.resources.action_set_up_profile
 import io.github.esseckers.pursuitofwind.core.resources.banner_crew_failed
 import io.github.esseckers.pursuitofwind.core.resources.banner_offline
 import io.github.esseckers.pursuitofwind.core.resources.banner_refresh_failed
@@ -84,7 +86,7 @@ internal fun TodayScreen(
         ) {
             when (val content = state.content) {
                 Content.Loading -> LoadingDays()
-                is Content.Empty -> EmptyContent(content.missing)
+                is Content.Empty -> EmptyContent(content.missing, onIntent)
                 is Content.Error -> ErrorContent(content.message, refresh)
                 is Content.Ready -> ReadyDays(content.days, state.notice, onIntent, refreshAction)
             }
@@ -201,7 +203,10 @@ private fun LoadingDays() {
 }
 
 @Composable
-private fun EmptyContent(missing: Missing) {
+private fun EmptyContent(
+    missing: Missing,
+    onIntent: (TodayIntent) -> Unit,
+) {
     // Scrollable, so the pull-to-refresh gesture works on this state too.
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).testTag("today.empty")) {
         when (missing) {
@@ -210,6 +215,13 @@ private fun EmptyContent(missing: Missing) {
                     icon = AppIcons.Person,
                     title = stringResource(Res.string.empty_profile_title),
                     body = stringResource(Res.string.empty_profile_body),
+                    action = {
+                        ActionButton(
+                            text = stringResource(Res.string.action_set_up_profile),
+                            onClick = { onIntent(TodayIntent.SetUpProfile) },
+                            modifier = Modifier.testTag("today.setUpProfile"),
+                        )
+                    },
                 )
             }
 
@@ -218,6 +230,13 @@ private fun EmptyContent(missing: Missing) {
                     icon = AppIcons.Pin,
                     title = stringResource(Res.string.empty_spots_title),
                     body = stringResource(Res.string.empty_spots_body),
+                    action = {
+                        ActionButton(
+                            text = stringResource(Res.string.action_pick_spots),
+                            onClick = { onIntent(TodayIntent.PickSpots) },
+                            modifier = Modifier.testTag("today.pickSpots"),
+                        )
+                    },
                 )
             }
         }

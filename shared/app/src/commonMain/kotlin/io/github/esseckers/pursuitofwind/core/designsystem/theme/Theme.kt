@@ -57,6 +57,15 @@ internal object Sizes {
     /** Minimum width and height of anything that can be tapped. */
     val touchTarget = 48.dp
 
+    /** Stroke of a small progress indicator inside a button. */
+    val progressStroke = 2.dp
+
+    /** Widest a form or a list of choices grows on a tablet or in landscape, so lines stay readable. */
+    val contentMaxWidth = 600.dp
+
+    /** Height of a placeholder row while a list of spots loads. */
+    val rowPlaceholder = 64.dp
+
     /** Height of a placeholder card while a day's answer loads. */
     val cardPlaceholder = 196.dp
 

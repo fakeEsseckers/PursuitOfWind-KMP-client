@@ -13,4 +13,10 @@ internal sealed interface TodayIntent {
         val spotId: SpotId,
         val date: LocalDate,
     ) : TodayIntent
+
+    /** Set up the profile that is still missing. */
+    data object SetUpProfile : TodayIntent
+
+    /** Choose favorite spots, none of which is set yet. */
+    data object PickSpots : TodayIntent
 }
