@@ -6,10 +6,10 @@ import kotlin.time.Duration
 import kotlin.time.Instant
 
 /**
- * A clock that only moves when told to. The fake server, and in demo mode the whole app, read time from it, so
- * "two hours later" is one call instead of a wait.
+ * A clock that only moves when told to. Tests give it to the fake server and the app, so "two hours later" is one
+ * call instead of a wait.
  *
- * Reads are safe from any thread. Move it from one place at a time (a test, the demo panel): two concurrent
+ * Reads are safe from any thread. Move it from one place at a time: two concurrent
  * [advanceBy] calls can lose one of the steps.
  */
 public class ControllableClock(
@@ -25,7 +25,7 @@ public class ControllableClock(
         current += duration
     }
 
-    /** Jumps to [instant], also backwards (for example when a demo restarts). */
+    /** Jumps to [instant], also backwards (for example to check a device clock set back). */
     public fun set(instant: Instant) {
         current = instant
     }

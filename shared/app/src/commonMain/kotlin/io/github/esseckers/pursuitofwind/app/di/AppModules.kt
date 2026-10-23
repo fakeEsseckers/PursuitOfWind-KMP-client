@@ -16,8 +16,8 @@ internal fun appModules(
 ): List<Module> = listOf(dataModule(environment, clock), todayModule, spotDetailModule)
 
 /**
- * Starts Koin once per process with [platform] bindings. The app talks to the in-app fake backend until a server
- * exists; demo mode (Issue #10) brings its own environment.
+ * Starts Koin once per process with [platform] bindings. The app talks to the in-app fake backend, which behaves like
+ * a live server, until the real server exists.
  */
 internal fun startKoinOnce(platform: Module) {
     if (KoinPlatform.getKoinOrNull() != null) return

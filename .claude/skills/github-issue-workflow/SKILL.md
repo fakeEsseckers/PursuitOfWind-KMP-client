@@ -23,7 +23,7 @@ The repository owner reads Russian; everything stored in the repo is English.
 ## 3. Verify
 
 - `./scripts/check.sh` is green.
-- For UI changes: run the app (or the demo scenario) and check light/dark and 200% font scale.
+- For UI changes: run the app and check light/dark and 200% font scale.
 - Run the `code-reviewer` subagent on the diff. Fix findings or explain in the PR why they are declined.
 - Optionally run the built-in `/code-review` or `/security-review` commands for a second pass.
 
@@ -38,7 +38,7 @@ test(engine): add DST vectors for Europe/Berlin
 docs(adr): 0004 fake backend at the HTTP layer
 ```
 
-Scopes: `engine`, `contract`, `data`, `fake`, `ui`, `demo`, `android`, `ios`, `ci`, `docs`, `build`.
+Scopes: `engine`, `contract`, `data`, `fake`, `ui`, `android`, `ios`, `ci`, `docs`, `build`.
 
 ## 5. Pull request
 
@@ -63,7 +63,7 @@ code-reviewer findings: fixed / declined (why).
 
 ## 6. Report to the owner (in Russian, 3–5 lines)
 
-What was done, how to check it (command or demo scenario), what is left or risky.
+What was done, how to check it (command or screen), what is left or risky.
 
 ## Creating issues
 
@@ -78,8 +78,8 @@ Use this body for new issues (labels: `phase:client`, `area:<module>`, `priority
 ## Dependencies
 ```
 
-## Releasing the demo APK
+## Releasing the APK
 
 1. All issues for the milestone closed, `main` green.
 2. Tag `vX.Y.Z` → `release.yml` builds the signed release APK and publishes a GitHub Release.
-3. Release notes: what is new, how to open the demo (`pursuitofwind://demo/saturday-on`), known limitations (local notifications only, iOS build not distributed).
+3. Release notes: what is new, that the APK runs on the in-app fake backend, known limitations (local notifications only, iOS build not distributed).

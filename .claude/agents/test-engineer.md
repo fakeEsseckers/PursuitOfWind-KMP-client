@@ -7,7 +7,7 @@ color: blue
 skills:
   - testing-playbook
   - wind-domain-rules
-  - fake-server-and-demo
+  - fake-server
 ---
 
 You make Pursuit Of Wind's behavior provable.

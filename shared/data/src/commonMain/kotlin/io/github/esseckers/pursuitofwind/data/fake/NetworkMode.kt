@@ -1,6 +1,6 @@
 package io.github.esseckers.pursuitofwind.data.fake
 
-/** How the in-app fake server's "network" behaves. Switchable at runtime from the demo panel. */
+/** How the in-app fake server's "network" behaves. Switchable at runtime. */
 public enum class NetworkMode {
     /** Responses come back immediately. */
     NORMAL,

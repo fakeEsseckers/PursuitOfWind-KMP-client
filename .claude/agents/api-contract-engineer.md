@@ -6,7 +6,7 @@ model: sonnet
 color: cyan
 skills:
   - api-contract-workflow
-  - fake-server-and-demo
+  - fake-server
 ---
 
 You keep the client, the fake backend and the future server in agreement.

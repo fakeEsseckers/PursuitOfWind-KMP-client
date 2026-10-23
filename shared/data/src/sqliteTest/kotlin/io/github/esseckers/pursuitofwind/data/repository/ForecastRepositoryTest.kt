@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
@@ -34,6 +35,25 @@ class ForecastRepositoryTest {
                         .byModel.keys,
                 )
                 assertEquals(THURSDAY_MORNING + 20.minutes, cached.updatedAt)
+            }
+        }
+
+    @Test
+    fun `pulling to refresh again brings the next model run`() =
+        runTest {
+            world {
+                val alex = device()
+                val nordstrand = SpotId("nordstrand-bay")
+
+                alex.forecasts.refresh(nordstrand).value()
+                val first = alex.forecasts.forecast(nordstrand).first()
+                clock.advanceBy(1.minutes)
+                alex.forecasts.refresh(nordstrand).value()
+                val second = alex.forecasts.forecast(nordstrand).first()
+
+                assertEquals(first.value.map { it.start }, second.value.map { it.start })
+                assertNotEquals(first.value, second.value)
+                assertEquals(THURSDAY_MORNING + 1.minutes, second.updatedAt)
             }
         }
 

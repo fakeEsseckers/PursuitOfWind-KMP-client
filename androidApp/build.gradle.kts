@@ -25,7 +25,7 @@ android {
 
     buildTypes {
         release {
-            // R8 and release signing arrive with the demo APK release (Issue #11–#12).
+            // R8 and release signing arrive with the release APK (Issue #12).
             isMinifyEnabled = false
         }
     }

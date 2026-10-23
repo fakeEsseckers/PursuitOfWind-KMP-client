@@ -1,6 +1,6 @@
 ---
 name: compose-screen-recipe
-description: The standard pattern for a Pursuit Of Wind screen in Compose Multiplatform — feature package layers, MVI ViewModel with state, intents, results and a reducer, route, stateless screen, previews on demo data, strings, accessibility and test tags. Use when creating or changing any screen, reusable component or the custom wind chart in shared/app.
+description: The standard pattern for a Pursuit Of Wind screen in Compose Multiplatform — feature package layers, MVI ViewModel with state, intents, results and a reducer, route, stateless screen, previews on sample data, strings, accessibility and test tags. Use when creating or changing any screen, reusable component or the custom wind chart in shared/app.
 ---
 
 # Compose screen recipe
@@ -58,7 +58,7 @@ Shared code next to `feature/`:
 - Repositories are the source of truth. The feature's repository interface (in `domain`) exposes cached flows and a `refresh()`; the ViewModel never keeps its own copy of the data.
 - Refresh from `bind()` (`onStart`) when it is due (`TodayRefreshPolicy.isDue`: never refreshed, the last one failed, older than `REFRESH_AFTER`, the clock went back, or data missing), not from `init`. One refresh runs at a time.
 - A refresh never throws into `viewModelScope`: failures come back as `AppError`s (storage exceptions as `AppError.Unknown`, logged with Kermit). Keep errors that only affect part of the screen apart (Today: crew problems do not mark the forecast as failed).
-- Inject `Clock` and anything time-based (`TodayViewModel(repository, clock, riderZone, tick)`); never hard-code `Clock.System` or `Dispatchers.IO` (tests use virtual time; demo uses `ControllableClock`).
+- Inject `Clock` and anything time-based (`TodayViewModel(repository, clock, riderZone, tick)`); never hard-code `Clock.System` or `Dispatchers.IO` (tests use virtual time and `ControllableClock`).
 - Map `AppError` to text with `AppError.message()` (`core/ui/Formatting.kt`); screens only render string resources.
 
 ## State shape
@@ -95,7 +95,7 @@ Cached data always wins over an error: the error replaces the content only when 
 - Times: where something happens (a session at the spot) in that place's time zone; when the rider has to act (leave, a ride departing) and the "today" label in the rider's zone.
 - Lazy list keys are strings (Android saves them in a `Bundle`).
 - `Modifier.testTag("today.day.2026-10-24")` style tags (`<screen>.<element>`) on elements used in UI tests.
-- Previews: one per state in light and dark, from `<Screen>PreviewData`, which the UI tests use too. Demo scenarios (Issue #10) will replace the sample data.
+- Previews: one per state in light and dark, from `<Screen>PreviewData`, which the UI tests use too. Never the live fake backend: its forecast changes on every request.
 
 ## Design system (`io.github.esseckers.pursuitofwind.core.designsystem`)
 

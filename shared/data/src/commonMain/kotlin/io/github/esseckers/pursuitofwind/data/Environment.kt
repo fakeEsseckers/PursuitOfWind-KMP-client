@@ -4,7 +4,7 @@ package io.github.esseckers.pursuitofwind.data
  * Where the app's data comes from, chosen at the entry point (`androidApp`, `iosApp`) and passed to the Koin graph.
  *
  * Each environment keeps its own database, settings and credentials ([storageName]), so data from the fake backend
- * never mixes with a real account, and leaving demo mode can delete everything demo mode wrote.
+ * never mixes with a real account.
  */
 public sealed interface Environment {
     /** File-name stem of this environment's database, settings and secure store. */

@@ -51,7 +51,7 @@ internal class CrewRoutes(
 
     /**
      * Without `since`: the newest events. With `since`: the events after it, oldest first, [CrewFeedDto.hasMore] when
-     * the page is full. An unknown `since` (for example after a demo reset) is `410 FEED_RESET`.
+     * the page is full. An unknown `since` (for example after the server was reset) is `410 FEED_RESET`.
      */
     fun feed(call: FakeCall): FakeResponse {
         val crew = memberCrew(call)

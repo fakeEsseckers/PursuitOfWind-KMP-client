@@ -9,7 +9,7 @@ import kotlin.time.Instant
 internal object SpotDetailRefreshPolicy {
     /**
      * True when the cached forecast is missing or older than [Freshness.REFRESH_AFTER], or the last refresh here failed.
-     * A forecast stamped later than [now] (the clock was set back in demo mode) counts as old. Opening the screen right
+     * A forecast stamped later than [now] (the device clock was set back) counts as old. Opening the screen right
      * after Today refreshed fetches nothing.
      */
     fun isDue(

@@ -13,6 +13,9 @@ internal class SpotRoutes(
     private val state: FakeState,
     private val forecastSeed: Long,
 ) {
+    /** Model runs served per spot: each forecast request is the next one. */
+    private val forecastRuns = mutableMapOf<String, Int>()
+
     fun catalog(call: FakeCall): FakeResponse {
         val limit = call.intQuery("limit", LIMITS, DEFAULT_LIMIT)
         val after =
@@ -58,7 +61,10 @@ internal class SpotRoutes(
         val hours = call.intQuery("hours", HOURS, DEFAULT_HOURS)
         val horizon = call.now.truncatedToHour() + HORIZON
         val count = hours.coerceAtMost(((horizon - from).inWholeHours).toInt().coerceAtLeast(0))
-        val forecast = SpotForecastDto(spot.spot.id, call.now, ForecastGenerator.hours(spot, from, count, forecastSeed))
+        // Every request is a new model run, as on a live server, so a refresh always brings a slightly different forecast.
+        val run = ModelRun(number = forecastRuns.getOrElse(spot.spot.id) { 0 } + 1, at = call.now)
+        forecastRuns[spot.spot.id] = run.number
+        val forecast = SpotForecastDto(spot.spot.id, call.now, ForecastGenerator.hours(spot, from, count, forecastSeed, run))
         return json(SpotForecastDto.serializer(), forecast)
     }
 

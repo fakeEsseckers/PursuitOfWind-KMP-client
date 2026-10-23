@@ -32,7 +32,7 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 
 /**
- * States of the spot detail screen for previews and UI tests: the demo persona (Alex, 80 kg, kites 7 / 9 / 12 m²) at
+ * States of the spot detail screen for previews and UI tests: the sample rider (Alex, 80 kg, kites 7 / 9 / 12 m²) at
  * Nordstrand Bay from Saturday 08:00. Saturday builds to 18–22 kn from the southwest between 13:00 and 17:00, Sunday is
  * windy but gusty, Monday turns offshore. The models disagree a little everywhere, so the band shows. The states are
  * computed by the real mapper and engine, so they are what the app would show for this forecast.

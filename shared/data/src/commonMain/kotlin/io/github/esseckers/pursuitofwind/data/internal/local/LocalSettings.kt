@@ -72,7 +72,7 @@ internal class LocalSettings(
         }
     }
 
-    /** Stops the store, so another one can open the same file (leaving and re-entering demo mode). */
+    /** Stops the store, so another one can open the same file (when the Koin graph is closed and started again). */
     override fun close() {
         scope?.cancel()
     }

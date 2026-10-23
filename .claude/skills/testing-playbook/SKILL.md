@@ -18,7 +18,7 @@ description: How tests are written and run in Pursuit Of Wind — test pyramid, 
 | MVI base (`MviViewModel`) | `:shared:app` `commonTest` | coroutines-test, Turbine, a test ViewModel | once |
 | ViewModels | `:shared:app` `jvmTest` | Turbine, `StandardTestDispatcher`, `ControllableClock`, the real data layer through `appModules(Environment.Fake, clock)` | per screen |
 | Screens | `:shared:app` `jvmTest` | Compose UI test on the desktop runtime (`androidx.compose.ui.test.v2.runComposeUiTest`) | each state, semantics, 200% font |
-| Screenshots | Android/JVM | Roborazzi (optional) | key screens × demo scenarios |
+| Screenshots | Android/JVM | Roborazzi (optional) | key screens × preview states |
 
 ## Conventions
 
@@ -32,7 +32,7 @@ description: How tests are written and run in Pursuit Of Wind — test pyramid, 
 ## Coroutines
 
 - Use `runTest` with `StandardTestDispatcher`; inject the test dispatcher into ViewModels and repositories.
-- Advance time with `advanceTimeBy` / `advanceUntilIdle`; for demo time use `ControllableClock.advanceBy`.
+- Advance time with `advanceTimeBy` / `advanceUntilIdle`; for the app's and the fake's time use `ControllableClock.advanceBy`.
 - Collect flows with Turbine: `viewModel.state.test { … awaitItem() … cancelAndIgnoreRemainingEvents() }`.
 - Assert every emitted state that matters (loading → ready), not only the last one.
 
@@ -60,6 +60,7 @@ fun `a retried seat request does not take a second seat`() =
 
 - Tests sit in the same package as the code they test (`feature/today/presentation/mapper/DayCardsMapperTest`).
 - `testGraph(clock)` in `jvmTest/.../testing/TestGraph.kt` is the app's Koin graph for the fake environment with a steady 18 kn seed; ViewModel and navigation tests start from it instead of building their own.
+- A test that runs view models on `testGraph` ends with `releaseMainDispatcher()` (`jvmTest/.../testing/MainDispatcher.kt`), not `Dispatchers.resetMain()`. A Room query that finishes on an IO thread after the test still resumes its cancelled caller through Main; with Main reset to "missing" that throws, and the next test fails with `UncaughtExceptionsBeforeTest`.
 - Navigation rules are tested without UI: `Navigator` works on a plain `MutableList<NavKey>` (`NavigatorTest`). `DestinationSavedStateTest` (`jvmTest`: saved state on Android is a `Bundle`, which host tests lack) checks that every subclass of the sealed `Destination` is registered in `navigationConfiguration` and that a back stack survives saving and restoring.
 - A UI test with real ViewModels and navigation (`AppNavigationTest`) wraps the content in `KoinIsolatedContext(testGraph(clock))` and a `LocalViewModelStoreOwner`, and sets `Dispatchers.setMain(Dispatchers.Unconfined)`: the desktop test runtime has no main dispatcher, and lifecycle checks that entries move on the main thread. Wait for screens with `waitUntil(timeoutMillis = …)`, because Room and HTTP run on real threads.
 - Reducers are pure: give them a state and a result and compare the next state. Test the rules in the state mapper, and in the reducer only what the reducer itself records (Today: the refresh status and the inputs).

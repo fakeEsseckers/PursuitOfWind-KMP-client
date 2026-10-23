@@ -12,7 +12,7 @@ description: Module layout, source sets, dependency rules and platform-code poli
 | `:shared:windengine` | android, ios (arm64, simulatorArm64), jvm | engine types and pure functions | any I/O, DI, serialization, platform API |
 | `:shared:contract` | android, ios, jvm | `@Serializable` DTOs mirroring `api/openapi.yaml`, error body, enums | business logic, mapping to domain |
 | `:shared:data` | android, ios, jvm (tests only) | Ktor client, `FakePursuitOfWindServer`, Room 3 (KSP), DataStore, repositories, `AppError`, DTO↔domain mappers, platform service interfaces, `dataModule(environment)` | Compose, ViewModels |
-| `:shared:app` | android, ios, jvm (tests only) | screens as `feature.<name>` packages with MVI ViewModels and Compose UI, `core` (MVI base, design system), navigation, DI graph (`appModules`, started by `startPursuitOfWind` on Android and `MainViewController` on iOS), demo mode UI; exports iOS framework `PursuitOfWindKit` | Ktor or Room types in public APIs |
+| `:shared:app` | android, ios, jvm (tests only) | screens as `feature.<name>` packages with MVI ViewModels and Compose UI, `core` (MVI base, design system), navigation, DI graph (`appModules`, started by `startPursuitOfWind` on Android and `MainViewController` on iOS); exports iOS framework `PursuitOfWindKit` | Ktor or Room types in public APIs |
 | `:androidApp` | android | `Application`, `MainActivity`, WorkManager workers, notification channel, manifest, deep links, signing | shared business logic |
 | `iosApp/` | — | Xcode project, SwiftUI `App`, `Info.plist`, BG task registration | business logic |
 | `:testing:openapi` | jvm (plain Kotlin/JVM) | `OpenApiSpec`: loads `api/openapi.yaml`, validates JSON against its schemas, checks recorded requests and responses | anything production code needs |
@@ -66,7 +66,7 @@ io.github.esseckers.pursuitofwind/
     designsystem/           # theme/, component/, icon/
     ui/                     # formatting and labels shared by screens
     resources/              # generated Res (packageOfResClass)
-  feature/<screen>/         # today, spotdetail, profile, spots, crew, settings, demo
+  feature/<screen>/         # today, spotdetail, profile, spots, crew, settings
     domain/model/           # the feature's models
     domain/repository/      # the repository interface the feature needs
     data/repository/        # its implementation over the :shared:data repositories

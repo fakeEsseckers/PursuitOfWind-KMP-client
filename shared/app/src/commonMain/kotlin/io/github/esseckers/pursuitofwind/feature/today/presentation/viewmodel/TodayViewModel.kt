@@ -26,7 +26,7 @@ import kotlin.time.Instant
 /**
  * Today's decisions in MVI. While the screen is shown, the cached data and the ticking [clock] come in as results;
  * the screen refreshes as it appears when [TodayRefreshPolicy] says so, and on [TodayIntent.Refresh]. Decisions are
- * recomputed every [tick], so "leave by" and "updated 5 min ago" stay true; demo mode passes a controllable clock.
+ * recomputed every [tick], so "leave by" and "updated 5 min ago" stay true; tests pass a controllable clock.
  * Opening a spot is a [TodayEffect]; a failed refresh is part of the state, not an effect.
  */
 internal class TodayViewModel(
