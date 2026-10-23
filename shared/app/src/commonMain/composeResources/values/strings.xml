@@ -197,6 +197,11 @@
     <string name="unit_name_meters_per_second">m/s</string>
     <string name="unit_name_kilometers_per_hour">km/h</string>
     <string name="unit_name_beaufort">Beaufort</string>
+    <string name="profile_language">Language</string>
+    <string name="language_system">As on the phone</string>
+    <!-- Each language by its own name, the same in every translation. -->
+    <string name="language_english">English</string>
+    <string name="language_russian">Русский</string>
     <string name="profile_more">More settings</string>
     <string name="profile_min_session">Shortest session worth the drive</string>
     <string name="profile_min_session_shorter">Shorter session</string>

@@ -11,7 +11,9 @@ import io.github.esseckers.pursuitofwind.core.resources.error_network
 import io.github.esseckers.pursuitofwind.data.fake.ControllableClock
 import io.github.esseckers.pursuitofwind.data.fake.FakePursuitOfWindServer
 import io.github.esseckers.pursuitofwind.data.fake.NetworkMode
+import io.github.esseckers.pursuitofwind.data.model.AppLanguage
 import io.github.esseckers.pursuitofwind.data.model.WindUnit
+import io.github.esseckers.pursuitofwind.data.repository.PreferencesRepository
 import io.github.esseckers.pursuitofwind.data.repository.ProfileRepository
 import io.github.esseckers.pursuitofwind.engine.model.SkillLevel
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileEdit
@@ -171,6 +173,22 @@ class ProfileViewModelTest {
                     ?.rider
                     ?.weightKg,
             )
+        }
+
+    @Test
+    fun `a language picked is stored at once and shown without saving the form`() =
+        runTest(dispatcher) {
+            val viewModel = viewModel()
+            viewModel.state.test(timeout = TURBINE_TIMEOUT) {
+                awaitState { !it.loading }
+                viewModel.onIntent(ProfileIntent.ChooseLanguage(AppLanguage.RUSSIAN))
+                val russian = awaitState { it.language == AppLanguage.RUSSIAN }
+
+                assertFalse(russian.saving)
+                cancelAndIgnoreRemainingEvents()
+            }
+            assertEquals(AppLanguage.RUSSIAN, koin.get<PreferencesRepository>().language.first())
+            assertNull(profiles.profile.first().value)
         }
 
     @Test

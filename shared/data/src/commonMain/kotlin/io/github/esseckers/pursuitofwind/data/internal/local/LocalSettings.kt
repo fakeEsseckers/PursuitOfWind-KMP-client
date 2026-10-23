@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import io.github.esseckers.pursuitofwind.contract.ContractJson
 import io.github.esseckers.pursuitofwind.contract.RiderProfileDto
+import io.github.esseckers.pursuitofwind.data.model.AppLanguage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -28,8 +29,8 @@ internal data class StoredProfile(
 )
 
 /**
- * Small values in DataStore Preferences: the rider's profile and the id of the user the cache belongs to. Later
- * also notification de-duplication (Issue #11).
+ * Small values in DataStore Preferences: the rider's profile, the id of the user the cache belongs to, and the app's
+ * language. Later also notification de-duplication (Issue #11).
  */
 internal class LocalSettings(
     private val store: DataStore<Preferences>,
@@ -60,6 +61,16 @@ internal class LocalSettings(
         }
     }
 
+    /** The app's language; a device choice, so a new owner of the cache keeps it. */
+    val language: Flow<AppLanguage> = store.data.map { AppLanguage.of(it[LANGUAGE]) }
+
+    suspend fun saveLanguage(language: AppLanguage) {
+        store.edit { preferences ->
+            val tag = language.tag
+            if (tag == null) preferences.remove(LANGUAGE) else preferences[LANGUAGE] = tag
+        }
+    }
+
     /** The user whose data the cache holds, null on a fresh install. */
     suspend fun cacheOwner(): String? = store.data.first()[CACHE_OWNER]
 
@@ -81,6 +92,7 @@ internal class LocalSettings(
         private val PROFILE = stringPreferencesKey("profile")
         private val PROFILE_UPDATED_AT = longPreferencesKey("profile_updated_at")
         private val CACHE_OWNER = stringPreferencesKey("cache_owner")
+        private val LANGUAGE = stringPreferencesKey("language")
 
         /**
          * One open store per file per process: open it once (Koin `single`) and [close] it before opening the file

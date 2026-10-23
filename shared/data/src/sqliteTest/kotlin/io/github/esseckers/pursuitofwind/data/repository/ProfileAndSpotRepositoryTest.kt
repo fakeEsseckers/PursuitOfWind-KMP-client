@@ -3,6 +3,7 @@ package io.github.esseckers.pursuitofwind.data.repository
 import io.github.esseckers.pursuitofwind.data.fake.NetworkMode
 import io.github.esseckers.pursuitofwind.data.fake.THURSDAY_MORNING
 import io.github.esseckers.pursuitofwind.data.model.AppError
+import io.github.esseckers.pursuitofwind.data.model.AppLanguage
 import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.errorOrNull
 import io.github.esseckers.pursuitofwind.data.network.fakeServer
@@ -36,6 +37,29 @@ class ProfileAndSpotRepositoryTest {
                         .first()
                         .value,
                 )
+            }
+        }
+
+    @Test
+    fun `the language is a choice of the device that a new owner of the cache keeps`() =
+        runTest {
+            world {
+                val alex = device()
+
+                assertEquals(AppLanguage.SYSTEM, alex.preferences.language.first())
+                alex.preferences.setLanguage(AppLanguage.RUSSIAN).value()
+                alex.profiles.save(ALEX).value()
+                alex.settings.switchOwner("usr_9999")
+
+                assertEquals(AppLanguage.RUSSIAN, alex.preferences.language.first())
+                assertEquals(
+                    null,
+                    alex.profiles.profile
+                        .first()
+                        .value,
+                )
+                alex.preferences.setLanguage(AppLanguage.SYSTEM).value()
+                assertEquals(AppLanguage.SYSTEM, alex.preferences.language.first())
             }
         }
 

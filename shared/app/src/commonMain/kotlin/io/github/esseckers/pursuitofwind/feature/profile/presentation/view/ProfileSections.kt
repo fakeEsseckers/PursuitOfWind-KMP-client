@@ -42,6 +42,7 @@ import io.github.esseckers.pursuitofwind.core.resources.decimal_separator
 import io.github.esseckers.pursuitofwind.core.resources.kite_size
 import io.github.esseckers.pursuitofwind.core.resources.profile_kites
 import io.github.esseckers.pursuitofwind.core.resources.profile_kites_hint
+import io.github.esseckers.pursuitofwind.core.resources.profile_language
 import io.github.esseckers.pursuitofwind.core.resources.profile_level
 import io.github.esseckers.pursuitofwind.core.resources.profile_level_hint
 import io.github.esseckers.pursuitofwind.core.resources.profile_max_drive
@@ -64,6 +65,7 @@ import io.github.esseckers.pursuitofwind.core.resources.unit_kg
 import io.github.esseckers.pursuitofwind.core.ui.durationText
 import io.github.esseckers.pursuitofwind.core.ui.formatKiteSize
 import io.github.esseckers.pursuitofwind.core.ui.windUnitLabel
+import io.github.esseckers.pursuitofwind.data.model.AppLanguage
 import io.github.esseckers.pursuitofwind.data.model.WindUnit
 import io.github.esseckers.pursuitofwind.engine.model.SkillLevel
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.mapper.ProfileFormMapper
@@ -169,6 +171,25 @@ internal fun UnitChoice(
                 onClick = { onEdit(ProfileEdit.Units(choice)) },
                 singleChoice = true,
                 modifier = Modifier.testTag("profile.unit.${choice.name}"),
+            )
+        }
+    }
+}
+
+/** The app's language: the phone's, or one the app is translated into. It applies at once, without saving. */
+@Composable
+internal fun LanguageChoice(
+    language: AppLanguage,
+    onChoose: (AppLanguage) -> Unit,
+) {
+    ChoiceGroup(title = stringResource(Res.string.profile_language), singleChoice = true) {
+        AppLanguage.entries.forEach { choice ->
+            ChoiceChip(
+                label = stringResource(languageLabel(choice)),
+                selected = choice == language,
+                onClick = { onChoose(choice) },
+                singleChoice = true,
+                modifier = Modifier.testTag("profile.language.${choice.name}"),
             )
         }
     }

@@ -120,6 +120,7 @@ private fun ProfileForm(
             LevelChoice(level = state.form.level, onEdit = onEdit)
             KiteChoices(kites = state.kites, onEdit = onEdit)
             UnitChoice(unit = state.form.unit, onEdit = onEdit)
+            LanguageChoice(language = state.language, onChoose = { onIntent(ProfileIntent.ChooseLanguage(it)) })
             MoreSettings(form = state.form, version = state.formVersion, errors = state.errors, onEdit = onEdit)
             SaveArea(state = state, mode = mode, onSave = { onIntent(ProfileIntent.Save) })
         }

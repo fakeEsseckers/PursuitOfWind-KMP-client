@@ -14,6 +14,7 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isHeading
@@ -27,6 +28,7 @@ import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.test.v2.runSkikoComposeUiTest
 import androidx.compose.ui.unit.Density
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.PursuitOfWindTheme
+import io.github.esseckers.pursuitofwind.data.model.AppLanguage
 import io.github.esseckers.pursuitofwind.data.model.WindUnit
 import io.github.esseckers.pursuitofwind.engine.model.SkillLevel
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileEdit
@@ -190,6 +192,22 @@ class ProfileScreenTest {
             onNodeWithTag("profile.name").assert(hasText("Al"))
             state = ProfilePreviewData.saved.copy(formVersion = state.formVersion + 1)
             onNodeWithTag("profile.name").assert(hasText("Alex"))
+        }
+
+    @Test
+    fun `every language is offered by its own name and a tap picks it`() =
+        runComposeUiTest {
+            show(ProfilePreviewData.saved)
+
+            onNodeWithTag("profile.language.SYSTEM")
+                .performScrollTo()
+                .assert(hasText("As on the phone"))
+                .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton))
+                .assertIsSelected()
+            onNodeWithTag("profile.language.ENGLISH").assert(hasText("English"))
+            onNodeWithTag("profile.language.RUSSIAN").assert(hasText("Русский")).performClick()
+
+            assertEquals(listOf<ProfileIntent>(ProfileIntent.ChooseLanguage(AppLanguage.RUSSIAN)), intents)
         }
 
     @Test

@@ -87,7 +87,7 @@ Cached data always wins over an error: the error replaces the content only when 
 ## Screen rules
 
 - Stateless composables, `Modifier` as the first optional parameter, hoisted state.
-- Strings only from Compose Multiplatform resources, EN + RU, including plurals (`pluralStringResource`). Reason copy follows the table in `docs/domain-rules.md`.
+- Strings only from Compose Multiplatform resources, EN + RU, including plurals (`pluralStringResource`). The rider can pick the language in the profile (`AppLanguage`, stored by `PreferencesRepository`); `AppNavigation` wraps the screens in `AppLanguageScope`, which sets the platform locale (`appLocale`, expect/actual) and composes them again. Anything that must survive a language change (the back stack, the ViewModel store decorator) stays outside the scope; never read a string into a `remember` that outlives it. Reason copy follows the table in `docs/domain-rules.md`.
 - Verdict display: icon + label + color, never color alone: `VerdictBadge`, `VerdictCard`, `ConfidenceChip`.
 - Accessibility: meaningful `contentDescription` (or `null` for decorative icons next to text), merged semantics for cards and banners, headings (cards too, so screen readers can jump between them), live regions for messages that replace content, minimum touch target 48 dp, layouts that wrap (`FlowRow`) and survive 200% font scale.
 - Where pull-to-refresh is the only way to refresh, add a custom "Refresh" action to nodes screen readers focus (the merged title and each card); an action on an unfocusable container is never offered. A screen opened from another one has a refresh button in its `ScreenTopBar` instead.

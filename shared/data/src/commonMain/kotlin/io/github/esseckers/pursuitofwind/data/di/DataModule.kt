@@ -12,6 +12,7 @@ import io.github.esseckers.pursuitofwind.data.internal.sync.CrewStore
 import io.github.esseckers.pursuitofwind.data.repository.AccountRepository
 import io.github.esseckers.pursuitofwind.data.repository.CrewRepository
 import io.github.esseckers.pursuitofwind.data.repository.ForecastRepository
+import io.github.esseckers.pursuitofwind.data.repository.PreferencesRepository
 import io.github.esseckers.pursuitofwind.data.repository.ProfileRepository
 import io.github.esseckers.pursuitofwind.data.repository.RideRepository
 import io.github.esseckers.pursuitofwind.data.repository.SpotRepository
@@ -64,6 +65,7 @@ public fun dataModule(
         single { CrewFeedSync(get(), get(), get(), get()) }
         singleOf(::AccountRepository)
         singleOf(::ProfileRepository)
+        singleOf(::PreferencesRepository)
         singleOf(::SpotRepository)
         singleOf(::ForecastRepository)
         singleOf(::CrewRepository)

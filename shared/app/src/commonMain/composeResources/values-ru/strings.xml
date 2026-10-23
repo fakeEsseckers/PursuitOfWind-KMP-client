@@ -209,6 +209,11 @@
     <string name="unit_name_meters_per_second">м/с</string>
     <string name="unit_name_kilometers_per_hour">км/ч</string>
     <string name="unit_name_beaufort">Бофорт</string>
+    <string name="profile_language">Язык</string>
+    <string name="language_system">Как на телефоне</string>
+    <!-- Each language by its own name, the same in every translation. -->
+    <string name="language_english">English</string>
+    <string name="language_russian">Русский</string>
     <string name="profile_more">Дополнительно</string>
     <string name="profile_min_session">Самая короткая сессия, ради которой стоит ехать</string>
     <string name="profile_min_session_shorter">Короче</string>

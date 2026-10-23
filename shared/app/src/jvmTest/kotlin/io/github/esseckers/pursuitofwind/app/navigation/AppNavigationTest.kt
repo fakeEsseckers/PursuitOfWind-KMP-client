@@ -11,7 +11,10 @@ import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performTextClearance
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
@@ -155,6 +158,28 @@ class AppNavigationTest {
             val saturday = "today.day.$SATURDAY"
             waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag(saturday)).fetchSemanticsNodes().isNotEmpty() }
             onNodeWithTag("tab.today").assertIsSelected()
+        }
+
+    @Test
+    fun `a language picked in the profile switches the whole app and keeps the screen and the draft`() =
+        runComposeUiTest {
+            setContent {
+                KoinIsolatedContext(graph) {
+                    CompositionLocalProvider(LocalViewModelStoreOwner provides owner) { PursuitOfWindTheme { AppNavigation() } }
+                }
+            }
+
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("today.header")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("tab.profile").performClick()
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("profile.form")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("profile.weight").performTextClearance()
+            onNodeWithTag("profile.weight").performTextInput("78")
+            onNodeWithTag("profile.language.RUSSIAN").performScrollTo().performClick()
+
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(isHeading() and hasText("Профиль")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("tab.profile").assertIsSelected()
+            onNodeWithTag("tab.today").assert(hasText("Сегодня"))
+            onNodeWithTag("profile.weight").assert(hasText("78"))
         }
 
     @Test
