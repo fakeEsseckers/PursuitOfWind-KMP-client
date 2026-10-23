@@ -43,7 +43,7 @@ fun at(
     minute: Int = 0,
 ): Instant = LocalDateTime(date, LocalTime(hour, minute)).toInstant(BERLIN)
 
-/** The demo persona: 80 kg, intermediate, kites 7 / 9 / 12 m². */
+/** The sample rider: 80 kg, intermediate, kites 7 / 9 / 12 m². */
 fun alex(unit: WindUnit = WindUnit.KNOTS): Profile =
     Profile(displayName = "Alex", rider = RiderProfile(80.0, SkillLevel.INTERMEDIATE, listOf(7.0, 9.0, 12.0)), windUnit = unit)
 

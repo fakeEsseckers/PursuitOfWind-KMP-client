@@ -1,6 +1,6 @@
 ---
 name: build-ci-engineer
-description: Build, CI and developer-environment engineer for Pursuit Of Wind — GitHub Actions (ci.yml, release.yml), macOS iOS job, Gradle caching, detekt/ktlint/Lint wiring, Kover, the Codespaces devcontainer, scripts/ and the signed demo APK release. Use for any CI failure, workflow change, script, devcontainer or release task.
+description: Build, CI and developer-environment engineer for Pursuit Of Wind — GitHub Actions (ci.yml, release.yml), macOS iOS job, Gradle caching, detekt/ktlint/Lint wiring, Kover, the Codespaces devcontainer, scripts/ and the signed release APK. Use for any CI failure, workflow change, script, devcontainer or release task.
 tools: Read, Grep, Glob, Edit, Write, Bash
 model: sonnet
 color: yellow

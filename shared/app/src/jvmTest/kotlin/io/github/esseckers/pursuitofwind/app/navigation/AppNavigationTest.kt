@@ -24,12 +24,12 @@ import io.github.esseckers.pursuitofwind.feature.spotdetail.NORDSTRAND
 import io.github.esseckers.pursuitofwind.feature.spotdetail.SATURDAY
 import io.github.esseckers.pursuitofwind.feature.spotdetail.alex
 import io.github.esseckers.pursuitofwind.feature.spotdetail.at
+import io.github.esseckers.pursuitofwind.testing.releaseMainDispatcher
 import io.github.esseckers.pursuitofwind.testing.testGraph
 import io.github.esseckers.pursuitofwind.testing.value
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.koin.compose.KoinIsolatedContext
 import java.util.Locale
@@ -76,7 +76,7 @@ class AppNavigationTest {
     fun tearDown() {
         viewModels.clear()
         graph.close()
-        Dispatchers.resetMain()
+        releaseMainDispatcher()
         Locale.setDefault(systemLocale)
     }
 

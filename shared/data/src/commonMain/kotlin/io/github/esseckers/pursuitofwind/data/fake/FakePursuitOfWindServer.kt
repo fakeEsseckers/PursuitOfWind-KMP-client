@@ -29,8 +29,8 @@ import kotlin.time.Duration.Companion.seconds
  * for real against it; switching to the real backend means switching the engine and base URL, nothing else.
  *
  * Requests are handled one at a time. Everything is deterministic for a given [seed] and [clock], including ids,
- * invite codes, forecasts and the failures of [NetworkMode.FLAKY] (for requests sent one after another; concurrent
- * requests take the failures in the order they get the lock).
+ * invite codes, forecast model runs and the failures of [NetworkMode.FLAKY] (for requests sent one after another;
+ * concurrent requests take failures and model runs in the order they get the lock).
  *
  * @param dispatcher where the engine runs; tests pass a test dispatcher so [NetworkMode.SLOW] waits in virtual time.
  */
@@ -39,7 +39,7 @@ public class FakePursuitOfWindServer(
     seed: Seed = Seed.default(clock.now()),
     dispatcher: CoroutineDispatcher? = null,
 ) {
-    /** Can be switched at any time, for example from the demo panel. */
+    /** Can be switched at any time, for example by a test while the app runs. */
     @Volatile
     public var networkMode: NetworkMode = NetworkMode.NORMAL
 

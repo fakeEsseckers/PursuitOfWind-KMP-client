@@ -21,7 +21,7 @@ import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 
 /**
- * States of the Today screen for previews and UI tests, modelled on the demo persona (Alex, 80 kg, kites 7 / 9 / 12 m²)
+ * States of the Today screen for previews and UI tests, modelled on the sample rider (Alex, 80 kg, kites 7 / 9 / 12 m²)
  * on a Thursday: gusty today, a short window tomorrow, Saturday on at Nordstrand Bay with Andrei driving.
  */
 internal object TodayPreviewData {

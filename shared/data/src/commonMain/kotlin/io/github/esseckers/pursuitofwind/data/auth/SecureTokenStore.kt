@@ -19,7 +19,7 @@ internal interface SecureTokenStore {
     suspend fun delete(key: String)
 }
 
-/** For tests, the JVM and demo sessions that must not outlive the process. */
+/** For tests and the JVM: sessions that must not outlive the process. */
 internal class InMemorySecureTokenStore : SecureTokenStore {
     private val values = mutableMapOf<String, String>()
 

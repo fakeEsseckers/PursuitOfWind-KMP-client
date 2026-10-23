@@ -19,7 +19,7 @@ internal object TodayRefreshPolicy {
         val startedAt = refresh.startedAt
         return startedAt == null ||
             refresh.last?.forecastError != null ||
-            // A clock set back (demo time travel) makes the last refresh look like it is from the future.
+            // A device clock set back makes the last refresh look like it is from the future.
             now < startedAt ||
             now - startedAt >= Freshness.REFRESH_AFTER ||
             snapshot.spots.value.any { it.favorite && snapshot.forecasts[it.spot.id]?.value.isNullOrEmpty() }

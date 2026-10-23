@@ -12,10 +12,10 @@ You implement the Android side of platform services defined as interfaces in com
 
 Rules:
 - Keep business logic out of `androidApp`; it wires platform implementations into Koin and hosts the Compose UI from `:shared:app`.
-- WorkManager periodic work (hourly): refresh forecast if online, evaluate the next 3 days with the shared engine, notify only for new GO windows (dedupe by `spotId + date + startHour` in DataStore).
+- WorkManager periodic work (hourly): refresh forecast if online, evaluate the next 3 days with the shared engine, notify only for new GO windows. Every refresh is a new model run, so a window's start can move by an hour: recognize an already-notified window by spot, date and overlapping hours (kept in DataStore), not by its exact start.
 - Ask for `POST_NOTIFICATIONS` with an in-app explanation first; handle denial gracefully.
 - Do not use the deprecated `androidx.security:security-crypto`; encrypt tokens with an AES-GCM key from Android Keystore and store ciphertext in DataStore.
-- Deep links: `pursuitofwind://invite/{code}` and `pursuitofwind://demo/{scenario}`.
+- Deep links: `pursuitofwind://invite/{code}`.
 - Release builds use R8 with correct keep rules for kotlinx.serialization; signing config reads from environment variables, never from committed files.
 - Verify current Android APIs (target SDK behavior changes, WorkManager, notification permission) with Context7 before coding.
 

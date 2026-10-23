@@ -11,7 +11,7 @@ description: Contract-first workflow for the Pursuit Of Wind API — editing api
 
 1. **Spec.** Edit `api/openapi.yaml`. Add or update an `example` for every new schema and response.
 2. **DTOs.** Mirror the change in `:shared:contract` (`io.github.esseckers.pursuitofwind.contract`). DTO names end with `Dto`; enums are serialized in `SCREAMING_SNAKE_CASE` exactly as in the spec.
-3. **Fake server.** Update the handler in `FakePursuitOfWindServer` (see skill `fake-server-and-demo`).
+3. **Fake server.** Update the handler in `FakePursuitOfWindServer` (see skill `fake-server`).
 4. **Contract tests.** Reach every new status in the tour (`Tour.kt` in `:shared:data` `commonTest`). `FakeServerContractTest` (`jvmTest`) replays every exchange against the spec and fails on an unreached documented status, a schema violation, a missing required header, or a request the spec rejects that the fake accepted. Behavior beyond the schema (seat math, paging, idempotency) gets its own `commonTest`.
 5. **Mappers and repositories.** Update DTO↔domain mappers in `:shared:data`. Domain types never leak DTOs to the UI.
 6. **Changelog.** Add a line to `api/CHANGELOG.md` (date, change, breaking or not).

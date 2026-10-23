@@ -20,7 +20,7 @@ Check, in this order:
 2. Architecture: module dependency rules, platform-code policy, no DTOs or Ktor/Room types leaking into UI, no `Clock.System` in the engine.
 3. Concurrency: structured concurrency, cancellation, `Mutex` around shared state, no `GlobalScope`, correct dispatchers, no blocking calls on the main thread, Flow collection lifecycle.
 4. KMP pitfalls: Android-only APIs in `commonMain`, `expect/actual` overuse, iOS memory and threading assumptions.
-5. Security and privacy: secrets, token logging, insecure storage, deep-link input validation, data leaving the device in FAKE/DEMO modes.
+5. Security and privacy: secrets, token logging, insecure storage, deep-link input validation, data leaving the device in the fake environment.
 6. Tests: missing cases, tests that would pass with a broken implementation, flakiness risks.
 7. Readability: naming, dead code, comments that restate code, TODOs without issue links.
 

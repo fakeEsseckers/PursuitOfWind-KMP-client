@@ -1,6 +1,6 @@
 # 0005. Contract-first API with an in-app fake backend at the HTTP layer
 
-- Status: Accepted
+- Status: Accepted; the rule that forecasts are a pure function of seed, spot, hour and model is superseded by [0010](0010-live-fake-backend-instead-of-demo-mode.md)
 - Date: 2026-10-22
 
 ## Context

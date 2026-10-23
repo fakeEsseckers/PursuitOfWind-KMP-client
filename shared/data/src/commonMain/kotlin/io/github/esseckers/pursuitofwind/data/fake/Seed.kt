@@ -14,7 +14,7 @@ import kotlin.time.Instant
  * Initial state of the fake server. Everything the fake generates later (ids, invite codes, flaky failures) comes
  * from [randomSeed], so the same seed and the same requests always give the same responses.
  *
- * A seed is checked when it is built, so a broken demo scenario fails at once instead of serving invalid responses.
+ * A seed is checked when it is built, so a broken seed fails at once instead of serving invalid responses.
  */
 public data class Seed(
     val spots: List<SeedSpot>,
@@ -159,6 +159,10 @@ private fun spot(
     danger: List<SectorDto> = emptyList(),
 ) = SpotDto(id, name, location, "Europe/Berlin", rideable, danger, DataQualityDto.VERIFIED)
 
+/** How much a new model run moves the wind three days out, like a real forecast update: a few knots, a few degrees. */
+private const val LIVE_DRIFT_KN = 4.0
+private const val LIVE_DRIFT_DEG = 15.0
+
 private val DEFAULT_SPOTS: List<SeedSpot> =
     listOf(
         SeedSpot(
@@ -181,6 +185,8 @@ private val DEFAULT_SPOTS: List<SeedSpot> =
                 noiseKn = 1.5,
                 rainyShare = 0.12,
                 temperatureC = 17.0,
+                runDriftKn = LIVE_DRIFT_KN,
+                runDriftDeg = LIVE_DRIFT_DEG,
             ),
         ),
         SeedSpot(
@@ -197,6 +203,8 @@ private val DEFAULT_SPOTS: List<SeedSpot> =
                 noiseKn = 1.5,
                 rainyShare = 0.15,
                 temperatureC = 16.0,
+                runDriftKn = LIVE_DRIFT_KN,
+                runDriftDeg = LIVE_DRIFT_DEG,
             ),
         ),
         SeedSpot(
@@ -218,6 +226,8 @@ private val DEFAULT_SPOTS: List<SeedSpot> =
                 noiseKn = 2.0,
                 rainyShare = 0.18,
                 temperatureC = 18.0,
+                runDriftKn = LIVE_DRIFT_KN,
+                runDriftDeg = LIVE_DRIFT_DEG,
             ),
         ),
         SeedSpot(
@@ -234,6 +244,8 @@ private val DEFAULT_SPOTS: List<SeedSpot> =
                 noiseKn = 1.5,
                 rainyShare = 0.15,
                 temperatureC = 15.0,
+                runDriftKn = LIVE_DRIFT_KN,
+                runDriftDeg = LIVE_DRIFT_DEG,
             ),
         ),
         SeedSpot(
@@ -256,6 +268,8 @@ private val DEFAULT_SPOTS: List<SeedSpot> =
                 noiseKn = 2.0,
                 rainyShare = 0.2,
                 temperatureC = 16.0,
+                runDriftKn = LIVE_DRIFT_KN,
+                runDriftDeg = LIVE_DRIFT_DEG,
             ),
         ),
     )

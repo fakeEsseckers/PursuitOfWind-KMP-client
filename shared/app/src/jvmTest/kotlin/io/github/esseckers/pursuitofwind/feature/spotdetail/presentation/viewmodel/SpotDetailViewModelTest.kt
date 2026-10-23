@@ -26,12 +26,12 @@ import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.S
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState.Content
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState.Missing
+import io.github.esseckers.pursuitofwind.testing.releaseMainDispatcher
 import io.github.esseckers.pursuitofwind.testing.testGraph
 import io.github.esseckers.pursuitofwind.testing.value
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.LocalDate
@@ -69,7 +69,7 @@ class SpotDetailViewModelTest {
     fun tearDown() {
         viewModels.clear()
         koin.close()
-        Dispatchers.resetMain()
+        releaseMainDispatcher()
     }
 
     private fun viewModel(

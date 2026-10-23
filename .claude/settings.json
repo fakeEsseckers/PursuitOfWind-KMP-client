@@ -19,7 +19,7 @@
       "Bash(git rebase:*)",
       "Bash(git clean:*)",
       "Bash(rm -rf:*)",
-      "Bash(./scripts/build-demo-apk.sh:*)"
+      "Bash(./scripts/build-release-apk.sh:*)"
     ],
     "deny": [
       "Read(./.env)",

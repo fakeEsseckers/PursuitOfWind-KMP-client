@@ -50,7 +50,7 @@ Dependencies point one way: `androidApp → app → data → (windengine, contra
 2. Contract first: `api/openapi.yaml` → DTOs → fake route → contract test. Never the other way round.
 3. The fake backend sits at the HTTP layer (an in-process Ktor engine). No fake repositories.
 4. Platform services are interfaces in common code with platform implementations bound in Koin. `expect/actual` only for small factories.
-5. Demo mode uses its own database and DataStore and never touches user data.
+5. There is no demo mode. The in-app fake backend behaves like a live server (every forecast request is a new model run) while staying deterministic for a seed and a sequence of requests (ADR 0010).
 6. No secrets in the repo. Signing material and tokens come from environment variables or CI secrets.
 7. Verify library APIs and versions with Context7 or official docs before using them. Use the latest stable versions via `gradle/libs.versions.toml`.
 8. Do not use the deprecated `androidx.security:security-crypto`.
@@ -66,14 +66,14 @@ One issue → one branch → one PR, following the `github-issue-workflow` skill
 | --- | --- | --- |
 | Modules, Gradle, architecture ADRs | `kmp-architect` | `kmp-module-conventions`, `adr-writing` |
 | Decision engine and its tests | `wind-engine-engineer` | `wind-domain-rules`, `testing-playbook` |
-| OpenAPI, DTOs, fake server, contract tests | `api-contract-engineer` | `api-contract-workflow`, `fake-server-and-demo` |
+| OpenAPI, DTOs, fake server, contract tests | `api-contract-engineer` | `api-contract-workflow`, `fake-server` |
 | Screens, design system, wind chart | `compose-ui-engineer` | `compose-screen-recipe` |
 | Android platform code | `android-platform-engineer` | `kmp-module-conventions` |
 | iOS platform code, Xcode | `ios-platform-engineer` | `kmp-module-conventions` |
 | CI, scripts, devcontainer, releases | `build-ci-engineer` | `github-issue-workflow` |
 | Missing tests, flaky tests | `test-engineer` | `testing-playbook` |
 | Review before PR (read-only) | `code-reviewer` | all relevant |
-| README, ADRs, demo script, issue texts | `docs-writer` | `adr-writing` |
+| README, ADRs, issue texts | `docs-writer` | `adr-writing` |
 
 Independent work (e.g. engine and contract) can run in parallel subagents.
 

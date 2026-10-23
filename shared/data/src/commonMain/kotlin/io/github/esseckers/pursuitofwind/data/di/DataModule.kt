@@ -27,7 +27,7 @@ import kotlin.time.Clock
  *
  * On Android the graph must also contain the application `Context` (Koin `androidContext`).
  *
- * @param clock time for the fake backend, token expiry and "updated" stamps; demo mode passes a controllable clock.
+ * @param clock time for the fake backend, token expiry and "updated" stamps; tests pass a controllable clock.
  */
 public fun dataModule(
     environment: Environment,
