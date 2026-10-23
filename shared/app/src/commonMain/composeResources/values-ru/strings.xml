@@ -209,6 +209,11 @@
     <string name="unit_name_meters_per_second">м/с</string>
     <string name="unit_name_kilometers_per_hour">км/ч</string>
     <string name="unit_name_beaufort">Бофорт</string>
+    <string name="profile_language">Язык</string>
+    <string name="language_system">Как на телефоне</string>
+    <!-- Each language by its own name, the same in every translation. -->
+    <string name="language_english">English</string>
+    <string name="language_russian">Русский</string>
     <string name="profile_more">Дополнительно</string>
     <string name="profile_min_session">Самая короткая сессия, ради которой стоит ехать</string>
     <string name="profile_min_session_shorter">Короче</string>
@@ -241,6 +246,24 @@
     <string name="spots_empty_body">Выбирать пока не из чего. Попробуй позже.</string>
     <string name="banner_spots_offline">Нет сети. Показан сохранённый список спотов.</string>
     <string name="banner_spots_failed">Не удалось обновить список спотов.</string>
+
+    <!-- Spots tab -->
+    <string name="tab_spots">Споты</string>
+    <string name="my_spots_intro">По избранным спотам каждый день есть ответ на экране «Сегодня». Изменения сохраняются сразу.</string>
+    <string name="my_spots_favorite">Избранный</string>
+    <string name="my_spots_favorite_hint">Ответ на «Сегодня» каждый день</string>
+    <string name="my_spots_forecast">Прогноз по часам</string>
+    <string name="action_remove">Убрать</string>
+    <string name="my_spots_remove">Убрать %1$s</string>
+    <string name="my_spots_removed">%1$s убран</string>
+    <string name="action_undo">Отменить</string>
+    <string name="action_add_spots">Добавить споты</string>
+    <string name="my_spots_saving">Сохраняем…</string>
+    <string name="my_spots_save_failed">Не удалось сохранить изменение.</string>
+    <string name="my_spots_loading">Загружаем твои споты</string>
+    <string name="my_spots_error_title">Не удалось загрузить твои споты</string>
+    <string name="my_spots_empty_title">Спотов пока нет</string>
+    <string name="my_spots_empty_body">Добавь споты, на которых катаешься, и время дороги от дома, чтобы каждый день получать ответ.</string>
 
     <!-- Errors -->
     <string name="error_network">Нет сети. Проверь подключение и попробуй ещё раз.</string>

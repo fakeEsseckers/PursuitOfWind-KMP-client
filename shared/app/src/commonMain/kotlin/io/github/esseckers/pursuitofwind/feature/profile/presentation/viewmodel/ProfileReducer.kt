@@ -47,6 +47,10 @@ internal object ProfileReducer : Reducer<ProfileState, ProfileResult> {
                     state.copy(saving = true, saveError = null)
                 }
 
+                is ProfileResult.LanguageChanged -> {
+                    state.copy(language = result.language)
+                }
+
                 is ProfileResult.SaveFinished -> {
                     // The saved profile counts at once, before the cache emits it, so "Save" is not offered again meanwhile.
                     state.copy(

@@ -1,5 +1,6 @@
 package io.github.esseckers.pursuitofwind.feature.profile.presentation.model
 
+import io.github.esseckers.pursuitofwind.data.model.AppLanguage
 import io.github.esseckers.pursuitofwind.data.model.Profile
 import org.jetbrains.compose.resources.StringResource
 
@@ -13,6 +14,7 @@ import org.jetbrains.compose.resources.StringResource
  * @property errors what to fix, shown once the rider has tried to save.
  * @property hasChanges whether the form differs from the saved profile (always true before there is one).
  * @property saveError why the last save failed; cleared when the next one starts.
+ * @property language the app's language; it is not part of the draft and applies as soon as it is picked.
  * @property inputs what the reducer computes the rest from. The view does not read it.
  */
 internal data class ProfileState(
@@ -24,6 +26,7 @@ internal data class ProfileState(
     val hasChanges: Boolean = true,
     val saving: Boolean = false,
     val saveError: StringResource? = null,
+    val language: AppLanguage = AppLanguage.SYSTEM,
     val inputs: ProfileInputs = ProfileInputs(),
 )
 

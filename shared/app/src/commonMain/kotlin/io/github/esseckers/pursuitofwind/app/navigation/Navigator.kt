@@ -27,9 +27,19 @@ internal class Navigator(
         show(if (tab == Destination.Today) listOf(Destination.Today) else listOf(Destination.Today, tab))
     }
 
-    /** Ends onboarding, or the spot picker opened from Today: Today becomes the only screen. */
+    /** Ends onboarding: Today becomes the only screen. */
     fun finishSetup() {
         show(listOf(Destination.Today))
+    }
+
+    /**
+     * Leaves the spot picker: back to where it was opened, or on to Today at the end of onboarding. Does nothing once the
+     * picker is gone, so a second "Done" during the exit animation cannot also close the screen below.
+     */
+    fun finishPicking() {
+        if (backStack.lastOrNull() != Destination.PickSpots) return
+        val below = backStack.getOrNull(backStack.lastIndex - 1)
+        if (below == null || below == Destination.Welcome || below == Destination.SetUpProfile) finishSetup() else back()
     }
 
     /**

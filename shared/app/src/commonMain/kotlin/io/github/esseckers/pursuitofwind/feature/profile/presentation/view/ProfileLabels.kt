@@ -1,6 +1,9 @@
 package io.github.esseckers.pursuitofwind.feature.profile.presentation.view
 
 import io.github.esseckers.pursuitofwind.core.resources.Res
+import io.github.esseckers.pursuitofwind.core.resources.language_english
+import io.github.esseckers.pursuitofwind.core.resources.language_russian
+import io.github.esseckers.pursuitofwind.core.resources.language_system
 import io.github.esseckers.pursuitofwind.core.resources.level_advanced
 import io.github.esseckers.pursuitofwind.core.resources.level_beginner
 import io.github.esseckers.pursuitofwind.core.resources.level_intermediate
@@ -13,6 +16,7 @@ import io.github.esseckers.pursuitofwind.core.resources.unit_name_beaufort
 import io.github.esseckers.pursuitofwind.core.resources.unit_name_kilometers_per_hour
 import io.github.esseckers.pursuitofwind.core.resources.unit_name_knots
 import io.github.esseckers.pursuitofwind.core.resources.unit_name_meters_per_second
+import io.github.esseckers.pursuitofwind.data.model.AppLanguage
 import io.github.esseckers.pursuitofwind.data.model.WindUnit
 import io.github.esseckers.pursuitofwind.engine.model.SkillLevel
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileError
@@ -25,6 +29,14 @@ internal fun levelLabel(level: SkillLevel): StringResource =
         SkillLevel.BEGINNER -> Res.string.level_beginner
         SkillLevel.INTERMEDIATE -> Res.string.level_intermediate
         SkillLevel.ADVANCED -> Res.string.level_advanced
+    }
+
+/** Each language by its own name, so a rider who cannot read the current one still finds theirs. */
+internal fun languageLabel(language: AppLanguage): StringResource =
+    when (language) {
+        AppLanguage.SYSTEM -> Res.string.language_system
+        AppLanguage.ENGLISH -> Res.string.language_english
+        AppLanguage.RUSSIAN -> Res.string.language_russian
     }
 
 internal fun unitName(unit: WindUnit): StringResource =

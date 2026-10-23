@@ -41,6 +41,7 @@ internal class DataHarness(
 
     val account = AccountRepository(network.session)
     val profiles = ProfileRepository(network.api, settings, clock)
+    val preferences = PreferencesRepository(settings)
     val spots = SpotRepository(network.api, database, clock)
     val forecasts = ForecastRepository(network.api, database, clock)
     val crews = CrewRepository(network.api, database, store, feed, clock)

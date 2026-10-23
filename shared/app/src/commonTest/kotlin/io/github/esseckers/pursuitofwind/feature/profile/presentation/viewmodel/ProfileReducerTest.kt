@@ -3,6 +3,7 @@ package io.github.esseckers.pursuitofwind.feature.profile.presentation.viewmodel
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.error_network
 import io.github.esseckers.pursuitofwind.data.model.AppError
+import io.github.esseckers.pursuitofwind.data.model.AppLanguage
 import io.github.esseckers.pursuitofwind.data.model.WindUnit
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileEdit
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileError
@@ -118,6 +119,16 @@ class ProfileReducerTest {
         assertTrue(edited.hasChanges)
         assertFalse(saved.hasChanges)
         assertEquals(stored, saved.inputs.saved)
+    }
+
+    @Test
+    fun `the language is shown as stored and is not part of the draft`() {
+        val loaded = reduce(ProfileResult.Loaded(savedAlex()))
+        val russian = reduce(ProfileResult.LanguageChanged(AppLanguage.RUSSIAN), from = loaded)
+
+        assertEquals(AppLanguage.SYSTEM, loaded.language)
+        assertEquals(AppLanguage.RUSSIAN, russian.language)
+        assertFalse(russian.hasChanges)
     }
 
     @Test

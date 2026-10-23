@@ -72,13 +72,53 @@ class NavigatorTest {
     }
 
     @Test
-    fun `the spot picker opened from Today returns to Today when done`() {
-        val stack = mutableListOf<NavKey>(Destination.Today)
-        val navigator = Navigator(stack)
+    fun `the spot picker returns to where it was opened when done`() {
+        val fromToday = mutableListOf<NavKey>(Destination.Today)
+        val fromSpots = mutableListOf<NavKey>(Destination.Today, Destination.Spots)
 
-        navigator.open(Destination.PickSpots)
-        navigator.finishSetup()
+        Navigator(fromToday).apply {
+            open(Destination.PickSpots)
+            finishPicking()
+        }
+        Navigator(fromSpots).apply {
+            open(Destination.PickSpots)
+            finishPicking()
+        }
+
+        assertEquals(listOf<NavKey>(Destination.Today), fromToday)
+        assertEquals(listOf<NavKey>(Destination.Today, Destination.Spots), fromSpots)
+    }
+
+    @Test
+    fun `the spot picker at the end of onboarding goes on to Today`() {
+        val stack = mutableListOf<NavKey>(Destination.Welcome, Destination.SetUpProfile, Destination.PickSpots)
+
+        Navigator(stack).finishPicking()
+
         assertEquals(listOf<NavKey>(Destination.Today), stack)
+    }
+
+    @Test
+    fun `a second Done after the picker closed leaves the screen below open`() {
+        val stack = mutableListOf<NavKey>(Destination.Today, Destination.Spots)
+
+        Navigator(stack).apply {
+            open(Destination.PickSpots)
+            finishPicking()
+            finishPicking()
+        }
+
+        assertEquals(listOf<NavKey>(Destination.Today, Destination.Spots), stack)
+    }
+
+    @Test
+    fun `the Spots tab sits on top of Today like every tab`() {
+        val stack = mutableListOf<NavKey>(Destination.Today, Destination.Profile)
+
+        Navigator(stack).selectTab(Destination.Spots)
+
+        assertEquals(listOf<NavKey>(Destination.Today, Destination.Spots), stack)
+        assertEquals(listOf(Destination.Today, Destination.Spots, Destination.Profile), tabDestinations)
     }
 
     @Test

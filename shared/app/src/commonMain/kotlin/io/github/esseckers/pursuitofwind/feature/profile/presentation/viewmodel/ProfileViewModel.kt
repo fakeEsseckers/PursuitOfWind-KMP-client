@@ -3,6 +3,7 @@ package io.github.esseckers.pursuitofwind.feature.profile.presentation.viewmodel
 import androidx.lifecycle.viewModelScope
 import io.github.esseckers.pursuitofwind.core.mvi.MviViewModel
 import io.github.esseckers.pursuitofwind.data.model.AppError
+import io.github.esseckers.pursuitofwind.data.model.AppLanguage
 import io.github.esseckers.pursuitofwind.data.model.Outcome
 import io.github.esseckers.pursuitofwind.data.model.Profile
 import io.github.esseckers.pursuitofwind.data.model.errorOrNull
@@ -15,12 +16,14 @@ import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.Prof
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
 
 /**
  * The profile form in MVI, for onboarding and the Profile tab alike. The saved profile comes in while the form is
  * shown; edits change the draft only. [ProfileIntent.Save] checks the draft, saves it when it differs from the saved
  * profile, and confirms with [ProfileEffect.Saved]. A failed save is part of the state, so the rider can try again.
+ * The app's language is not part of the draft: picking one stores it at once.
  */
 internal class ProfileViewModel(
     private val repository: ProfileEditRepository,
@@ -29,10 +32,20 @@ internal class ProfileViewModel(
         when (intent) {
             is ProfileIntent.Edit -> dispatch(ProfileResult.Edited(intent.edit))
             ProfileIntent.Save -> save()
+            is ProfileIntent.ChooseLanguage -> chooseLanguage(intent.language)
         }
     }
 
-    override fun bind(): Flow<ProfileResult> = repository.profile.map { ProfileResult.Loaded(it) }
+    override fun bind(): Flow<ProfileResult> =
+        merge(
+            repository.profile.map { ProfileResult.Loaded(it) },
+            repository.language.map { ProfileResult.LanguageChanged(it) },
+        )
+
+    /** The choice is stored and comes back through [bind]; the whole app switches as it is stored. */
+    private fun chooseLanguage(language: AppLanguage) {
+        viewModelScope.launch { repository.setLanguage(language) }
+    }
 
     /** One save at a time; a tap while the form is loading or saving does nothing. */
     private fun save() {

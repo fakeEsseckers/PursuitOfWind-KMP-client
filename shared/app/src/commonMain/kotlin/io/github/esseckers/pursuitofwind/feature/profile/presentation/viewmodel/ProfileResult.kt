@@ -1,6 +1,7 @@
 package io.github.esseckers.pursuitofwind.feature.profile.presentation.viewmodel
 
 import io.github.esseckers.pursuitofwind.data.model.AppError
+import io.github.esseckers.pursuitofwind.data.model.AppLanguage
 import io.github.esseckers.pursuitofwind.data.model.Profile
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileEdit
 
@@ -19,6 +20,11 @@ internal sealed interface ProfileResult {
     data object Submitted : ProfileResult
 
     data object SaveStarted : ProfileResult
+
+    /** The app's language, as stored. */
+    data class LanguageChanged(
+        val language: AppLanguage,
+    ) : ProfileResult
 
     /** The save ended: [saved] as the server stored it, or failing with [error]. */
     data class SaveFinished(

@@ -3,12 +3,17 @@ package io.github.esseckers.pursuitofwind.data.repository
 import io.github.esseckers.pursuitofwind.data.fake.NetworkMode
 import io.github.esseckers.pursuitofwind.data.fake.THURSDAY_MORNING
 import io.github.esseckers.pursuitofwind.data.model.AppError
+import io.github.esseckers.pursuitofwind.data.model.AppLanguage
 import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.errorOrNull
 import io.github.esseckers.pursuitofwind.data.network.fakeServer
 import io.github.esseckers.pursuitofwind.data.network.forwardingEngine
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.currentTime
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -36,6 +41,29 @@ class ProfileAndSpotRepositoryTest {
                         .first()
                         .value,
                 )
+            }
+        }
+
+    @Test
+    fun `the language is a choice of the device that a new owner of the cache keeps`() =
+        runTest {
+            world {
+                val alex = device()
+
+                assertEquals(AppLanguage.SYSTEM, alex.preferences.language.first())
+                alex.preferences.setLanguage(AppLanguage.RUSSIAN).value()
+                alex.profiles.save(ALEX).value()
+                alex.settings.switchOwner("usr_9999")
+
+                assertEquals(AppLanguage.RUSSIAN, alex.preferences.language.first())
+                assertEquals(
+                    null,
+                    alex.profiles.profile
+                        .first()
+                        .value,
+                )
+                alex.preferences.setLanguage(AppLanguage.SYSTEM).value()
+                assertEquals(AppLanguage.SYSTEM, alex.preferences.language.first())
             }
         }
 
@@ -101,6 +129,32 @@ class ProfileAndSpotRepositoryTest {
                 assertEquals(listOf("nordstrand-bay"), mine.map { it.spot.id.value })
                 assertEquals(120.minutes, mine.single().toSpotConfig().drive)
                 assertTrue(mine.single().favorite)
+            }
+        }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `a change to the followed spots waits for a running refresh so the refresh cannot undo it`() =
+        runTest {
+            world {
+                val alex = device()
+                alex.spots.refreshMySpots().value()
+                server.networkMode = NetworkMode.SLOW
+                val start = currentTime
+
+                val refreshing = async { alex.spots.refreshMySpots() }
+                runCurrent()
+                val following = async { alex.spots.follow(SpotId("nordstrand-bay"), drive = 60.minutes, favorite = true) }
+                refreshing.await().value()
+                following.await().value()
+                val mine =
+                    alex.spots.mySpots
+                        .first()
+                        .value
+
+                // Each answer takes 2 s in SLOW mode: run side by side, both would be done after 2 s.
+                assertTrue(currentTime - start >= 4_000, "took ${currentTime - start} ms")
+                assertEquals(listOf("nordstrand-bay"), mine.map { it.spot.id.value })
             }
         }
 
