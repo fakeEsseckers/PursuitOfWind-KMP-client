@@ -12,7 +12,7 @@ description: Module layout, source sets, dependency rules and platform-code poli
 | `:shared:windengine` | android, ios (arm64, simulatorArm64), jvm | engine types and pure functions | any I/O, DI, serialization, platform API |
 | `:shared:contract` | android, ios, jvm | `@Serializable` DTOs mirroring `api/openapi.yaml`, error body, enums | business logic, mapping to domain |
 | `:shared:data` | android, ios, jvm (tests only) | Ktor client, `FakePursuitOfWindServer`, Room 3 (KSP), DataStore, repositories, `AppError`, DTO↔domain mappers, platform service interfaces, `dataModule(environment)` | Compose, ViewModels |
-| `:shared:app` | android, ios, jvm (tests only) | ViewModels, Compose UI, navigation, theme, DI graph (`appModules`, started by `startPursuitOfWind` on Android and `MainViewController` on iOS), demo mode UI; exports iOS framework `PursuitOfWindKit` | Ktor or Room types in public APIs |
+| `:shared:app` | android, ios, jvm (tests only) | screens as `feature.<name>` packages with MVI ViewModels and Compose UI, `core` (MVI base, design system), navigation, DI graph (`appModules`, started by `startPursuitOfWind` on Android and `MainViewController` on iOS), demo mode UI; exports iOS framework `PursuitOfWindKit` | Ktor or Room types in public APIs |
 | `:androidApp` | android | `Application`, `MainActivity`, WorkManager workers, notification channel, manifest, deep links, signing | shared business logic |
 | `iosApp/` | — | Xcode project, SwiftUI `App`, `Info.plist`, BG task registration | business logic |
 | `:testing:openapi` | jvm (plain Kotlin/JVM) | `OpenApiSpec`: loads `api/openapi.yaml`, validates JSON against its schemas, checks recorded requests and responses | anything production code needs |
@@ -47,13 +47,37 @@ Allowed dependency direction: `contract` and `windengine` are independent leaves
 
 ## Package layout inside a module
 
+Library modules (`windengine`, `contract`, `data`):
+
 ```text
 io.github.esseckers.pursuitofwind.<module>/
   model/        # types
-  <feature>/    # e.g. today, spot, crew, demo (in :shared:app)
   internal/     # implementation details, `internal` visibility
   di/           # Koin modules
 ```
+
+`:shared:app` is organised by screen (`docs/adr/0008-mvi-presentation-in-feature-packages.md`):
+
+```text
+io.github.esseckers.pursuitofwind/
+  app/                      # App(), appModules(), platform entry points (androidMain, iosMain)
+  core/
+    mvi/                    # MviViewModel, Reducer
+    designsystem/           # theme/, component/, icon/
+    ui/                     # formatting and labels shared by screens
+    resources/              # generated Res (packageOfResClass)
+  feature/<screen>/         # today, spot, profile, spots, crew, settings, demo
+    domain/model/           # the feature's models
+    domain/repository/      # the repository interface the feature needs
+    data/repository/        # its implementation over the :shared:data repositories
+    presentation/model/     # State, Intent, Effect, UI models
+    presentation/mapper/    # pure functions: domain -> UI models, inputs -> State
+    presentation/viewmodel/ # ViewModel, Result, Reducer
+    presentation/view/      # Route, Screen, previews
+    di/                     # the feature's Koin module
+```
+
+Packages are not Gradle modules: a feature must not import another feature, and nothing enforces it at compile time, so reviewers check it. Test source sets mirror the same packages; shared fixtures of a feature sit at `feature/<screen>/` in `commonTest`.
 
 Prefer `internal` for anything not used by another module.
 

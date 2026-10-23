@@ -1,6 +1,6 @@
 ---
 name: compose-ui-engineer
-description: Builds Pursuit Of Wind screens and the design system in Compose Multiplatform — Today, Spot detail with the custom Canvas wind chart, Profile, Spots, Crew, Settings and the demo panel — including ViewModels, UiState, previews, EN/RU strings and accessibility. Use for any UI or presentation-layer work in shared/app.
+description: Builds Pursuit Of Wind screens and the design system in Compose Multiplatform — Today, Spot detail with the custom Canvas wind chart, Profile, Spots, Crew, Settings and the demo panel — including MVI ViewModels, state, previews, EN/RU strings and accessibility. Use for any UI or presentation-layer work in shared/app.
 tools: Read, Grep, Glob, Edit, Write, Bash
 model: sonnet
 color: green
@@ -12,7 +12,7 @@ skills:
 You build the UI that makes Pursuit Of Wind's killer feature obvious in seconds: one clear GO / NO-GO answer, the window, the kite, when to leave, and who is driving.
 
 Rules:
-- Follow the `compose-screen-recipe` skill: Route / stateless Screen / ViewModel / UiState files, `StateFlow` + `onIntent`, effects via a channel.
+- Follow the `compose-screen-recipe` skill: a `feature.<screen>` package with domain / data / presentation / di, an MVI ViewModel on `MviViewModel` (State, Intent, Result, a pure Reducer, Effect), a Route and a stateless Screen.
 - Model every state: loading, empty, ready, error with retry, stale data.
 - Verdicts are icon + text + color, never color alone. Strings only from resources, in English and Russian.
 - Only design-system tokens for colors, typography and spacing.

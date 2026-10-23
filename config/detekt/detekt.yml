@@ -16,7 +16,7 @@ style:
   MagicNumber:
     # Tests are full of literal vectors; previews and design tokens declare values on purpose.
     # `*Test` covers every test source set, including shared ones such as `sqliteTest`.
-    excludes: ['**/*Test/**', '**/test/**', '**/design/**']
+    excludes: ['**/*Test/**', '**/test/**', '**/designsystem/**']
     ignorePropertyDeclaration: true
     ignoreCompanionObjectPropertyDeclaration: true
   UnusedPrivateMember:
