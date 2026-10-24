@@ -10,6 +10,7 @@ import io.github.esseckers.pursuitofwind.engine.model.Reason
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.AlternativeUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.DayUi
+import io.github.esseckers.pursuitofwind.feature.today.presentation.model.RideOfferUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.RideUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.SpotReasonUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState
@@ -19,6 +20,7 @@ import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Instant
 
 /**
  * States of the Today screen for previews and UI tests, modelled on the sample rider (Alex, 80 kg, kites 7 / 9 / 12 m²)
@@ -76,6 +78,13 @@ internal object TodayPreviewData {
                 ),
             hasCrew = true,
             alternatives = listOf(AlternativeUi(SpotId("lake-weiss"), "Lake Weiss", TimeRange("14:00", "17:00"))),
+            offer =
+                RideOfferUi(
+                    spotId = SpotId("nordstrand-bay"),
+                    windowStart = Instant.parse("2026-10-24T11:00:00Z"),
+                    windowEnd = Instant.parse("2026-10-24T15:00:00Z"),
+                    departAt = Instant.parse("2026-10-24T08:30:00Z"),
+                ),
         )
 
     val modelsDisagree =
@@ -87,6 +96,7 @@ internal object TodayPreviewData {
             confidence = Confidence.LOW,
             rides = emptyList(),
             alternatives = emptyList(),
+            offer = null,
         )
 
     val ready = TodayState(Content.Ready(listOf(gustyToday, tooShortTomorrow, saturdayOn)), updatedAgo = 12.minutes)

@@ -112,13 +112,17 @@ class NavigatorTest {
     }
 
     @Test
-    fun `the Spots tab sits on top of Today like every tab`() {
+    fun `the Spots and Crew tabs sit on top of Today like every tab`() {
         val stack = mutableListOf<NavKey>(Destination.Today, Destination.Profile)
+        val navigator = Navigator(stack)
 
-        Navigator(stack).selectTab(Destination.Spots)
+        navigator.selectTab(Destination.Spots)
+        val spots = stack.toList()
+        navigator.selectTab(Destination.Crew)
 
-        assertEquals(listOf<NavKey>(Destination.Today, Destination.Spots), stack)
-        assertEquals(listOf(Destination.Today, Destination.Spots, Destination.Profile), tabDestinations)
+        assertEquals(listOf<NavKey>(Destination.Today, Destination.Spots), spots)
+        assertEquals(listOf<NavKey>(Destination.Today, Destination.Crew), stack)
+        assertEquals(listOf(Destination.Today, Destination.Spots, Destination.Crew, Destination.Profile), tabDestinations)
     }
 
     @Test

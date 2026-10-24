@@ -39,6 +39,14 @@ internal object AppIcons {
         )
     val Info: ImageVector = icon("Info", CIRCLE, "M12 11v5", "M12 8v0.01")
     val Person: ImageVector = icon("Person", "M16 8a4 4 0 1 1-8 0a4 4 0 1 1 8 0", "M4 20c0-3.5 3.5-6 8-6s8 2.5 8 6")
+    val Group: ImageVector =
+        icon(
+            "Group",
+            "M12.5 8a3.5 3.5 0 1 1-7 0a3.5 3.5 0 1 1 7 0",
+            "M2.5 20c0-3.2 2.9-5.5 6.5-5.5s6.5 2.3 6.5 5.5",
+            "M15.5 4.6a3.5 3.5 0 0 1 0 6.8",
+            "M17.5 14.7c2.4 0.6 4 2.6 4 5.3",
+        )
     val Pin: ImageVector =
         icon(
             "Pin",

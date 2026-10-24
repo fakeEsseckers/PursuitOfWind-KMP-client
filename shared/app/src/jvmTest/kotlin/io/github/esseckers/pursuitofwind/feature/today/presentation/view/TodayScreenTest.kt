@@ -41,6 +41,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /** The Today screen on the desktop runtime: what each state shows, what its buttons send, and how it reads. */
@@ -112,6 +113,20 @@ class TodayScreenTest {
                 ),
                 intents,
             )
+        }
+
+    @Test
+    fun `I'm going on a GO card offers the crew a ride for that window`() =
+        runComposeUiTest {
+            show(TodayPreviewData.ready)
+            scrollTo("today.offer.2026-10-24")
+
+            onNodeWithTag("today.offer.2026-10-24")
+                .assert(hasText("I’m going"))
+                .assert(hasContentDescription("I’m going to Nordstrand Bay: offer your crew a ride"))
+                .performClick()
+
+            assertEquals(listOf<TodayIntent>(TodayIntent.OfferRide(assertNotNull(TodayPreviewData.saturdayOn.offer))), intents)
         }
 
     @Test

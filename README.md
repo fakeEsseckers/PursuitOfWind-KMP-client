@@ -4,7 +4,7 @@
 
 Kitesurfers who live hours from the water lose whole days to forecasts that looked fine on paper. Pursuit Of Wind turns the raw forecast into one answer — *go or no-go, when, where, with which kite and when to leave* — and shows who from your crew is driving with free seats.
 
-> **Status:** client phase. The decision engine, the API contract, the in-app fake backend, the data layer, onboarding with the profile and the spot picker, the app language, the Today screen, the Spots tab and the spot's hourly wind chart are done; Crew and Settings are next. See the [roadmap](#roadmap).
+> **Status:** client phase. The decision engine, the API contract, the in-app fake backend, the data layer, onboarding with the profile and the spot picker, the app language, the Today screen, the Spots and Crew tabs and the spot's hourly wind chart are done; Settings is next. See the [roadmap](#roadmap).
 
 ## What is in this repository
 
@@ -49,6 +49,8 @@ Until the server exists, the app talks to `FakePursuitOfWindServer`: an in-proce
 
 It behaves like a live server: every forecast request is a new model run that moves the wind a little — less for the next hours, more three days out — so pulling to refresh always brings a slightly different forecast. There is no separate demo mode ([ADR 0010](docs/adr/0010-live-fake-backend-instead-of-demo-mode.md)).
 
+The Weekend Crew's members act on their own, as people in a crew do. Every one to three minutes of the server's clock one of them may take a free seat, offer a ride to a spot where the decision engine finds a GO window for them, or now and then give up a seat (`MemberActivity`). When a rider goes for the last free seat of a car, a member sometimes gets it first, so the app meets the `409 SEATS_FULL` race it is built to handle.
+
 Everything is still deterministic for a seed, a clock and a sequence of requests: ids, tokens, forecasts (synoptic swings, an afternoon sea breeze, model spread, model runs and a daylight flag from the sunrise equation) and simulated network trouble — `SLOW`, `FLAKY` (`503` with `Retry-After`) and `OFFLINE`. A tour test calls every route with its success and error cases. On the JVM every recorded request (parameters and body) and response is validated against the spec, and the build fails if a documented status or crew event type is never reached, or if the fake accepts a request the spec rejects. The fake enforces no rule that is not in the spec.
 
 ## Data and offline
@@ -85,6 +87,15 @@ The Spots tab lists the spots the rider follows. Each card says whether its wind
 - **Writes finish:** a write the rider asked for completes even if they leave the tab meanwhile. The writes of one spot (saves, a removal, its undo) run in the order they were made. "Undo" leaves a spot alone that was followed again meanwhile, from the picker for example.
 - **Failures:** a write that fails puts the spot back as it was and says why in a snackbar. "Remove" hides the spot at once, with "Undo" in the snackbar to follow it again with the same drive and favorite flag.
 - **Refresh:** the tab refreshes when it opens and on pull-to-refresh. `SpotRepository` runs refreshes and writes of the followed spots one at a time, from any screen, so a refresh never brings back the list from before a change.
+
+## Crew
+
+The Crew tab shows one of the rider's crews, with chips to switch when there are several: its invite code with "Invite friends" (the system share sheet), its rides by day, and its members. A rider without a crew creates one or joins with a code. To see a live crew in this build, join the Weekend Crew with the code `WIND-4KQ7`.
+
+- **Rides:** each card has the spot, who drives and when they leave, the window at the spot, where to meet, who rides along and the free seats, and a link to the spot's forecast. A cancelled ride stays, crossed out, until its window ends.
+- **One action per ride:** "Take a seat" shows the seat at once. If someone else got the last seat first, the car shows full again and a snackbar says so. A passenger can leave; the driver can cancel, after confirming. These finish even if the rider leaves the tab.
+- **Live:** while the tab is shown it fetches the crew's feed every 30 seconds, so the members' rides and seats appear as they happen. Offline, the saved crew stays with a notice.
+- **"I'm going":** a GO card on Today has "I'm going" when the rider has a crew and is not in a car that day yet. It opens a short form: the crew, the free seats and where to meet. The ride covers the riding window and leaves at the time to leave, or at the next quarter hour once that has passed. Today and the Crew tab then show "You drive".
 
 ## Today
 
@@ -147,7 +158,7 @@ open iosApp/iosApp.xcodeproj            # then Run on an iOS simulator
 4. Data layer: network, cache, offline — done
 5. Design system and the Today screen — done
 6. Spot detail with the hourly wind chart, and navigation — done
-7. Screens: onboarding, Profile with the app language, Spots — done; Crew, Settings — next
+7. Screens: onboarding, Profile with the app language, Spots, Crew with "I'm going" — done; Settings — next
 8. Background evaluation and local notifications
 9. Server phase (separate repository), with guided tours and spotlight hints
 

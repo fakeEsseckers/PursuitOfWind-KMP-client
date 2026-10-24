@@ -19,4 +19,9 @@ internal sealed interface TodayIntent {
 
     /** Choose favorite spots, none of which is set yet. */
     data object PickSpots : TodayIntent
+
+    /** "I'm going": offer the crew a ride for a GO window. */
+    data class OfferRide(
+        val offer: RideOfferUi,
+    ) : TodayIntent
 }

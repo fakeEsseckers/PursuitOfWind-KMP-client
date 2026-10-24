@@ -7,6 +7,7 @@ import io.github.esseckers.pursuitofwind.engine.model.Confidence
 import io.github.esseckers.pursuitofwind.engine.model.Reason
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import kotlinx.datetime.LocalDate
+import kotlin.time.Instant
 
 // UI models of the Today screen: formatted for display, with no domain logic left to run in composables.
 
@@ -30,6 +31,8 @@ internal sealed interface DayUi {
         val rides: List<RideUi>,
         val hasCrew: Boolean,
         val alternatives: List<AlternativeUi>,
+        /** What "I'm going" offers the crew; null without a crew, or when the rider already drives or rides along. */
+        val offer: RideOfferUi? = null,
     ) : DayUi
 
     /** [spots] holds the reason of every favorite spot; with one spot that is the main [reason] again. */
@@ -58,6 +61,17 @@ internal data class RideUi(
     val youDrive: Boolean,
     val youRide: Boolean,
     val pending: Boolean,
+)
+
+/**
+ * A ride the rider can offer for a GO window at [spotId]: the riding time from [windowStart] to [windowEnd], leaving
+ * at [departAt], which is the time to leave, or now once that has passed.
+ */
+internal data class RideOfferUi(
+    val spotId: SpotId,
+    val windowStart: Instant,
+    val windowEnd: Instant,
+    val departAt: Instant,
 )
 
 internal data class AlternativeUi(

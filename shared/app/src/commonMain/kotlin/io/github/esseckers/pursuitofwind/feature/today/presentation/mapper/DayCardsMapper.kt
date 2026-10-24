@@ -4,6 +4,7 @@ import io.github.esseckers.pursuitofwind.core.ui.DayLabel
 import io.github.esseckers.pursuitofwind.core.ui.TimeRange
 import io.github.esseckers.pursuitofwind.core.ui.clockTime
 import io.github.esseckers.pursuitofwind.core.ui.dayLabelOf
+import io.github.esseckers.pursuitofwind.core.ui.nextQuarterHour
 import io.github.esseckers.pursuitofwind.core.ui.rounded
 import io.github.esseckers.pursuitofwind.data.model.MySpot
 import io.github.esseckers.pursuitofwind.data.model.Profile
@@ -18,6 +19,7 @@ import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.today.domain.model.CrewRides
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.AlternativeUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.DayUi
+import io.github.esseckers.pursuitofwind.feature.today.presentation.model.RideOfferUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.RideUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.SpotReasonUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.WindRange
@@ -67,8 +69,10 @@ internal class DayCardsMapper(
             }
     }
 
-    private fun DayDecision.Go.toUi(): DayUi.Go =
-        DayUi.Go(
+    private fun DayDecision.Go.toUi(): DayUi.Go {
+        val rides = ridesTo(window.spotId, date)
+        val busy = rides.any { it.youDrive || it.youRide }
+        return DayUi.Go(
             date = date,
             label = label(date),
             spotId = window.spotId,
@@ -79,10 +83,12 @@ internal class DayCardsMapper(
             leaveBy = leaveBy.clockTime(riderZone),
             leaveNow = now >= leaveBy,
             confidence = confidence,
-            rides = ridesTo(window.spotId, date),
+            rides = rides,
             hasCrew = crew.hasCrew,
             alternatives = alternatives.map { AlternativeUi(it.spotId, nameOf(it.spotId), it.ridingTime()) },
+            offer = if (crew.hasCrew && !busy) RideOfferUi(window.spotId, window.usableStart, window.end, departure(leaveBy)) else null,
         )
+    }
 
     private fun DayDecision.NoGo.toUi(): DayUi.NoGo =
         DayUi.NoGo(
@@ -92,6 +98,12 @@ internal class DayCardsMapper(
             spots = details.map { SpotReasonUi(it.spotId, nameOf(it.spotId), it.reason) },
             nextGoDay = nextGoDay?.let(::label),
         )
+
+    /**
+     * When an offered ride leaves: at [leaveBy], or once that has passed, at the next quarter hour. The riding time
+     * already starts from leaving now plus the drive and rigging, so the window still begins after it.
+     */
+    private fun departure(leaveBy: Instant): Instant = if (leaveBy > now) leaveBy else nextQuarterHour(now)
 
     /** The lowest and highest consensus mean wind of the hours the rider can actually ride, in the rider's unit. */
     private fun windRange(window: SessionWindow): WindRange? {

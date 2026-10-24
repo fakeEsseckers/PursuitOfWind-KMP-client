@@ -33,9 +33,25 @@ internal sealed interface Destination : NavKey {
     @Serializable
     data object Spots : Destination
 
+    /** Tab: the rider's crews, their rides and seats. */
+    @Serializable
+    data object Crew : Destination
+
     /** Tab: the rider's profile, saved in place. */
     @Serializable
     data object Profile : Destination
+
+    /**
+     * "I'm going": the form that offers the crew a ride to [spotId] for the window from [windowStart] to [windowEnd],
+     * leaving at [departAt]. Times are epoch seconds, so the key stays plain.
+     */
+    @Serializable
+    data class OfferRide(
+        val spotId: String,
+        val windowStart: Long,
+        val windowEnd: Long,
+        val departAt: Long,
+    ) : Destination
 
     /** The hourly forecast of the spot [spotId], opened at [date] (local to the spot) if given. */
     @Serializable
@@ -46,7 +62,7 @@ internal sealed interface Destination : NavKey {
 }
 
 /** The destinations with a tab in the bottom bar, in the bar's order. The bar shows only while one of them is on top. */
-internal val tabDestinations: List<Destination> = listOf(Destination.Today, Destination.Spots, Destination.Profile)
+internal val tabDestinations: List<Destination> = listOf(Destination.Today, Destination.Spots, Destination.Crew, Destination.Profile)
 
 /**
  * How the back stack is saved. On iOS there is no reflection, so every [Destination] is registered here by hand; a new
@@ -62,7 +78,9 @@ internal val navigationConfiguration: SavedStateConfiguration =
                     subclass(Destination.PickSpots::class, Destination.PickSpots.serializer())
                     subclass(Destination.Today::class, Destination.Today.serializer())
                     subclass(Destination.Spots::class, Destination.Spots.serializer())
+                    subclass(Destination.Crew::class, Destination.Crew.serializer())
                     subclass(Destination.Profile::class, Destination.Profile.serializer())
+                    subclass(Destination.OfferRide::class, Destination.OfferRide.serializer())
                     subclass(Destination.SpotDetail::class, Destination.SpotDetail.serializer())
                 }
             }
