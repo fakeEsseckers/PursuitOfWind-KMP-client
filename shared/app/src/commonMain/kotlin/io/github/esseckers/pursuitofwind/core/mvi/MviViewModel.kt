@@ -34,6 +34,7 @@ internal abstract class MviViewModel<State, Intent, Result, Effect>(
     initialState: State,
     private val reducer: Reducer<State, Result>,
 ) : ViewModel() {
+
     private val mutableState = MutableStateFlow(initialState)
     val state: StateFlow<State> = mutableState.asStateFlow()
 

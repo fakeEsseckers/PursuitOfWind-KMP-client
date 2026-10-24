@@ -33,6 +33,7 @@ internal class RideOfferViewModel(
     private val clock: Clock,
     private val tick: Duration = 1.minutes,
 ) : MviViewModel<RideOfferState, RideOfferIntent, RideOfferResult, RideOfferEffect>(RideOfferState(), RideOfferReducer(mapper)) {
+
     override fun onIntent(intent: RideOfferIntent) {
         val inputs = currentState.inputs
         when (intent) {
