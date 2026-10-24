@@ -10,8 +10,8 @@ import io.github.esseckers.pursuitofwind.data.model.Crew
 import io.github.esseckers.pursuitofwind.data.model.MemberRole
 import io.github.esseckers.pursuitofwind.data.model.Ride
 import io.github.esseckers.pursuitofwind.data.model.RideStatus
-import io.github.esseckers.pursuitofwind.feature.crew.domain.model.CrewDetails
-import io.github.esseckers.pursuitofwind.feature.crew.domain.model.shownCrew
+import io.github.esseckers.pursuitofwind.feature.crew.domain.entity.CrewDetailsEntity
+import io.github.esseckers.pursuitofwind.feature.crew.domain.entity.shownCrew
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewChoice
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewInputs
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewRideUi
@@ -75,7 +75,7 @@ internal object CrewStateMapper {
 
     private fun crewUi(
         crew: Crew,
-        details: CrewDetails,
+        details: CrewDetailsEntity,
         inputs: CrewInputs,
         riderZone: TimeZone,
     ): CrewUi {
@@ -90,7 +90,7 @@ internal object CrewStateMapper {
 
     /** Rides that have not ended, by the day their window starts at their spot, each day by departure. */
     private fun days(
-        details: CrewDetails,
+        details: CrewDetailsEntity,
         inputs: CrewInputs,
         riderZone: TimeZone,
     ): List<RideDayUi> {
@@ -120,7 +120,7 @@ internal object CrewStateMapper {
 
     private fun rideUi(
         ride: Ride,
-        details: CrewDetails,
+        details: CrewDetailsEntity,
         inputs: CrewInputs,
         riderZone: TimeZone,
     ): CrewRideUi {

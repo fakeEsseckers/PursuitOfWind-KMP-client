@@ -15,7 +15,7 @@ import io.github.esseckers.pursuitofwind.data.repository.CrewRepository
 import io.github.esseckers.pursuitofwind.data.repository.ProfileRepository
 import io.github.esseckers.pursuitofwind.data.repository.RideRepository
 import io.github.esseckers.pursuitofwind.data.repository.SpotRepository
-import io.github.esseckers.pursuitofwind.feature.rideoffer.domain.model.RideDraft
+import io.github.esseckers.pursuitofwind.feature.rideoffer.domain.entity.RideDraftEntity
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.RideOfferEffect
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.RideOfferIntent
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.RideOfferState
@@ -53,7 +53,7 @@ class RideOfferViewModelTest {
     private val clock = ControllableClock(at(SATURDAY, 8))
     private val koin: Koin = testGraph(clock).koin
     private val viewModels = ViewModelStore()
-    private val draft = RideDraft(NORDSTRAND, at(SUNDAY, 13), at(SUNDAY, 17), at(SUNDAY, 10, 30))
+    private val draft = RideDraftEntity(NORDSTRAND, at(SUNDAY, 13), at(SUNDAY, 17), at(SUNDAY, 10, 30))
 
     @BeforeTest
     fun setMainDispatcher() {

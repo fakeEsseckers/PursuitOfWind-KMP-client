@@ -17,7 +17,7 @@ import io.github.esseckers.pursuitofwind.engine.model.SkillLevel
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.engine.model.ThunderRisk
 import io.github.esseckers.pursuitofwind.engine.model.WindSpeed
-import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.model.SpotDetailSnapshot
+import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.entity.SpotDetailSnapshotEntity
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.RefreshStatus
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.Selection
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailInputs
@@ -69,7 +69,7 @@ internal object SpotDetailPreviewData {
         selection: Selection = Selection.First,
     ): SpotDetailState {
         val fetched = saturday8am - 5.minutes
-        val snapshot = SpotDetailSnapshot(Cached(profile, fetched), Cached(spot, fetched), Cached(hours, fetched))
+        val snapshot = SpotDetailSnapshotEntity(Cached(profile, fetched), Cached(spot, fetched), Cached(hours, fetched))
         // Through the real reducer, as the screen gets it: the selection result maps these inputs.
         val inputs = SpotDetailInputs(spotId, selection, snapshot, now, refresh)
         return SpotDetailReducer(zone).reduce(SpotDetailState(inputs = inputs), SpotDetailResult.Selected(selection))

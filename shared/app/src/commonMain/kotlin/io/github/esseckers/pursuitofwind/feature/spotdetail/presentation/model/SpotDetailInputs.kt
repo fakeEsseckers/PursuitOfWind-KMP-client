@@ -2,7 +2,7 @@ package io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model
 
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
-import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.model.SpotDetailSnapshot
+import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.entity.SpotDetailSnapshotEntity
 import kotlinx.datetime.LocalDate
 import kotlin.time.Instant
 
@@ -13,7 +13,7 @@ import kotlin.time.Instant
 internal data class SpotDetailInputs(
     val spotId: SpotId,
     val selection: Selection = Selection.First,
-    val snapshot: SpotDetailSnapshot? = null,
+    val snapshot: SpotDetailSnapshotEntity? = null,
     val now: Instant? = null,
     val refresh: RefreshStatus = RefreshStatus(),
 )

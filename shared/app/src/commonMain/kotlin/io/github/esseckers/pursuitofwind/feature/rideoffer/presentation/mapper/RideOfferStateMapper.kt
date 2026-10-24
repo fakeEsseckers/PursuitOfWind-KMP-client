@@ -4,7 +4,7 @@ import io.github.esseckers.pursuitofwind.core.ui.TimeRange
 import io.github.esseckers.pursuitofwind.core.ui.clockTime
 import io.github.esseckers.pursuitofwind.core.ui.dayLabelOf
 import io.github.esseckers.pursuitofwind.core.ui.message
-import io.github.esseckers.pursuitofwind.feature.rideoffer.domain.model.RideDraft
+import io.github.esseckers.pursuitofwind.feature.rideoffer.domain.entity.RideDraftEntity
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.CrewOption
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.OfferSummary
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.RideOfferInputs
@@ -13,13 +13,13 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
 /**
- * Computes the ride offer form from its [RideOfferInputs], for [RideDraft]. The crew and the departure are the
+ * Computes the ride offer form from its [RideOfferInputs], for [RideDraftEntity]. The crew and the departure are the
  * ViewModel's choice; the form shows them. Times are local to the spot, the departure to the rider ([TimeZone]).
  */
 internal object RideOfferStateMapper {
     fun map(
         inputs: RideOfferInputs,
-        draft: RideDraft,
+        draft: RideDraftEntity,
         riderZone: TimeZone,
     ): RideOfferState {
         val crews = inputs.crews?.value.orEmpty()
@@ -41,7 +41,7 @@ internal object RideOfferStateMapper {
     /** The day is named as seen from where the rider is now. */
     private fun summary(
         inputs: RideOfferInputs,
-        draft: RideDraft,
+        draft: RideDraftEntity,
         riderZone: TimeZone,
     ): OfferSummary? {
         val spot = inputs.spot

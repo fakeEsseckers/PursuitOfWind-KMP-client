@@ -14,7 +14,7 @@ import io.github.esseckers.pursuitofwind.data.model.RideStatus
 import io.github.esseckers.pursuitofwind.data.model.Spot
 import io.github.esseckers.pursuitofwind.engine.model.Sector
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
-import io.github.esseckers.pursuitofwind.feature.crew.domain.model.CrewDetails
+import io.github.esseckers.pursuitofwind.feature.crew.domain.entity.CrewDetailsEntity
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewDialog
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.viewmodel.CrewReducer
@@ -71,7 +71,7 @@ internal object CrewPreviewData {
         )
 
     val details =
-        CrewDetails(
+        CrewDetailsEntity(
             crewId = weekendCrew.id,
             members = Cached(members, fetchedAt),
             rides = Cached(rides, fetchedAt),

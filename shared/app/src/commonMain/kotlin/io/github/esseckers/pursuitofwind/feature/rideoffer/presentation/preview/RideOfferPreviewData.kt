@@ -7,7 +7,7 @@ import io.github.esseckers.pursuitofwind.data.model.GeoPoint
 import io.github.esseckers.pursuitofwind.data.model.Spot
 import io.github.esseckers.pursuitofwind.engine.model.Sector
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
-import io.github.esseckers.pursuitofwind.feature.rideoffer.domain.model.RideDraft
+import io.github.esseckers.pursuitofwind.feature.rideoffer.domain.entity.RideDraftEntity
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.RideOfferState
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.viewmodel.RideOfferReducer
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.viewmodel.RideOfferResult
@@ -24,7 +24,7 @@ internal object RideOfferPreviewData {
     private val now = Instant.parse("2026-10-22T06:00:00Z")
 
     val draft =
-        RideDraft(
+        RideDraftEntity(
             spotId = SpotId("nordstrand-bay"),
             windowStart = Instant.parse("2026-10-24T11:00:00Z"),
             windowEnd = Instant.parse("2026-10-24T15:00:00Z"),

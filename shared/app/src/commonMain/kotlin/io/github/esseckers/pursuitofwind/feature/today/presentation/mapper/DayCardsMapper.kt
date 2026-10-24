@@ -16,7 +16,7 @@ import io.github.esseckers.pursuitofwind.engine.model.SessionWindow
 import io.github.esseckers.pursuitofwind.engine.model.SpotConfig
 import io.github.esseckers.pursuitofwind.engine.model.SpotForecast
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
-import io.github.esseckers.pursuitofwind.feature.today.domain.model.CrewRides
+import io.github.esseckers.pursuitofwind.feature.today.domain.entity.CrewRidesEntity
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.AlternativeUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.DayUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.RideOfferUi
@@ -46,7 +46,7 @@ internal data class SpotWithForecast(
 internal class DayCardsMapper(
     private val profile: Profile,
     spots: List<SpotWithForecast>,
-    private val crew: CrewRides,
+    private val crew: CrewRidesEntity,
     private val now: Instant,
     private val riderZone: TimeZone,
 ) {

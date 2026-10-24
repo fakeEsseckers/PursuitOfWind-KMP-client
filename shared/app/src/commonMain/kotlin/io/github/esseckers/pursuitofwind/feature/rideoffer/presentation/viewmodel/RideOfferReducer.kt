@@ -1,7 +1,7 @@
 package io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.viewmodel
 
 import io.github.esseckers.pursuitofwind.core.mvi.Reducer
-import io.github.esseckers.pursuitofwind.feature.rideoffer.domain.model.RideDraft
+import io.github.esseckers.pursuitofwind.feature.rideoffer.domain.entity.RideDraftEntity
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.mapper.RideOfferStateMapper
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.RideOfferInputs
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.RideOfferState
@@ -9,7 +9,7 @@ import kotlinx.datetime.TimeZone
 
 /** Records each result in the inputs and computes the form from them, for [draft]; [riderZone] is where the rider is. */
 internal class RideOfferReducer(
-    private val draft: RideDraft,
+    private val draft: RideDraftEntity,
     private val riderZone: TimeZone,
 ) : Reducer<RideOfferState, RideOfferResult> {
     override fun reduce(

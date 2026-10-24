@@ -7,7 +7,7 @@ import io.github.esseckers.pursuitofwind.data.model.MySpot
 import io.github.esseckers.pursuitofwind.data.model.Spot
 import io.github.esseckers.pursuitofwind.engine.model.Sector
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
-import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.model.SpotPickerSnapshot
+import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.entity.SpotPickerSnapshotEntity
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerState
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.viewmodel.SpotPickerReducer
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.viewmodel.SpotPickerResult
@@ -32,12 +32,12 @@ internal object SpotPickerPreviewData {
     val loading = SpotPickerState()
 
     /** A new rider: the catalog, nothing chosen yet. */
-    val fresh = reduce(SpotPickerResult.DataChanged(SpotPickerSnapshot(Cached(catalog, fetchedAt), emptyList())), refreshed())
+    val fresh = reduce(SpotPickerResult.DataChanged(SpotPickerSnapshotEntity(Cached(catalog, fetchedAt), emptyList())), refreshed())
 
     /** Nordstrand Bay followed, and Lake Weiss just chosen. */
     val chosen =
         reduce(
-            SpotPickerResult.DataChanged(SpotPickerSnapshot(Cached(catalog, fetchedAt), following)),
+            SpotPickerResult.DataChanged(SpotPickerSnapshotEntity(Cached(catalog, fetchedAt), following)),
             refreshed(),
             SpotPickerResult.Toggled(lakeWeiss.id),
         )
@@ -45,21 +45,21 @@ internal object SpotPickerPreviewData {
     /** The saved catalog shown while offline. */
     val offline =
         reduce(
-            SpotPickerResult.DataChanged(SpotPickerSnapshot(Cached(catalog, fetchedAt), following)),
+            SpotPickerResult.DataChanged(SpotPickerSnapshotEntity(Cached(catalog, fetchedAt), following)),
             refreshed(AppError.Network),
         )
 
     /** The catalog came back empty. */
-    val empty = reduce(SpotPickerResult.DataChanged(SpotPickerSnapshot(Cached(emptyList(), fetchedAt), emptyList())), refreshed())
+    val empty = reduce(SpotPickerResult.DataChanged(SpotPickerSnapshotEntity(Cached(emptyList(), fetchedAt), emptyList())), refreshed())
 
     /** Nothing cached and no connection. */
     val error =
-        reduce(SpotPickerResult.DataChanged(SpotPickerSnapshot(Cached(emptyList(), null), emptyList())), refreshed(AppError.Network))
+        reduce(SpotPickerResult.DataChanged(SpotPickerSnapshotEntity(Cached(emptyList(), null), emptyList())), refreshed(AppError.Network))
 
     /** Saving the choice failed. */
     val saveFailed =
         reduce(
-            SpotPickerResult.DataChanged(SpotPickerSnapshot(Cached(catalog, fetchedAt), following)),
+            SpotPickerResult.DataChanged(SpotPickerSnapshotEntity(Cached(catalog, fetchedAt), following)),
             refreshed(),
             SpotPickerResult.Toggled(lakeWeiss.id),
             SpotPickerResult.SaveStarted,

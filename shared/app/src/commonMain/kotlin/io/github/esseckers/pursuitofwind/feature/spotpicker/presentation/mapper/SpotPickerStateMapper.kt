@@ -4,7 +4,7 @@ import io.github.esseckers.pursuitofwind.core.ui.message
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Spot
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
-import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.model.SpotChange
+import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.entity.SpotChangeEntity
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.DriveLimits
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.PickSpotUi
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotChoice
@@ -62,14 +62,20 @@ internal object SpotPickerStateMapper {
      * What "Done" saves, in catalog order: every spot whose choice differs from how it is followed. A spot that is not
      * followed and not chosen stays as it is, whatever its drive time says.
      */
-    private fun changes(inputs: SpotPickerInputs): List<SpotChange> {
+    private fun changes(inputs: SpotPickerInputs): List<SpotChangeEntity> {
         val snapshot = inputs.snapshot ?: return emptyList()
         val followed = snapshot.mySpots.associateBy { it.spot.id }
         return snapshot.catalog.value.mapNotNull { spot ->
             val choice = inputs.choices[spot.id] ?: return@mapNotNull null
             val mine = followed[spot.id]
             val unchanged = mine != null && mine.favorite == choice.selected && mine.drive == choice.driveMinutes.minutes
-            if (unchanged || (mine == null && !choice.selected)) null else SpotChange(spot.id, choice.driveMinutes.minutes, choice.selected)
+            if (unchanged ||
+                (mine == null && !choice.selected)
+            ) {
+                null
+            } else {
+                SpotChangeEntity(spot.id, choice.driveMinutes.minutes, choice.selected)
+            }
         }
     }
 

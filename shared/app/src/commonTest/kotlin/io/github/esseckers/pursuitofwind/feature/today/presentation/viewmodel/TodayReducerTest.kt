@@ -3,7 +3,7 @@ package io.github.esseckers.pursuitofwind.feature.today.presentation.viewmodel
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.feature.today.BERLIN
 import io.github.esseckers.pursuitofwind.feature.today.THURSDAY_8AM
-import io.github.esseckers.pursuitofwind.feature.today.domain.model.RefreshResult
+import io.github.esseckers.pursuitofwind.feature.today.domain.entity.RefreshResultEntity
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.RefreshStatus
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState.Content
@@ -35,12 +35,12 @@ class TodayReducerTest {
     @Test
     fun `a refresh is shown from its start to its end`() {
         val started = TodayState().after(TodayResult.RefreshStarted(at = THURSDAY_8AM))
-        val finished = started.after(TodayResult.RefreshFinished(RefreshResult()))
+        val finished = started.after(TodayResult.RefreshFinished(RefreshResultEntity()))
 
         assertTrue(started.isRefreshing)
         assertEquals(RefreshStatus(refreshing = true, startedAt = THURSDAY_8AM), started.inputs.refresh)
         assertFalse(finished.isRefreshing)
-        assertEquals(RefreshStatus(last = RefreshResult(), startedAt = THURSDAY_8AM), finished.inputs.refresh)
+        assertEquals(RefreshStatus(last = RefreshResultEntity(), startedAt = THURSDAY_8AM), finished.inputs.refresh)
     }
 
     @Test
@@ -50,7 +50,7 @@ class TodayReducerTest {
                 TodayResult.DataChanged(todaySnapshot()),
                 TodayResult.ClockTicked(THURSDAY_8AM),
                 TodayResult.RefreshStarted(at = THURSDAY_8AM),
-                TodayResult.RefreshFinished(RefreshResult(forecastError = AppError.Network)),
+                TodayResult.RefreshFinished(RefreshResultEntity(forecastError = AppError.Network)),
             )
 
         assertIs<Content.Ready>(state.content)
@@ -72,11 +72,11 @@ class TodayReducerTest {
             TodayState().after(
                 TodayResult.DataChanged(todaySnapshot()),
                 TodayResult.ClockTicked(THURSDAY_8AM),
-                TodayResult.RefreshFinished(RefreshResult(forecastError = AppError.Network)),
+                TodayResult.RefreshFinished(RefreshResultEntity(forecastError = AppError.Network)),
             )
         val retrying = offline.after(TodayResult.RefreshStarted(at = THURSDAY_8AM + 1.minutes))
 
-        assertEquals(RefreshResult(forecastError = AppError.Network), retrying.inputs.refresh.last)
+        assertEquals(RefreshResultEntity(forecastError = AppError.Network), retrying.inputs.refresh.last)
         assertEquals(Notice.OFFLINE, retrying.notice)
     }
 

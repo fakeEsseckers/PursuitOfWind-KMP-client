@@ -1,14 +1,14 @@
 package io.github.esseckers.pursuitofwind.feature.today.presentation.viewmodel
 
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
-import io.github.esseckers.pursuitofwind.feature.today.domain.model.RefreshResult
-import io.github.esseckers.pursuitofwind.feature.today.domain.model.TodaySnapshot
+import io.github.esseckers.pursuitofwind.feature.today.domain.entity.RefreshResultEntity
+import io.github.esseckers.pursuitofwind.feature.today.domain.entity.TodaySnapshotEntity
 import kotlin.time.Instant
 
 /** What happened, as the reducer sees it: new cached data, a tick of the clock, a refresh starting or ending. */
 internal sealed interface TodayResult {
     data class DataChanged(
-        val snapshot: TodaySnapshot,
+        val snapshot: TodaySnapshotEntity,
     ) : TodayResult
 
     data class ClockTicked(
@@ -22,6 +22,6 @@ internal sealed interface TodayResult {
     ) : TodayResult
 
     data class RefreshFinished(
-        val result: RefreshResult,
+        val result: RefreshResultEntity,
     ) : TodayResult
 }

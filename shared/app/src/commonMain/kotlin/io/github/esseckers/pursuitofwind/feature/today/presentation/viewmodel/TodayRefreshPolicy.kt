@@ -2,7 +2,7 @@ package io.github.esseckers.pursuitofwind.feature.today.presentation.viewmodel
 
 import io.github.esseckers.pursuitofwind.core.ui.Freshness
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
-import io.github.esseckers.pursuitofwind.feature.today.domain.model.TodaySnapshot
+import io.github.esseckers.pursuitofwind.feature.today.domain.entity.TodaySnapshotEntity
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.RefreshStatus
 import kotlin.time.Instant
 
@@ -13,7 +13,7 @@ internal object TodayRefreshPolicy {
      * [Freshness.REFRESH_AFTER] or later than [now], or a favorite spot has no cached forecast yet.
      */
     fun isDue(
-        snapshot: TodaySnapshot,
+        snapshot: TodaySnapshotEntity,
         refresh: RefreshStatus,
         now: Instant,
     ): Boolean {
@@ -32,7 +32,7 @@ internal object TodayRefreshPolicy {
      * for [isDue], so an offline device does not refresh in a loop.
      */
     fun hasNewFavorite(
-        snapshot: TodaySnapshot,
+        snapshot: TodaySnapshotEntity,
         refresh: RefreshStatus,
     ): Boolean =
         !refresh.refreshing &&
@@ -41,7 +41,7 @@ internal object TodayRefreshPolicy {
             }
 
     /** The favorite spots of [snapshot], which a refresh started now fetches. */
-    fun favorites(snapshot: TodaySnapshot?): Set<SpotId> =
+    fun favorites(snapshot: TodaySnapshotEntity?): Set<SpotId> =
         snapshot
             ?.spots
             ?.value

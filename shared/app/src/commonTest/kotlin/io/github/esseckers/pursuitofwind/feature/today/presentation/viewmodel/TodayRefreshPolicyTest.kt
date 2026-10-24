@@ -3,7 +3,7 @@ package io.github.esseckers.pursuitofwind.feature.today.presentation.viewmodel
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.today.THURSDAY_8AM
-import io.github.esseckers.pursuitofwind.feature.today.domain.model.RefreshResult
+import io.github.esseckers.pursuitofwind.feature.today.domain.entity.RefreshResultEntity
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.RefreshStatus
 import io.github.esseckers.pursuitofwind.feature.today.todaySnapshot
 import kotlin.test.Test
@@ -15,7 +15,7 @@ import kotlin.time.Duration.Companion.minutes
 class TodayRefreshPolicyTest {
     private val now = THURSDAY_8AM
 
-    private fun refreshedAgo(minutes: Int) = RefreshStatus(last = RefreshResult(), startedAt = now - minutes.minutes)
+    private fun refreshedAgo(minutes: Int) = RefreshStatus(last = RefreshResultEntity(), startedAt = now - minutes.minutes)
 
     @Test
     fun `the first appearance refreshes`() {
@@ -30,7 +30,7 @@ class TodayRefreshPolicyTest {
 
     @Test
     fun `coming back refreshes after a failed refresh or for a favorite without a forecast`() {
-        val failed = refreshedAgo(1).copy(last = RefreshResult(forecastError = AppError.Network))
+        val failed = refreshedAgo(1).copy(last = RefreshResultEntity(forecastError = AppError.Network))
 
         assertTrue(TodayRefreshPolicy.isDue(todaySnapshot(), failed, now))
         assertTrue(TodayRefreshPolicy.isDue(todaySnapshot(forecasts = emptyMap()), refreshedAgo(1), now))
@@ -57,7 +57,7 @@ class TodayRefreshPolicyTest {
         val failed =
             refreshedAgo(
                 1,
-            ).copy(favorites = setOf(SpotId("nordstrand-bay")), last = RefreshResult(forecastError = AppError.Network))
+            ).copy(favorites = setOf(SpotId("nordstrand-bay")), last = RefreshResultEntity(forecastError = AppError.Network))
 
         assertFalse(TodayRefreshPolicy.hasNewFavorite(todaySnapshot(forecasts = emptyMap()), failed))
     }

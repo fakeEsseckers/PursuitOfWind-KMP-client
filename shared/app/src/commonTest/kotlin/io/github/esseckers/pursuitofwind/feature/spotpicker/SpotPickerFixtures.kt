@@ -3,7 +3,7 @@ package io.github.esseckers.pursuitofwind.feature.spotpicker
 import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.MySpot
 import io.github.esseckers.pursuitofwind.data.model.Spot
-import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.model.SpotPickerSnapshot
+import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.entity.SpotPickerSnapshotEntity
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerInputs
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.preview.SpotPickerPreviewData
 import kotlin.time.Duration
@@ -15,7 +15,8 @@ val CATALOG: List<Spot> =
 val FETCHED_AT: Instant = Instant.parse("2026-10-24T06:00:00Z")
 
 /** The catalog, with [mySpots] followed. */
-internal fun snapshot(vararg mySpots: MySpot): SpotPickerSnapshot = SpotPickerSnapshot(Cached(CATALOG, FETCHED_AT), mySpots.toList())
+internal fun snapshot(vararg mySpots: MySpot): SpotPickerSnapshotEntity =
+    SpotPickerSnapshotEntity(Cached(CATALOG, FETCHED_AT), mySpots.toList())
 
 fun following(
     spot: Spot,

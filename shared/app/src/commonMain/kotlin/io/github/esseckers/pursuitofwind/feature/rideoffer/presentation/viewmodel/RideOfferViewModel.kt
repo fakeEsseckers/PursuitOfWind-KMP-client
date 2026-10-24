@@ -5,7 +5,7 @@ import io.github.esseckers.pursuitofwind.core.mvi.MviViewModel
 import io.github.esseckers.pursuitofwind.core.ui.nextQuarterHour
 import io.github.esseckers.pursuitofwind.data.model.Crew
 import io.github.esseckers.pursuitofwind.data.model.RidePlan
-import io.github.esseckers.pursuitofwind.feature.rideoffer.domain.model.RideDraft
+import io.github.esseckers.pursuitofwind.feature.rideoffer.domain.entity.RideDraftEntity
 import io.github.esseckers.pursuitofwind.feature.rideoffer.domain.repository.RideOfferRepository
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.RideOfferEffect
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.RideOfferIntent
@@ -29,7 +29,7 @@ import kotlin.time.Instant
  * is out, [RideOfferEffect.Offered] closes the form; a failure stays in the form with its reason.
  */
 internal class RideOfferViewModel(
-    private val draft: RideDraft,
+    private val draft: RideDraftEntity,
     private val repository: RideOfferRepository,
     private val clock: Clock,
     riderZone: TimeZone,

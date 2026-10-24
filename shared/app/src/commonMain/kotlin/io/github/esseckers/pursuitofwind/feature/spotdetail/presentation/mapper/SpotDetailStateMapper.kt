@@ -5,7 +5,7 @@ import io.github.esseckers.pursuitofwind.core.resources.spot_no_forecast
 import io.github.esseckers.pursuitofwind.core.ui.Freshness
 import io.github.esseckers.pursuitofwind.core.ui.message
 import io.github.esseckers.pursuitofwind.data.model.AppError
-import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.model.SpotDetailSnapshot
+import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.entity.SpotDetailSnapshotEntity
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.RefreshStatus
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailInputs
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState
@@ -73,7 +73,7 @@ internal object SpotDetailStateMapper {
 
     /** What to show while there is no hour to show. */
     private fun waitingContent(
-        snapshot: SpotDetailSnapshot,
+        snapshot: SpotDetailSnapshotEntity,
         refresh: RefreshStatus,
     ): Content {
         val error = refresh.error
@@ -102,5 +102,5 @@ internal object SpotDetailStateMapper {
         }
 
     /** True when the cached forecast was written by a refresh started at [startedAt] or later. */
-    private fun SpotDetailSnapshot.reflects(startedAt: Instant): Boolean = forecast.updatedAt?.let { it >= startedAt } == true
+    private fun SpotDetailSnapshotEntity.reflects(startedAt: Instant): Boolean = forecast.updatedAt?.let { it >= startedAt } == true
 }

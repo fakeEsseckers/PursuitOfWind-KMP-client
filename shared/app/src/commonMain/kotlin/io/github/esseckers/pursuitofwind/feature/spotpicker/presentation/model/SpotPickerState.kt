@@ -1,7 +1,7 @@
 package io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model
 
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
-import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.model.SpotChange
+import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.entity.SpotChangeEntity
 import org.jetbrains.compose.resources.StringResource
 import kotlin.time.Duration
 
@@ -18,7 +18,7 @@ internal data class SpotPickerState(
     val isRefreshing: Boolean = false,
     val notice: Notice? = null,
     val selectedCount: Int = 0,
-    val changes: List<SpotChange> = emptyList(),
+    val changes: List<SpotChangeEntity> = emptyList(),
     val saving: Boolean = false,
     val saveError: StringResource? = null,
     val inputs: SpotPickerInputs = SpotPickerInputs(),

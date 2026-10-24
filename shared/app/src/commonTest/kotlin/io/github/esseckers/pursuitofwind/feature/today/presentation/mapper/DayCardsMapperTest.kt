@@ -19,7 +19,7 @@ import io.github.esseckers.pursuitofwind.feature.today.THURSDAY_8AM
 import io.github.esseckers.pursuitofwind.feature.today.alex
 import io.github.esseckers.pursuitofwind.feature.today.at
 import io.github.esseckers.pursuitofwind.feature.today.day
-import io.github.esseckers.pursuitofwind.feature.today.domain.model.CrewRides
+import io.github.esseckers.pursuitofwind.feature.today.domain.entity.CrewRidesEntity
 import io.github.esseckers.pursuitofwind.feature.today.hour
 import io.github.esseckers.pursuitofwind.feature.today.mySpot
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.AlternativeUi
@@ -45,7 +45,7 @@ class DayCardsMapperTest {
 
     private fun cards(
         forecasts: Map<String, List<ForecastHour>> = mapOf("nordstrand-bay" to saturdayOn()),
-        rides: CrewRides = CrewRides(emptyList(), hasCrew = false, userId = me.userId),
+        rides: CrewRidesEntity = CrewRidesEntity(emptyList(), hasCrew = false, userId = me.userId),
         unit: WindUnit = WindUnit.KNOTS,
         now: Instant = THURSDAY_8AM,
         riderZone: TimeZone = BERLIN,
@@ -126,7 +126,7 @@ class DayCardsMapperTest {
                 ride("elsewhere").copy(spotId = SpotId("salt-lagoon")),
                 ride("cancelled").copy(status = RideStatus.CANCELLED),
             )
-        val saturday = assertIs<DayUi.Go>(cards(rides = CrewRides(rides, hasCrew = true, userId = me.userId))[2])
+        val saturday = assertIs<DayUi.Go>(cards(rides = CrewRidesEntity(rides, hasCrew = true, userId = me.userId))[2])
 
         assertEquals(
             listOf(
@@ -142,7 +142,7 @@ class DayCardsMapperTest {
     @Test
     fun `with a crew a GO day offers a ride for its riding time unless the rider already drives or rides`() {
         fun offer(vararg rides: Ride) =
-            assertIs<DayUi.Go>(cards(rides = CrewRides(rides.toList(), hasCrew = true, userId = me.userId))[2]).offer
+            assertIs<DayUi.Go>(cards(rides = CrewRidesEntity(rides.toList(), hasCrew = true, userId = me.userId))[2]).offer
         val andrei = ride("andrei", departHour = 10)
 
         assertEquals(RideOfferUi(SpotId("nordstrand-bay"), at(SATURDAY, 13), at(SATURDAY, 17), at(SATURDAY, 10, 30)), offer())
@@ -155,7 +155,7 @@ class DayCardsMapperTest {
     @Test
     fun `once the time to leave has passed an offered ride leaves at the next quarter hour`() {
         val windyToday = day(THURSDAY) { hour -> if (hour < 10) 12.0 else 18.0 }
-        val crew = CrewRides(emptyList(), hasCrew = true, userId = me.userId)
+        val crew = CrewRidesEntity(emptyList(), hasCrew = true, userId = me.userId)
         val today = assertIs<DayUi.Go>(cards(forecasts = mapOf("nordstrand-bay" to windyToday), rides = crew).single())
 
         assertEquals(RideOfferUi(SpotId("nordstrand-bay"), at(THURSDAY, 10, 30), at(THURSDAY, 17), at(THURSDAY, 8, 15)), today.offer)
@@ -185,7 +185,7 @@ class DayCardsMapperTest {
     @Test
     fun `rides that already left are marked as departed`() {
         val rides = listOf(ride("early", departHour = 9), ride("later", departHour = 12))
-        val saturday = cards(rides = CrewRides(rides, hasCrew = true, userId = me.userId), now = at(SATURDAY, 10)).first()
+        val saturday = cards(rides = CrewRidesEntity(rides, hasCrew = true, userId = me.userId), now = at(SATURDAY, 10)).first()
 
         assertEquals(listOf(true, false), assertIs<DayUi.Go>(saturday).rides.map { it.departed })
     }
@@ -194,7 +194,7 @@ class DayCardsMapperTest {
     fun `a spot behind the time zone of the rider does not bring back yesterday`() {
         // 00:30 on Friday in Berlin, where the rider is, is still Thursday 23:30 in London, where the spot is.
         val londonSpot = SpotWithForecast(mySpot("nordstrand-bay", zone = TimeZone.of("Europe/London")), saturdayOn())
-        val noRides = CrewRides(emptyList(), hasCrew = false, userId = null)
+        val noRides = CrewRidesEntity(emptyList(), hasCrew = false, userId = null)
         val cards = DayCardsMapper(alex(), listOf(londonSpot), noRides, now = at(FRIDAY, 0, 30), riderZone = BERLIN).map()
 
         assertEquals(listOf(DayLabel.Today, DayLabel.Tomorrow), cards.map { it.label })

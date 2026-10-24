@@ -3,8 +3,8 @@ package io.github.esseckers.pursuitofwind.feature.crew.presentation.model
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.Crew
-import io.github.esseckers.pursuitofwind.feature.crew.domain.model.CrewDetails
-import io.github.esseckers.pursuitofwind.feature.crew.domain.model.shownCrew
+import io.github.esseckers.pursuitofwind.feature.crew.domain.entity.CrewDetailsEntity
+import io.github.esseckers.pursuitofwind.feature.crew.domain.entity.shownCrew
 import org.jetbrains.compose.resources.StringResource
 import kotlin.time.Instant
 
@@ -16,7 +16,7 @@ import kotlin.time.Instant
 internal data class CrewInputs(
     val crews: Cached<List<Crew>>? = null,
     val chosen: String? = null,
-    val details: CrewDetails? = null,
+    val details: CrewDetailsEntity? = null,
     val refresh: CrewRefresh = CrewRefresh(),
     val cancelling: Set<String> = emptySet(),
     val dialog: CrewDialog? = null,

@@ -1,14 +1,14 @@
 package io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.viewmodel
 
 import io.github.esseckers.pursuitofwind.data.model.AppError
-import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.model.SpotDetailSnapshot
+import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.entity.SpotDetailSnapshotEntity
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.Selection
 import kotlin.time.Instant
 
 /** What happened, as the reducer sees it. */
 internal sealed interface SpotDetailResult {
     data class DataChanged(
-        val snapshot: SpotDetailSnapshot,
+        val snapshot: SpotDetailSnapshotEntity,
     ) : SpotDetailResult
 
     data class ClockTicked(

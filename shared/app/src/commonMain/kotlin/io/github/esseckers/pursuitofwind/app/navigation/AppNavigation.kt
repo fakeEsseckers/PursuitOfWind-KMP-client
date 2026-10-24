@@ -36,7 +36,7 @@ import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.navigation.CrewRoute
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileMode
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.navigation.ProfileRoute
-import io.github.esseckers.pursuitofwind.feature.rideoffer.domain.model.RideDraft
+import io.github.esseckers.pursuitofwind.feature.rideoffer.domain.entity.RideDraftEntity
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.navigation.RideOfferRoute
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.navigation.SpotDetailRoute
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.navigation.SpotPickerRoute
@@ -129,7 +129,7 @@ private fun entries(navigator: Navigator): (NavKey) -> NavEntry<NavKey> =
         }
         entry<Destination.OfferRide> { key ->
             val draft =
-                RideDraft(
+                RideDraftEntity(
                     spotId = SpotId(key.spotId),
                     windowStart = Instant.fromEpochSeconds(key.windowStart),
                     windowEnd = Instant.fromEpochSeconds(key.windowEnd),

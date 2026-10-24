@@ -4,8 +4,8 @@ import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.Crew
 import io.github.esseckers.pursuitofwind.data.model.Outcome
-import io.github.esseckers.pursuitofwind.feature.crew.domain.model.CrewDetails
-import io.github.esseckers.pursuitofwind.feature.crew.domain.model.shownCrew
+import io.github.esseckers.pursuitofwind.feature.crew.domain.entity.CrewDetailsEntity
+import io.github.esseckers.pursuitofwind.feature.crew.domain.entity.shownCrew
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -17,7 +17,7 @@ internal interface CrewsRepository {
     val crews: Flow<Cached<List<Crew>>>
 
     /** Members, rides and the rides' spots of [crewId], as cached; emits again whenever any of them changes. */
-    fun details(crewId: String): Flow<CrewDetails>
+    fun details(crewId: String): Flow<CrewDetailsEntity>
 
     /** Fetches the list of crews, then members and rides of the crew shown for [chosen] ([shownCrew]). */
     suspend fun refreshAll(chosen: String?): AppError?

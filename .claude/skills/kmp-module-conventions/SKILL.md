@@ -67,7 +67,7 @@ io.github.esseckers.pursuitofwind/
     ui/                     # formatting and labels shared by screens
     resources/              # generated Res (packageOfResClass)
   feature/<screen>/         # today, spotdetail, profile, spots, crew, settings
-    domain/model/           # the feature's models
+    domain/entity/          # the feature's domain types, named *Entity
     domain/repository/      # the repository interface the feature needs
     data/repository/        # its implementation over the :shared:data repositories
     presentation/model/     # State, Intent, Effect, UI models

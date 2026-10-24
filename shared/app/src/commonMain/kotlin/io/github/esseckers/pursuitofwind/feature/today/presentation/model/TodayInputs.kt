@@ -1,8 +1,8 @@
 package io.github.esseckers.pursuitofwind.feature.today.presentation.model
 
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
-import io.github.esseckers.pursuitofwind.feature.today.domain.model.RefreshResult
-import io.github.esseckers.pursuitofwind.feature.today.domain.model.TodaySnapshot
+import io.github.esseckers.pursuitofwind.feature.today.domain.entity.RefreshResultEntity
+import io.github.esseckers.pursuitofwind.feature.today.domain.entity.TodaySnapshotEntity
 import kotlin.time.Instant
 
 /**
@@ -10,7 +10,7 @@ import kotlin.time.Instant
  * and [now] are null until they first arrive.
  */
 internal data class TodayInputs(
-    val snapshot: TodaySnapshot? = null,
+    val snapshot: TodaySnapshotEntity? = null,
     val now: Instant? = null,
     val refresh: RefreshStatus = RefreshStatus(),
 )
@@ -22,7 +22,7 @@ internal data class TodayInputs(
  */
 internal data class RefreshStatus(
     val refreshing: Boolean = false,
-    val last: RefreshResult? = null,
+    val last: RefreshResultEntity? = null,
     val startedAt: Instant? = null,
     val favorites: Set<SpotId> = emptySet(),
 )

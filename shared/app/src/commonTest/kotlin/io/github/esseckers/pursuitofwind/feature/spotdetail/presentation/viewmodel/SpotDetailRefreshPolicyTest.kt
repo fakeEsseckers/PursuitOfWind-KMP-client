@@ -3,7 +3,7 @@ package io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.viewmo
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.feature.spotdetail.SATURDAY
 import io.github.esseckers.pursuitofwind.feature.spotdetail.at
-import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.model.SpotDetailSnapshot
+import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.entity.SpotDetailSnapshotEntity
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.RefreshStatus
 import io.github.esseckers.pursuitofwind.feature.spotdetail.snapshot
 import kotlin.test.Test
@@ -15,7 +15,7 @@ class SpotDetailRefreshPolicyTest {
     private val now = at(SATURDAY, 8, 20)
 
     private fun due(
-        snapshot: SpotDetailSnapshot = snapshot(fetched = now - 10.minutes),
+        snapshot: SpotDetailSnapshotEntity = snapshot(fetched = now - 10.minutes),
         refresh: RefreshStatus = RefreshStatus(),
     ) = SpotDetailRefreshPolicy.isDue(snapshot, refresh, now)
 
