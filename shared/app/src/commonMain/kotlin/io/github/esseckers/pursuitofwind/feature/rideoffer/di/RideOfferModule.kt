@@ -4,7 +4,6 @@ import io.github.esseckers.pursuitofwind.feature.rideoffer.data.repository.RideO
 import io.github.esseckers.pursuitofwind.feature.rideoffer.domain.model.RideDraft
 import io.github.esseckers.pursuitofwind.feature.rideoffer.domain.repository.RideOfferRepository
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.viewmodel.RideOfferViewModel
-import kotlinx.datetime.TimeZone
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
@@ -14,6 +13,6 @@ internal val rideOfferModule: Module =
     module {
         factory<RideOfferRepository> { RideOfferRepositoryImpl(get(), get(), get()) }
         viewModel { (draft: RideDraft) ->
-            RideOfferViewModel(draft, repository = get(), clock = get(), riderZone = TimeZone.currentSystemDefault())
+            RideOfferViewModel(draft, repository = get(), clock = get(), riderZone = get())
         }
     }

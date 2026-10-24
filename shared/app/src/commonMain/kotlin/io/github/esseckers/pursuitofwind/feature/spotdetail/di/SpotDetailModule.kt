@@ -5,7 +5,6 @@ import io.github.esseckers.pursuitofwind.feature.spotdetail.data.repository.Spot
 import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.repository.SpotDetailRepository
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.viewmodel.SpotDetailViewModel
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
@@ -20,7 +19,7 @@ internal val spotDetailModule: Module =
                 date = date,
                 repository = get(),
                 clock = get(),
-                riderZone = TimeZone.currentSystemDefault(),
+                riderZone = get(),
             )
         }
     }
