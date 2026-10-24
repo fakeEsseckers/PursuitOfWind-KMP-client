@@ -4,7 +4,7 @@ import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.Crew
 import io.github.esseckers.pursuitofwind.feature.crew.domain.entity.CrewDetailsEntity
-import io.github.esseckers.pursuitofwind.feature.crew.domain.entity.shownCrew
+import io.github.esseckers.pursuitofwind.feature.crew.domain.mapper.CrewChoiceMapper
 import org.jetbrains.compose.resources.StringResource
 import kotlin.time.Instant
 
@@ -56,5 +56,5 @@ internal sealed interface CrewDialog {
     }
 }
 
-/** The crew on screen ([shownCrew]). */
-internal fun CrewInputs.shownCrew(): Crew? = shownCrew(crews?.value.orEmpty(), chosen)
+/** The crew on screen ([CrewChoiceMapper.shownCrew]). */
+internal fun CrewInputs.shownCrew(): Crew? = CrewChoiceMapper.shownCrew(crews?.value.orEmpty(), chosen)

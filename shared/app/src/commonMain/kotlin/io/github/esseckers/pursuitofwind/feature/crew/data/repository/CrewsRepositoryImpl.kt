@@ -11,7 +11,7 @@ import io.github.esseckers.pursuitofwind.data.repository.CrewRepository
 import io.github.esseckers.pursuitofwind.data.repository.RideRepository
 import io.github.esseckers.pursuitofwind.data.repository.SpotRepository
 import io.github.esseckers.pursuitofwind.feature.crew.domain.entity.CrewDetailsEntity
-import io.github.esseckers.pursuitofwind.feature.crew.domain.entity.shownCrew
+import io.github.esseckers.pursuitofwind.feature.crew.domain.mapper.CrewChoiceMapper
 import io.github.esseckers.pursuitofwind.feature.crew.domain.repository.CrewsRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
@@ -34,7 +34,7 @@ internal class CrewsRepositoryImpl(
 
     override suspend fun refreshAll(chosen: String?): AppError? =
         crewRepository.refreshCrews().errorOrNull() ?: readCache {
-            shownCrew(crewRepository.crews.first().value, chosen)?.let { refresh(it.id) }
+            CrewChoiceMapper.shownCrew(crewRepository.crews.first().value, chosen)?.let { refresh(it.id) }
         }
 
     /**

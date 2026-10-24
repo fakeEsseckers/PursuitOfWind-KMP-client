@@ -68,6 +68,7 @@ io.github.esseckers.pursuitofwind/
     resources/              # generated Res (packageOfResClass)
   feature/<screen>/         # today, spotdetail, profile, spots, crew, settings
     domain/entity/          # the feature's domain types, named *Entity
+    domain/mapper/          # pure rules over those types (`RefreshErrorMapper`, `CrewChoiceMapper`), with tests
     domain/repository/      # the repository interface the feature needs
     data/repository/        # its implementation over the :shared:data repositories
     presentation/model/     # State, Intent, Effect, UI models

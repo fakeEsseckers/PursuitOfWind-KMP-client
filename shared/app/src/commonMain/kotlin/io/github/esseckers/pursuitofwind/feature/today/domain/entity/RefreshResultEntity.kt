@@ -10,6 +10,3 @@ internal data class RefreshResultEntity(
     val forecastError: AppError? = null,
     val crewError: AppError? = null,
 )
-
-/** The error to show for [errors]: a connection problem first, since it explains the others. */
-internal fun mainError(errors: List<AppError>): AppError? = errors.firstOrNull { it == AppError.Network } ?: errors.firstOrNull()

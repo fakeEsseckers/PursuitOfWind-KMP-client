@@ -5,7 +5,7 @@ import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.Crew
 import io.github.esseckers.pursuitofwind.data.model.Outcome
 import io.github.esseckers.pursuitofwind.feature.crew.domain.entity.CrewDetailsEntity
-import io.github.esseckers.pursuitofwind.feature.crew.domain.entity.shownCrew
+import io.github.esseckers.pursuitofwind.feature.crew.domain.mapper.CrewChoiceMapper
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -19,7 +19,7 @@ internal interface CrewsRepository {
     /** Members, rides and the rides' spots of [crewId], as cached; emits again whenever any of them changes. */
     fun details(crewId: String): Flow<CrewDetailsEntity>
 
-    /** Fetches the list of crews, then members and rides of the crew shown for [chosen] ([shownCrew]). */
+    /** Fetches the list of crews, then members and rides of the crew shown for [chosen] (`CrewChoiceMapper.shownCrew`). */
     suspend fun refreshAll(chosen: String?): AppError?
 
     /** Brings members and rides of [crewId] up to date, and the names of spots its rides go to. */

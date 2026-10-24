@@ -14,6 +14,7 @@ feature/today/
   domain/
     entity/TodaySnapshotEntity.kt  // what the screen needs from the data layer, as one value
     entity/RefreshResultEntity.kt  // what a refresh reports (forecast and crew errors kept apart)
+    mapper/RefreshErrorMapper.kt   // pure rules over domain types: which of several errors to show
     repository/TodayRepository.kt  // interface: snapshot: Flow, suspend fun refresh()
   data/
     repository/TodayRepositoryImpl.kt  // over the :shared:data repositories; catches and logs storage errors

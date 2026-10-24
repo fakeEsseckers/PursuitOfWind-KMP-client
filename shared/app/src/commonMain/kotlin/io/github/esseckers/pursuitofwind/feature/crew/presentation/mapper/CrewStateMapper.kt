@@ -11,7 +11,7 @@ import io.github.esseckers.pursuitofwind.data.model.MemberRole
 import io.github.esseckers.pursuitofwind.data.model.Ride
 import io.github.esseckers.pursuitofwind.data.model.RideStatus
 import io.github.esseckers.pursuitofwind.feature.crew.domain.entity.CrewDetailsEntity
-import io.github.esseckers.pursuitofwind.feature.crew.domain.entity.shownCrew
+import io.github.esseckers.pursuitofwind.feature.crew.domain.mapper.CrewChoiceMapper
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewChoice
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewInputs
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewRideUi
@@ -34,7 +34,7 @@ internal object CrewStateMapper {
     ): CrewState {
         val refresh = inputs.refresh
         val crews = inputs.crews?.value.orEmpty()
-        val shown = shownCrew(crews, inputs.chosen)
+        val shown = CrewChoiceMapper.shownCrew(crews, inputs.chosen)
         val base =
             CrewState(
                 crews = crews.map { CrewChoice(it.id, it.name, selected = it.id == shown?.id) },

@@ -17,7 +17,7 @@ import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.today.domain.entity.CrewRidesEntity
 import io.github.esseckers.pursuitofwind.feature.today.domain.entity.RefreshResultEntity
 import io.github.esseckers.pursuitofwind.feature.today.domain.entity.TodaySnapshotEntity
-import io.github.esseckers.pursuitofwind.feature.today.domain.entity.mainError
+import io.github.esseckers.pursuitofwind.feature.today.domain.mapper.RefreshErrorMapper
 import io.github.esseckers.pursuitofwind.feature.today.domain.repository.TodayRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -73,9 +73,10 @@ internal class TodayRepositoryImpl(
                         .value
                         .filter { it.favorite }
                 val forecastResults = favorites.map { async { forecasts.refresh(it.spot.id) } }.awaitAll()
+                val forecastErrors = (listOf(profile.await(), followed) + forecastResults).mapNotNull { it.errorOrNull() }
                 RefreshResultEntity(
-                    forecastError = mainError((listOf(profile.await(), followed) + forecastResults).mapNotNull { it.errorOrNull() }),
-                    crewError = mainError(crew.await().mapNotNull { it.errorOrNull() }),
+                    forecastError = RefreshErrorMapper.mainError(forecastErrors),
+                    crewError = RefreshErrorMapper.mainError(crew.await().mapNotNull { it.errorOrNull() }),
                 )
             }
         } catch (cancelled: CancellationException) {

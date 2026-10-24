@@ -1,7 +1,6 @@
 package io.github.esseckers.pursuitofwind.feature.crew.domain.entity
 
 import io.github.esseckers.pursuitofwind.data.model.Cached
-import io.github.esseckers.pursuitofwind.data.model.Crew
 import io.github.esseckers.pursuitofwind.data.model.CrewMember
 import io.github.esseckers.pursuitofwind.data.model.Ride
 import io.github.esseckers.pursuitofwind.data.model.Spot
@@ -18,9 +17,3 @@ internal data class CrewDetailsEntity(
     val spots: Map<SpotId, Spot>,
     val userId: String?,
 )
-
-/** The crew the tab shows: the one the rider [chosen], or the first of [crews] when none is chosen or it is gone. */
-internal fun shownCrew(
-    crews: List<Crew>,
-    chosen: String?,
-): Crew? = crews.firstOrNull { it.id == chosen } ?: crews.firstOrNull()

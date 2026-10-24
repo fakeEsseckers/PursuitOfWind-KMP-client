@@ -12,7 +12,7 @@ import io.github.esseckers.pursuitofwind.core.ui.message
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Crew
 import io.github.esseckers.pursuitofwind.data.model.Outcome
-import io.github.esseckers.pursuitofwind.feature.crew.domain.entity.shownCrew
+import io.github.esseckers.pursuitofwind.feature.crew.domain.mapper.CrewChoiceMapper
 import io.github.esseckers.pursuitofwind.feature.crew.domain.repository.CrewsRepository
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewDialog
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewEffect
@@ -80,7 +80,7 @@ internal class CrewViewModel(
     override fun bind(): Flow<CrewResult> =
         merge(
             repository.crews
-                .onEach { shown.value = shownCrew(it.value, currentState.inputs.chosen)?.id }
+                .onEach { shown.value = CrewChoiceMapper.shownCrew(it.value, currentState.inputs.chosen)?.id }
                 .map { CrewResult.CrewsChanged(it) },
             shown.filterNotNull().flatMapLatest { repository.details(it) }.map { CrewResult.DetailsChanged(it) },
             ticks().map { CrewResult.Ticked(it) },
