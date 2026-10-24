@@ -60,7 +60,7 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * "I'm going": the window the ride is for, the crew it goes to, the free seats and where to meet, and "Offer the
- * ride". Stateless; [RideOfferRoute] connects it to its ViewModel. [onBack] leaves without offering.
+ * ride". Stateless; [io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.navigation.RideOfferRoute] connects it to its ViewModel. [onBack] leaves without offering.
  */
 @Composable
 internal fun RideOfferScreen(

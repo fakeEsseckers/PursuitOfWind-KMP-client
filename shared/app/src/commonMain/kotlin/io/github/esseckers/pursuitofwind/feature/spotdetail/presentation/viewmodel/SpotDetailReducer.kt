@@ -49,12 +49,11 @@ internal class SpotDetailReducer(
         previous: Content,
         next: Content,
     ): Content =
-        when {
-            previous == next -> {
+        when (previous) {
+            next -> {
                 previous
             }
-
-            previous is Content.Ready && next is Content.Ready -> {
+            is Content.Ready if next is Content.Ready -> {
                 Content.Ready(
                     chart = if (next.chart == previous.chart) previous.chart else next.chart,
                     days = if (next.days == previous.days) previous.days else next.days,

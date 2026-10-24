@@ -56,15 +56,6 @@ internal class RideOfferStateMapper(
         return crews.firstOrNull { it.id == inputs.chosen } ?: crews.firstOrNull()
     }
 
-    companion object {
-        /** The mapper for [draft] as seen at [clock]'s time in [riderZone]. */
-        fun at(
-            draft: RideDraft,
-            clock: Clock,
-            riderZone: TimeZone,
-        ): RideOfferStateMapper = RideOfferStateMapper(draft, clock.now().toLocalDateTime(riderZone).date, riderZone)
-    }
-
     private fun summary(inputs: RideOfferInputs): OfferSummary? {
         val spot = inputs.spot ?: return null
         val zone = spot.timeZone
@@ -73,6 +64,19 @@ internal class RideOfferStateMapper(
             day = dayLabelOf(draft.windowStart.toLocalDateTime(zone).date, today),
             window = TimeRange(draft.windowStart.clockTime(zone), draft.windowEnd.clockTime(zone)),
             departAt = departure(inputs).clockTime(riderZone),
+        )
+    }
+
+    companion object {
+        /** The mapper for [draft] as seen at [clock]'s time in [riderZone]. */
+        fun create(
+            draft: RideDraft,
+            clock: Clock,
+            riderZone: TimeZone,
+        ): RideOfferStateMapper = RideOfferStateMapper(
+            draft,
+            clock.now().toLocalDateTime(riderZone).date,
+            riderZone,
         )
     }
 }

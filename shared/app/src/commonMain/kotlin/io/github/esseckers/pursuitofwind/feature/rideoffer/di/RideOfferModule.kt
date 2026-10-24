@@ -16,6 +16,6 @@ internal val rideOfferModule: Module =
         factory<RideOfferRepository> { RideOfferRepositoryImpl(get(), get(), get()) }
         viewModel { (draft: RideDraft) ->
             val zone = TimeZone.currentSystemDefault()
-            RideOfferViewModel(draft, repository = get(), mapper = RideOfferStateMapper.at(draft, get(), zone), clock = get())
+            RideOfferViewModel(draft, repository = get(), mapper = RideOfferStateMapper.create(draft, get(), zone), clock = get())
         }
     }

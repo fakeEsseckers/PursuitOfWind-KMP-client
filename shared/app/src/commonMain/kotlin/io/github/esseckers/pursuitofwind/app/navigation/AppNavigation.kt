@@ -37,7 +37,7 @@ import io.github.esseckers.pursuitofwind.feature.crew.presentation.view.CrewRout
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileMode
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.view.ProfileRoute
 import io.github.esseckers.pursuitofwind.feature.rideoffer.domain.model.RideDraft
-import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.view.RideOfferRoute
+import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.navigation.RideOfferRoute
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.view.SpotDetailRoute
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.view.SpotPickerRoute
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.view.SpotsRoute

@@ -72,7 +72,7 @@ class RideOfferViewModelTest {
             viewModels,
             viewModelFactory {
                 initializer {
-                    val mapper = RideOfferStateMapper.at(draft, clock, BERLIN)
+                    val mapper = RideOfferStateMapper.create(draft, clock, BERLIN)
                     // No ticks: the tests move the clock themselves.
                     RideOfferViewModel(draft, repository = koin.get(), mapper = mapper, clock = clock, tick = Duration.INFINITE)
                 }
