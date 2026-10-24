@@ -1,4 +1,4 @@
-package io.github.esseckers.pursuitofwind.feature.crew.presentation.view
+package io.github.esseckers.pursuitofwind.feature.crew.presentation.navigation
 
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
@@ -22,6 +22,7 @@ import io.github.esseckers.pursuitofwind.core.resources.crew_joined
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewEffect
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewIntent
+import io.github.esseckers.pursuitofwind.feature.crew.presentation.view.CrewScreen
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.viewmodel.CrewViewModel
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate

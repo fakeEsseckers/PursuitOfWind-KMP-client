@@ -1,10 +1,11 @@
-package io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.view
+package io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
+import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.view.SpotDetailScreen
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.viewmodel.SpotDetailViewModel
 import kotlinx.datetime.LocalDate
 import org.koin.compose.viewmodel.koinViewModel

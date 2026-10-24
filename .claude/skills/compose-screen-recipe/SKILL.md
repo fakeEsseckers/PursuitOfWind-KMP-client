@@ -29,7 +29,7 @@ feature/today/
     viewmodel/TodayReducer.kt   // pure: (state, result) -> state
     viewmodel/TodayViewModel.kt // MviViewModel: intents and observed data -> results
     viewmodel/TodayRefreshPolicy.kt  // when the screen refreshes on its own
-    view/TodayRoute.kt          // collects state and effects, takes navigation lambdas (onOpenSpot); no layout
+    navigation/TodayRoute.kt    // collects state and effects, takes navigation lambdas (onOpenSpot); no layout
     view/TodayScreen.kt         // stateless: (state, onIntent) -> UI
     view/TodayCards.kt          // larger pieces of the screen, when TodayScreen would grow too long
     view/TodayPreviewData.kt    // sample states for previews and UI tests

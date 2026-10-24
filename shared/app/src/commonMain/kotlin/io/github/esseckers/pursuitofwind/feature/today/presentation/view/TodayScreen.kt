@@ -66,7 +66,7 @@ import org.jetbrains.compose.resources.stringResource
 import kotlin.time.Duration
 
 /**
- * "Go?": the answer for today and the next two days. Stateless; [TodayRoute] connects it to [TodayViewModel].
+ * "Go?": the answer for today and the next two days. Stateless; `TodayRoute` connects it to [TodayViewModel].
  * Pull to refresh; screen readers get a "Refresh" action on the title and on every day instead of the gesture.
  */
 @Composable

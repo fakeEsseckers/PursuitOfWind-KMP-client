@@ -1,4 +1,4 @@
-package io.github.esseckers.pursuitofwind.feature.profile.presentation.view
+package io.github.esseckers.pursuitofwind.feature.profile.presentation.navigation
 
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
@@ -12,6 +12,7 @@ import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.profile_saved
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileEffect
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileMode
+import io.github.esseckers.pursuitofwind.feature.profile.presentation.view.ProfileScreen
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.viewmodel.ProfileViewModel
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource

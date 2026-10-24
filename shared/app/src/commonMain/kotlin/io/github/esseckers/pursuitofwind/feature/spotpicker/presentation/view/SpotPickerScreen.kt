@@ -63,7 +63,7 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * The spot catalog to choose favorites from, each with its drive from home. Stateless; [SpotPickerRoute] connects it
+ * The spot catalog to choose favorites from, each with its drive from home. Stateless; `SpotPickerRoute` connects it
  * to its ViewModel. "Done" stays at the bottom, so it is in reach however long the list is.
  */
 @Composable

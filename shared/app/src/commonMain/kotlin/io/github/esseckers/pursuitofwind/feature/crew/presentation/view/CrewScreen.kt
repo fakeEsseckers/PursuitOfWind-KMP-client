@@ -79,7 +79,7 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * The Crew tab: the crew on screen with its invite code, its rides by day with a seat to take, and its members; chips
- * to switch crews, and ways to create or join one. Stateless; [CrewRoute] connects it to its ViewModel and shows
+ * to switch crews, and ways to create or join one. Stateless; `CrewRoute` connects it to its ViewModel and shows
  * [snackbarHostState]'s messages. Pull to refresh; screen readers get a "Refresh" action on the title instead.
  */
 @Composable

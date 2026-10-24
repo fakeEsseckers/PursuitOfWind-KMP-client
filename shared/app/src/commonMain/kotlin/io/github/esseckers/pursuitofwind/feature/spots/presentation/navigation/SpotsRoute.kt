@@ -1,4 +1,4 @@
-package io.github.esseckers.pursuitofwind.feature.spots.presentation.view
+package io.github.esseckers.pursuitofwind.feature.spots.presentation.navigation
 
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
@@ -19,6 +19,7 @@ import io.github.esseckers.pursuitofwind.core.resources.my_spots_save_failed
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsEffect
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsIntent
+import io.github.esseckers.pursuitofwind.feature.spots.presentation.view.SpotsScreen
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.viewmodel.SpotsViewModel
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString

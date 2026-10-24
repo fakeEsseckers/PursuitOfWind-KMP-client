@@ -63,7 +63,7 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * The Spots tab: the followed spots, each changed in place and saved at once, and "Add spots" to the catalog.
- * Stateless; [SpotsRoute] connects it to its ViewModel and shows [snackbarHostState]'s messages (removed, with undo;
+ * Stateless; `SpotsRoute` connects it to its ViewModel and shows [snackbarHostState]'s messages (removed, with undo;
  * a change that could not be saved). Pull to refresh; screen readers get a "Refresh" action on the title instead.
  */
 @Composable

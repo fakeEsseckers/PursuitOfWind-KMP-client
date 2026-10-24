@@ -73,7 +73,8 @@ io.github.esseckers.pursuitofwind/
     presentation/model/     # State, Intent, Effect, UI models
     presentation/mapper/    # state mappers (called by the reducer only) and their pure helpers
     presentation/viewmodel/ # ViewModel, Result, Reducer
-    presentation/view/      # Route, Screen, previews
+    presentation/navigation/ # Route: state and effects to the Screen, navigation lambdas out
+    presentation/view/      # Screen, previews
     di/                     # the feature's Koin module
 ```
 

@@ -1,4 +1,4 @@
-package io.github.esseckers.pursuitofwind.feature.today.presentation.view
+package io.github.esseckers.pursuitofwind.feature.today.presentation.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -11,6 +11,7 @@ import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.RideOfferUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayEffect
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayIntent
+import io.github.esseckers.pursuitofwind.feature.today.presentation.view.TodayScreen
 import io.github.esseckers.pursuitofwind.feature.today.presentation.viewmodel.TodayViewModel
 import kotlinx.datetime.LocalDate
 import org.koin.compose.viewmodel.koinViewModel

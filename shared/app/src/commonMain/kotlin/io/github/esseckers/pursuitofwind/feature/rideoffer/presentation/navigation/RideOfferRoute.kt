@@ -12,7 +12,7 @@ import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.viewmode
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
-/** Connects [io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.view.RideOfferScreen] for [draft] to its [RideOfferViewModel]. [onDone] closes the form once the ride is offered. */
+/** Connects [RideOfferScreen] for [draft] to its [RideOfferViewModel]. [onDone] closes the form once the ride is offered. */
 @Composable
 internal fun RideOfferRoute(
     draft: RideDraft,
