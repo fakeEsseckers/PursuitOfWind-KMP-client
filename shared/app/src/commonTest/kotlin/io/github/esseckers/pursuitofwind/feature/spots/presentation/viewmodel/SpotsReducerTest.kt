@@ -19,14 +19,14 @@ import kotlin.time.Instant
 class SpotsReducerTest {
     private val fetchedAt = Instant.parse("2026-10-24T06:00:00Z")
 
+    private val loaded = reduce(data(nordstrand, saltLagoon), SpotsResult.RefreshFinished(null))
+
     private fun data(vararg spots: MySpot) = SpotsResult.DataChanged(Cached(spots.toList(), fetchedAt))
 
     private fun reduce(
         vararg results: SpotsResult,
         from: SpotsState = SpotsState(),
     ): SpotsState = results.fold(from, SpotsReducer::reduce)
-
-    private val loaded = reduce(data(nordstrand, saltLagoon), SpotsResult.RefreshFinished(null))
 
     private fun SpotsState.spot(name: String) = (content as Content.Ready).spots.single { it.name == name }
 

@@ -40,6 +40,10 @@ class TodayStateMapperTest {
     private val nordstrand = mySpot("nordstrand-bay")
     private val refreshed = RefreshStatus(last = RefreshResult(), startedAt = fetched)
 
+    private val sundayNoon = at(SUNDAY, 12)
+
+    private val neverFetched = snapshot(profile = Cached(null, null), spots = Cached(emptyList(), null), forecasts = emptyMap())
+
     private fun snapshot(
         profile: Cached<Profile?> = Cached(alex(), fetched),
         spots: Cached<List<MySpot>> = Cached(listOf(nordstrand), fetched),
@@ -56,10 +60,6 @@ class TodayStateMapperTest {
         forecastError: AppError? = null,
         crewError: AppError? = null,
     ) = RefreshStatus(last = RefreshResult(forecastError, crewError), startedAt = fetched)
-
-    private val sundayNoon = at(SUNDAY, 12)
-
-    private val neverFetched = snapshot(profile = Cached(null, null), spots = Cached(emptyList(), null), forecasts = emptyMap())
 
     @Test
     fun `before the data and the clock arrive the screen loads`() {

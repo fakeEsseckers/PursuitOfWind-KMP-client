@@ -47,6 +47,9 @@ internal class LocalSettings(
             }
         }
 
+    /** The app's language; a device choice, so a new owner of the cache keeps it. */
+    val language: Flow<AppLanguage> = store.data.map { AppLanguage.of(it[LANGUAGE]) }
+
     suspend fun saveProfile(
         profile: RiderProfileDto?,
         updatedAt: Instant,
@@ -60,9 +63,6 @@ internal class LocalSettings(
             preferences[PROFILE_UPDATED_AT] = updatedAt.toEpochMilliseconds()
         }
     }
-
-    /** The app's language; a device choice, so a new owner of the cache keeps it. */
-    val language: Flow<AppLanguage> = store.data.map { AppLanguage.of(it[LANGUAGE]) }
 
     suspend fun saveLanguage(language: AppLanguage) {
         store.edit { preferences ->

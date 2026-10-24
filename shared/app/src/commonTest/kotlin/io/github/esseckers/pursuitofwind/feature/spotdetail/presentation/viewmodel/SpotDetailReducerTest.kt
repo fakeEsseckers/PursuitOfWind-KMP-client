@@ -27,10 +27,10 @@ class SpotDetailReducerTest {
     private val reducer = SpotDetailReducer(BERLIN)
     private val now = at(SATURDAY, 8, 20)
 
-    private fun SpotDetailState.after(vararg results: SpotDetailResult): SpotDetailState = results.fold(this, reducer::reduce)
-
     private val opened = SpotDetailState(SpotDetailInputs(NORDSTRAND))
     private val ready = opened.after(SpotDetailResult.DataChanged(snapshot()), SpotDetailResult.ClockTicked(now))
+
+    private fun SpotDetailState.after(vararg results: SpotDetailResult): SpotDetailState = results.fold(this, reducer::reduce)
 
     @Test
     fun `the screen loads until both the data and the clock have arrived`() {

@@ -28,13 +28,13 @@ internal class ProfileEditRepositoryImpl(
                 emit(null)
             }.distinctUntilChanged()
 
-    override suspend fun save(profile: Profile): Outcome<Profile> = profiles.save(profile)
-
     override val language: Flow<AppLanguage> =
         preferences.language.catch { failure ->
             Logger.withTag("Profile").e(failure) { "Reading the language failed" }
             emit(AppLanguage.SYSTEM)
         }
+
+    override suspend fun save(profile: Profile): Outcome<Profile> = profiles.save(profile)
 
     override suspend fun setLanguage(language: AppLanguage): Outcome<Unit> = preferences.setLanguage(language)
 }

@@ -118,12 +118,12 @@ internal class AuthSession(
         const val INSTALLATION_ID = "installation_id"
         const val CREATED = 201
 
-        /** A `4xx` answer to a refresh means the refresh token is no good: sign in again. Not a timeout or rate limit. */
-        fun Int.isRefusal(): Boolean = this in CLIENT_ERRORS && this != REQUEST_TIMEOUT && this != TOO_MANY_REQUESTS
-
         val CLIENT_ERRORS = 400..499
 
         const val REQUEST_TIMEOUT = 408
         const val TOO_MANY_REQUESTS = 429
+
+        /** A `4xx` answer to a refresh means the refresh token is no good: sign in again. Not a timeout or rate limit. */
+        fun Int.isRefusal(): Boolean = this in CLIENT_ERRORS && this != REQUEST_TIMEOUT && this != TOO_MANY_REQUESTS
     }
 }

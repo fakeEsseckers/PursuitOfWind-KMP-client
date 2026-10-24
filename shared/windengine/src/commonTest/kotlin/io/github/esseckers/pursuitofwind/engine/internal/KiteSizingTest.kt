@@ -8,19 +8,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class KiteSizingTest {
-    private data class Vector(
-        val id: String,
-        val weightKg: Double,
-        val meanKn: Int,
-        val gustKn: Int,
-        val quiver: List<Double>,
-        val ideal: Double,
-        val expected: KiteSizing,
-    )
-
     private val standardQuiver = listOf(7.0, 9.0, 12.0)
-
-    private fun go(kite: Double) = KiteSizing(kiteM2 = kite, verdict = Verdict.GO, reason = null)
 
     private val vectors =
         listOf(
@@ -57,6 +45,18 @@ class KiteSizingTest {
             ),
             Vector("B8", 80.0, 20, 31, standardQuiver, ideal = 7.5536, expected = go(7.0)),
         )
+
+    private data class Vector(
+        val id: String,
+        val weightKg: Double,
+        val meanKn: Int,
+        val gustKn: Int,
+        val quiver: List<Double>,
+        val ideal: Double,
+        val expected: KiteSizing,
+    )
+
+    private fun go(kite: Double) = KiteSizing(kiteM2 = kite, verdict = Verdict.GO, reason = null)
 
     @Test
     fun `B1 to B8 ideal size and the kite picked from the quiver`() {

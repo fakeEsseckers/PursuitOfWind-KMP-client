@@ -21,6 +21,8 @@ internal class SpotDetailRepositoryImpl(
     private val spots: SpotRepository,
     private val forecasts: ForecastRepository,
 ) : SpotDetailRepository {
+    private val log = Logger.withTag("SpotDetail")
+
     override fun snapshot(spotId: SpotId): Flow<SpotDetailSnapshot> =
         combine(
             profiles.profile,
@@ -41,6 +43,4 @@ internal class SpotDetailRepositoryImpl(
             log.e(failure) { "Refreshing the forecast of $spotId failed" }
             AppError.Unknown(failure.toString())
         }
-
-    private val log = Logger.withTag("SpotDetail")
 }

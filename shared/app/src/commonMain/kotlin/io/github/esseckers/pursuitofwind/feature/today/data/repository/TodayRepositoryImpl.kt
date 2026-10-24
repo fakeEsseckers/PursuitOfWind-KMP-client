@@ -55,6 +55,8 @@ internal class TodayRepositoryImpl(
             TodaySnapshot(profile, spots, forecasts, CrewRides(rides.rides, rides.hasCrew, user))
         }
 
+    private val log = Logger.withTag("Today")
+
     /**
      * Fetches the profile, the followed spots, the favorites' forecasts and the crews' rides. Never throws, apart from
      * cancellation: a storage failure while reading the cache is reported as [AppError.Unknown].
@@ -129,8 +131,6 @@ internal class TodayRepositoryImpl(
                     ) { lists -> RidesOfCrews(lists.flatMap { it }, hasCrew = true) }
                 }
             }
-
-    private val log = Logger.withTag("Today")
 
     private data class RidesOfCrews(
         val rides: List<Ride>,

@@ -47,6 +47,29 @@ class CrewScreenTest {
     private val intents = mutableListOf<CrewIntent>()
     private val systemLocale = Locale.getDefault()
 
+    /** Alex has a seat in Andrei's car. */
+    private val seated =
+        CrewReducer(CrewPreviewData.zone).reduce(
+            CrewPreviewData.ready,
+            CrewResult.DetailsChanged(
+                details.copy(
+                    rides =
+                        Cached(
+                            details.rides.value.map {
+                                if (it ==
+                                    andreisRide
+                                ) {
+                                    it.copy(passengers = it.passengers + alex, seatsFree = 0)
+                                } else {
+                                    it
+                                }
+                            },
+                            null,
+                        ),
+                ),
+            ),
+        )
+
     @BeforeTest
     fun english() {
         Locale.setDefault(Locale.ENGLISH)
@@ -71,29 +94,6 @@ class CrewScreenTest {
     private fun ComposeUiTest.scrollTo(tag: String) {
         onNodeWithTag("crew.list").performScrollToNode(hasTestTag(tag))
     }
-
-    /** Alex has a seat in Andrei's car. */
-    private val seated =
-        CrewReducer(CrewPreviewData.zone).reduce(
-            CrewPreviewData.ready,
-            CrewResult.DetailsChanged(
-                details.copy(
-                    rides =
-                        Cached(
-                            details.rides.value.map {
-                                if (it ==
-                                    andreisRide
-                                ) {
-                                    it.copy(passengers = it.passengers + alex, seatsFree = 0)
-                                } else {
-                                    it
-                                }
-                            },
-                            null,
-                        ),
-                ),
-            ),
-        )
 
     @Test
     fun `the crew reads as headings with its invite code its rides by day and its members`() =

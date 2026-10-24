@@ -27,13 +27,6 @@ class DayDecisionTest {
     private val spotA = SPOT.copy(id = SpotId("a-beach"), name = "A Beach")
     private val spotB = SPOT.copy(id = SpotId("b-bay"), name = "B Bay")
 
-    private fun at(time: String) = Instant.parse("${time}Z")
-
-    private fun forecast(
-        spot: SpotConfig,
-        vararg hours: List<ForecastHour>,
-    ) = SpotForecast(spot, hours.flatMap { it })
-
     /** Models disagree by 4 kn every hour, so a window gets MEDIUM confidence. */
     private val disagreeingModels: ForecastHourBuilder.() -> Unit = {
         byModel =
@@ -43,6 +36,13 @@ class DayDecisionTest {
                 ModelId.GFS to ModelWind(20.kn, 24.kn, Bearing(240.0)),
             )
     }
+
+    private fun at(time: String) = Instant.parse("${time}Z")
+
+    private fun forecast(
+        spot: SpotConfig,
+        vararg hours: List<ForecastHour>,
+    ) = SpotForecast(spot, hours.flatMap { it })
 
     @Test
     fun `G1 the best window wins and the others become alternatives`() {
