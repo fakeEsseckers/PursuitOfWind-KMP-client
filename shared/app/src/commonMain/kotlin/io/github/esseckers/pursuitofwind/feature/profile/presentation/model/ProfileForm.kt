@@ -8,7 +8,7 @@ import io.github.esseckers.pursuitofwind.engine.model.WindSpeed
 
 /**
  * The profile as the rider edits it: text exactly as typed, choices as values. It becomes a [Profile] only through
- * validation (`ProfileFormMapper.check`), so a half-typed weight never reaches the data layer.
+ * validation (`ProfileState.validProfile`), so a half-typed weight never reaches the data layer.
  *
  * @property minWind the personal lower wind limit as typed, in the form's limit unit (`limitUnit`); empty means the
  *   level's default. [maxWind] likewise.

@@ -1,10 +1,6 @@
 package io.github.esseckers.pursuitofwind.feature.crew.presentation.mapper
 
-import io.github.esseckers.pursuitofwind.contract.ProblemCode
 import io.github.esseckers.pursuitofwind.core.resources.Res
-import io.github.esseckers.pursuitofwind.core.resources.crew_invite_invalid
-import io.github.esseckers.pursuitofwind.core.resources.crew_ride_was_cancelled
-import io.github.esseckers.pursuitofwind.core.resources.crew_seat_taken
 import io.github.esseckers.pursuitofwind.core.resources.error_network
 import io.github.esseckers.pursuitofwind.core.ui.DayLabel
 import io.github.esseckers.pursuitofwind.core.ui.TimeRange
@@ -179,14 +175,6 @@ class CrewStateMapperTest {
 
         assertEquals(emptyList(), (map(inputs(rides = emptyList())).content as Content.Ready).crew.days)
         assertEquals(emptyList(), (map(inputs(rides = listOf(yesterday))).content as Content.Ready).crew.days)
-    }
-
-    @Test
-    fun `failures that have a reason of their own say it`() {
-        assertEquals(Res.string.crew_seat_taken, CrewStateMapper.failure(AppError.Conflict(ProblemCode.SEATS_FULL)))
-        assertEquals(Res.string.crew_ride_was_cancelled, CrewStateMapper.failure(AppError.Conflict(ProblemCode.RIDE_CANCELLED)))
-        assertEquals(Res.string.crew_invite_invalid, CrewStateMapper.failure(AppError.Rejected(404, ProblemCode.INVITE_INVALID)))
-        assertEquals(Res.string.error_network, CrewStateMapper.failure(AppError.Network))
     }
 
     @Test

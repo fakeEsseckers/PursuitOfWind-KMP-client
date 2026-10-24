@@ -1,10 +1,5 @@
 package io.github.esseckers.pursuitofwind.feature.crew.presentation.mapper
 
-import io.github.esseckers.pursuitofwind.contract.ProblemCode
-import io.github.esseckers.pursuitofwind.core.resources.Res
-import io.github.esseckers.pursuitofwind.core.resources.crew_invite_invalid
-import io.github.esseckers.pursuitofwind.core.resources.crew_ride_was_cancelled
-import io.github.esseckers.pursuitofwind.core.resources.crew_seat_taken
 import io.github.esseckers.pursuitofwind.core.ui.DayLabel
 import io.github.esseckers.pursuitofwind.core.ui.TimeRange
 import io.github.esseckers.pursuitofwind.core.ui.clockTime
@@ -30,7 +25,6 @@ import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.RideAct
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.RideDayUi
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import org.jetbrains.compose.resources.StringResource
 
 /** Pure rules of the Crew tab: what it shows for its inputs. Times of day are local to the spot, departures to the rider. */
 internal object CrewStateMapper {
@@ -78,15 +72,6 @@ internal object CrewStateMapper {
             else -> Content.Loading
         }
     }
-
-    /** What to tell the rider when an action on the Crew tab failed with [error]. */
-    fun failure(error: AppError): StringResource =
-        when {
-            error == AppError.Conflict(ProblemCode.SEATS_FULL) -> Res.string.crew_seat_taken
-            error == AppError.Conflict(ProblemCode.RIDE_CANCELLED) -> Res.string.crew_ride_was_cancelled
-            error is AppError.Rejected && error.code == ProblemCode.INVITE_INVALID -> Res.string.crew_invite_invalid
-            else -> error.message()
-        }
 
     private fun crewUi(
         crew: Crew,

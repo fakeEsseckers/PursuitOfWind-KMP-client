@@ -77,7 +77,7 @@ class SpotPickerStateMapperTest {
     fun `done follows a newly chosen spot as a favorite at its drive`() {
         val chosen = inputs().copy(choices = mapOf(saltLagoon.id to SpotChoice(selected = true, driveMinutes = 90)))
 
-        assertEquals(listOf(SpotChange(saltLagoon.id, 90.minutes, favorite = true)), SpotPickerStateMapper.changes(chosen))
+        assertEquals(listOf(SpotChange(saltLagoon.id, 90.minutes, favorite = true)), SpotPickerStateMapper.map(chosen).changes)
         assertTrue(SpotPickerStateMapper.map(chosen).hasChanges)
     }
 
@@ -85,7 +85,7 @@ class SpotPickerStateMapperTest {
     fun `a favorite that is no longer chosen stays followed but not as a favorite`() {
         val unchosen = inputs(following(nordstrand, 2.hours)).copy(choices = mapOf(nordstrand.id to SpotChoice(false, 120)))
 
-        assertEquals(listOf(SpotChange(nordstrand.id, 2.hours, favorite = false)), SpotPickerStateMapper.changes(unchosen))
+        assertEquals(listOf(SpotChange(nordstrand.id, 2.hours, favorite = false)), SpotPickerStateMapper.map(unchosen).changes)
     }
 
     @Test
@@ -93,8 +93,8 @@ class SpotPickerStateMapperTest {
         val same = inputs(following(nordstrand, 2.hours)).copy(choices = mapOf(nordstrand.id to SpotChoice(true, 120)))
         val driveOfUnchosen = inputs().copy(choices = mapOf(dune.id to SpotChoice(false, 30)))
 
-        assertEquals(emptyList(), SpotPickerStateMapper.changes(same))
-        assertEquals(emptyList(), SpotPickerStateMapper.changes(driveOfUnchosen))
+        assertEquals(emptyList(), SpotPickerStateMapper.map(same).changes)
+        assertEquals(emptyList(), SpotPickerStateMapper.map(driveOfUnchosen).changes)
     }
 
     @Test
@@ -109,7 +109,7 @@ class SpotPickerStateMapperTest {
                     ),
             )
 
-        assertEquals(listOf(dune.id, nordstrand.id, saltLagoon.id), SpotPickerStateMapper.changes(chosen).map { it.spotId })
+        assertEquals(listOf(dune.id, nordstrand.id, saltLagoon.id), SpotPickerStateMapper.map(chosen).changes.map { it.spotId })
     }
 
     @Test

@@ -16,7 +16,6 @@ import io.github.esseckers.pursuitofwind.data.repository.ProfileRepository
 import io.github.esseckers.pursuitofwind.data.repository.RideRepository
 import io.github.esseckers.pursuitofwind.data.repository.SpotRepository
 import io.github.esseckers.pursuitofwind.feature.rideoffer.domain.model.RideDraft
-import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.mapper.RideOfferStateMapper
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.RideOfferEffect
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.RideOfferIntent
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.RideOfferState
@@ -41,6 +40,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
@@ -71,10 +71,15 @@ class RideOfferViewModelTest {
         ViewModelProvider.create(
             viewModels,
             viewModelFactory {
+                // No ticks: the tests move the clock themselves.
                 initializer {
-                    val mapper = RideOfferStateMapper.create(draft, clock, BERLIN)
-                    // No ticks: the tests move the clock themselves.
-                    RideOfferViewModel(draft, repository = koin.get(), mapper = mapper, clock = clock, tick = Duration.INFINITE)
+                    RideOfferViewModel(
+                        draft,
+                        repository = koin.get(),
+                        clock = clock,
+                        riderZone = BERLIN,
+                        tick = Duration.INFINITE,
+                    )
                 }
             },
         )[RideOfferViewModel::class]
@@ -141,6 +146,79 @@ class RideOfferViewModelTest {
                     .value
                     .single { it.driver.displayName == "Alex" }
             assertEquals(at(SUNDAY, 10, 45), ride.departAt)
+        }
+
+    @Test
+    fun `an offer sent once the window has started leaves at its start`() =
+        runTest(dispatcher) {
+            riderInWeekendCrew()
+            val viewModel = viewModel()
+
+            viewModel.state.test(timeout = TURBINE_TIMEOUT) {
+                awaitState { it.summary != null && it.crews.isNotEmpty() }
+                clock.set(at(SUNDAY, 13) + 20.minutes)
+                viewModel.onIntent(RideOfferIntent.ChangeMeetingPoint("Old harbour"))
+                viewModel.onIntent(RideOfferIntent.Submit)
+                assertEquals("13:00", awaitState { it.sending }.summary?.departAt)
+                cancelAndIgnoreRemainingEvents()
+            }
+            viewModel.effects.test(timeout = TURBINE_TIMEOUT) { assertEquals(RideOfferEffect.Offered, awaitItem()) }
+
+            val ride =
+                koin
+                    .get<RideRepository>()
+                    .rides("crw_weekend")
+                    .first()
+                    .value
+                    .single { it.driver.displayName == "Alex" }
+            assertEquals(at(SUNDAY, 13), ride.departAt)
+        }
+
+    @Test
+    fun `the ride goes to the first crew unless the rider picks another and the pick survives a crews update`() =
+        runTest(dispatcher) {
+            riderInWeekendCrew()
+            val owls =
+                koin
+                    .get<CrewRepository>()
+                    .create("Night Owls")
+                    .value()
+            val viewModel = viewModel()
+
+            viewModel.state.test(timeout = TURBINE_TIMEOUT) {
+                val shown = awaitState { it.crews.size == 2 }
+                assertEquals(listOf("Weekend Crew"), shown.crews.filter { it.selected }.map { it.name })
+                viewModel.onIntent(RideOfferIntent.ChooseCrew(owls.id))
+                viewModel.onIntent(RideOfferIntent.ChooseCrew("crw_left_long_ago"))
+                // A refresh brings the crews again, as the Crew tab's polling does.
+                val before = awaitState { it.crews.any { crew -> crew.selected && crew.id == owls.id } }.inputs.crews
+                clock.advanceBy(1.minutes)
+                koin.get<CrewRepository>().refreshCrews().value()
+                val refreshed = awaitState { it.inputs.crews != before }
+                assertEquals(listOf("Night Owls"), refreshed.crews.filter { it.selected }.map { it.name })
+                viewModel.onIntent(RideOfferIntent.ChangeMeetingPoint("Old harbour"))
+                viewModel.onIntent(RideOfferIntent.Submit)
+                awaitState { it.sending }
+                cancelAndIgnoreRemainingEvents()
+            }
+            viewModel.effects.test(timeout = TURBINE_TIMEOUT) { assertEquals(RideOfferEffect.Offered, awaitItem()) }
+
+            val rides = koin.get<RideRepository>()
+            assertEquals(
+                listOf("Alex"),
+                rides
+                    .rides(owls.id)
+                    .first()
+                    .value
+                    .map { it.driver.displayName },
+            )
+            assertTrue(
+                rides
+                    .rides("crw_weekend")
+                    .first()
+                    .value
+                    .none { it.driver.displayName == "Alex" },
+            )
         }
 
     @Test

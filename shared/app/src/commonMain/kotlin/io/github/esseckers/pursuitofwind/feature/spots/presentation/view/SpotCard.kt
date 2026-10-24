@@ -39,8 +39,8 @@ import io.github.esseckers.pursuitofwind.core.resources.spots_drive_longer
 import io.github.esseckers.pursuitofwind.core.resources.spots_drive_shorter
 import io.github.esseckers.pursuitofwind.core.resources.spots_unverified
 import io.github.esseckers.pursuitofwind.core.ui.durationText
-import io.github.esseckers.pursuitofwind.feature.spots.presentation.mapper.SpotsStateMapper
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.MySpotUi
+import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotDrive
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -78,8 +78,8 @@ internal fun SpotCard(
                 value = durationText(spot.drive),
                 decreaseLabel = stringResource(Res.string.spots_drive_shorter, spot.name),
                 increaseLabel = stringResource(Res.string.spots_drive_longer, spot.name),
-                onDecrease = { onDrive(SpotsStateMapper.shorter(minutes)) },
-                onIncrease = { onDrive(SpotsStateMapper.longer(minutes)) },
+                onDecrease = { onDrive(SpotDrive.shorter(minutes)) },
+                onIncrease = { onDrive(SpotDrive.longer(minutes)) },
                 canDecrease = spot.canShorten,
                 canIncrease = spot.canLengthen,
                 modifier = Modifier.testTag("myspots.drive.${spot.id.value}"),

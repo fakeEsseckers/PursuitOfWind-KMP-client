@@ -10,8 +10,6 @@ import io.github.esseckers.pursuitofwind.data.model.Profile
 import io.github.esseckers.pursuitofwind.data.model.errorOrNull
 import io.github.esseckers.pursuitofwind.data.model.valueOrNull
 import io.github.esseckers.pursuitofwind.feature.profile.domain.repository.ProfileEditRepository
-import io.github.esseckers.pursuitofwind.feature.profile.presentation.mapper.ProfileFormMapper
-import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileCheck
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileEffect
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileIntent
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileState
@@ -52,7 +50,7 @@ internal class ProfileViewModel(
     private fun save() {
         if (currentState.loading || currentState.saving) return
         dispatchResult(ProfileResult.Submitted)
-        when (val profile = (ProfileFormMapper.check(currentState.form) as? ProfileCheck.Valid)?.profile) {
+        when (val profile = currentState.validProfile) {
             // Not valid: the errors show now.
             null -> Unit
 

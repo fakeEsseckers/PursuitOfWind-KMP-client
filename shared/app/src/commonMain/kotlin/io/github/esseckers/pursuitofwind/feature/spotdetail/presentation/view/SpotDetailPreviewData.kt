@@ -18,11 +18,12 @@ import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.engine.model.ThunderRisk
 import io.github.esseckers.pursuitofwind.engine.model.WindSpeed
 import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.model.SpotDetailSnapshot
-import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.mapper.SpotDetailStateMapper
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.RefreshStatus
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.Selection
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailInputs
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState
+import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.viewmodel.SpotDetailReducer
+import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.viewmodel.SpotDetailResult
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
@@ -44,13 +45,6 @@ internal object SpotDetailPreviewData {
 
     private val profile = Profile("Alex", RiderProfile(80.0, SkillLevel.INTERMEDIATE, listOf(7.0, 9.0, 12.0)), WindUnit.KNOTS)
 
-    fun spot(verified: Boolean = true): MySpot =
-        MySpot(
-            spot = Spot(spotId, "Nordstrand Bay", GeoPoint(54.5, 8.8), zone, listOf(Sector.of(180.0, 300.0)), emptyList(), verified),
-            drive = 2.hours,
-            favorite = true,
-        )
-
     val hours: List<ForecastHour> = (0 until 96).map { forecastHour(saturday8am + it.hours) }
 
     val ready: SpotDetailState = state()
@@ -59,6 +53,13 @@ internal object SpotDetailPreviewData {
     val loading: SpotDetailState = state(hours = emptyList(), refresh = RefreshStatus(refreshing = true, startedAt = saturday8am))
     val error: SpotDetailState = state(hours = emptyList(), refresh = RefreshStatus(finished = true, error = AppError.Network))
     val notFollowed: SpotDetailState = state(spot = null)
+
+    fun spot(verified: Boolean = true): MySpot =
+        MySpot(
+            spot = Spot(spotId, "Nordstrand Bay", GeoPoint(54.5, 8.8), zone, listOf(Sector.of(180.0, 300.0)), emptyList(), verified),
+            drive = 2.hours,
+            favorite = true,
+        )
 
     fun state(
         spot: MySpot? = spot(),
@@ -69,7 +70,9 @@ internal object SpotDetailPreviewData {
     ): SpotDetailState {
         val fetched = saturday8am - 5.minutes
         val snapshot = SpotDetailSnapshot(Cached(profile, fetched), Cached(spot, fetched), Cached(hours, fetched))
-        return SpotDetailStateMapper.map(SpotDetailInputs(spotId, selection, snapshot, now, refresh), zone)
+        // Through the real reducer, as the screen gets it: the selection result maps these inputs.
+        val inputs = SpotDetailInputs(spotId, selection, snapshot, now, refresh)
+        return SpotDetailReducer(zone).reduce(SpotDetailState(inputs = inputs), SpotDetailResult.Selected(selection))
     }
 
     private fun forecastHour(start: Instant): ForecastHour {

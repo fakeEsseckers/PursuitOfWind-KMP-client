@@ -36,6 +36,17 @@ class ProfileReducerTest {
     }
 
     @Test
+    fun `the form is a profile to save only while every field is right`() {
+        val loaded = reduce(ProfileResult.Loaded(savedAlex()))
+        val noWeight = reduce(ProfileResult.Edited(ProfileEdit.Weight("")), from = loaded)
+
+        assertEquals(savedAlex(), loaded.validProfile)
+        assertNull(noWeight.validProfile)
+        // Errors wait for the first try to save.
+        assertTrue(noWeight.errors.isEmpty())
+    }
+
+    @Test
     fun `a rider without a profile gets an empty form with something to save`() {
         val state = reduce(ProfileResult.Loaded(null))
 

@@ -5,7 +5,6 @@ import io.github.esseckers.pursuitofwind.core.mvi.MviViewModel
 import io.github.esseckers.pursuitofwind.core.mvi.launchFinishing
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.repository.SpotPickerRepository
-import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.mapper.SpotPickerStateMapper
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerEffect
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerIntent
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerState
@@ -23,6 +22,9 @@ import kotlinx.coroutines.flow.onStart
 internal class SpotPickerViewModel(
     private val repository: SpotPickerRepository,
 ) : MviViewModel<SpotPickerState, SpotPickerIntent, SpotPickerResult, SpotPickerEffect>(SpotPickerState(), SpotPickerReducer) {
+    /** The running refresh, which a save waits for: both write the followed spots. */
+    private var refreshJob: Job? = null
+
     override fun onIntent(intent: SpotPickerIntent) {
         when (intent) {
             is SpotPickerIntent.Toggle -> dispatchResult(SpotPickerResult.Toggled(intent.spotId))
@@ -36,9 +38,6 @@ internal class SpotPickerViewModel(
         repository.snapshot
             .map<_, SpotPickerResult> { SpotPickerResult.DataChanged(it) }
             .onStart { if (!currentState.inputs.refresh.finished) refresh() }
-
-    /** The running refresh, which a save waits for: both write the followed spots. */
-    private var refreshJob: Job? = null
 
     /** One refresh at a time; a tap while one runs joins it, and none starts while saving. */
     private fun refresh() {
@@ -54,7 +53,7 @@ internal class SpotPickerViewModel(
     /** Saves what changed, then finishes; with nothing changed, finishes at once. One save at a time. */
     private fun done() {
         if (currentState.saving) return
-        val changes = SpotPickerStateMapper.changes(currentState.inputs)
+        val changes = currentState.changes
         if (changes.isEmpty()) {
             postEffect(SpotPickerEffect.Finished)
             return

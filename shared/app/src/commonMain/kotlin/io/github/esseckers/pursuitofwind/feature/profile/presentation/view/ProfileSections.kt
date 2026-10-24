@@ -68,7 +68,6 @@ import io.github.esseckers.pursuitofwind.core.ui.windUnitLabel
 import io.github.esseckers.pursuitofwind.data.model.AppLanguage
 import io.github.esseckers.pursuitofwind.data.model.WindUnit
 import io.github.esseckers.pursuitofwind.engine.model.SkillLevel
-import io.github.esseckers.pursuitofwind.feature.profile.presentation.mapper.ProfileFormMapper
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.mapper.acceptsNumber
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.mapper.limitUnit
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.KiteChoice
@@ -95,7 +94,8 @@ internal fun AboutYouFields(
             version = version,
             onValueChange = { onEdit(ProfileEdit.Name(it)) },
             label = stringResource(Res.string.profile_name),
-            accepts = ProfileFormMapper::acceptsName,
+            // Longer names than the server allows are never typed.
+            accepts = { it.length <= ProfileLimits.NAME_MAX_LENGTH },
             error = errors[ProfileField.NAME]?.let { stringResource(errorText(it)) },
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Next),
             modifier = Modifier.testTag("profile.name"),

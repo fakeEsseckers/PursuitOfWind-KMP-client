@@ -1,13 +1,16 @@
 package io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.viewmodel
 
 import io.github.esseckers.pursuitofwind.core.mvi.Reducer
+import io.github.esseckers.pursuitofwind.feature.rideoffer.domain.model.RideDraft
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.mapper.RideOfferStateMapper
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.RideOfferInputs
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.RideOfferState
+import kotlinx.datetime.TimeZone
 
-/** Records each result in the inputs and computes the form from them with [mapper]. */
+/** Records each result in the inputs and computes the form from them, for [draft]; [riderZone] is where the rider is. */
 internal class RideOfferReducer(
-    private val mapper: RideOfferStateMapper,
+    private val draft: RideDraft,
+    private val riderZone: TimeZone,
 ) : Reducer<RideOfferState, RideOfferResult> {
     override fun reduce(
         state: RideOfferState,
@@ -16,8 +19,8 @@ internal class RideOfferReducer(
         val inputs = state.inputs
         val next =
             when (result) {
-                is RideOfferResult.Ticked -> inputs.copy(now = result.now)
-                is RideOfferResult.CrewsChanged -> inputs.copy(crews = result.cached)
+                is RideOfferResult.Ticked -> inputs.copy(now = result.now, departAt = result.departAt)
+                is RideOfferResult.CrewsChanged -> inputs.copy(crews = result.cached, chosen = result.chosen)
                 is RideOfferResult.SpotChanged -> inputs.copy(spot = result.spot)
                 is RideOfferResult.Chosen -> inputs.copy(chosen = result.crewId)
                 is RideOfferResult.SeatsChanged -> inputs.copy(seats = result.seats.coerceIn(RideOfferInputs.SEATS))
@@ -25,6 +28,6 @@ internal class RideOfferReducer(
                 RideOfferResult.Sending -> inputs.copy(sending = true, error = null)
                 is RideOfferResult.Failed -> inputs.copy(sending = false, error = result.error)
             }
-        return mapper.map(next)
+        return RideOfferStateMapper.map(next, draft, riderZone)
     }
 }

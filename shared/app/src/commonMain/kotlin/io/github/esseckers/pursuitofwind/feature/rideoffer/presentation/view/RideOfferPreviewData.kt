@@ -8,11 +8,9 @@ import io.github.esseckers.pursuitofwind.data.model.Spot
 import io.github.esseckers.pursuitofwind.engine.model.Sector
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.rideoffer.domain.model.RideDraft
-import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.mapper.RideOfferStateMapper
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.RideOfferState
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.viewmodel.RideOfferReducer
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.viewmodel.RideOfferResult
-import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Instant
@@ -38,11 +36,10 @@ internal object RideOfferPreviewData {
     val weekendCrew = Crew("crw_weekend", "Weekend Crew", "WIND-4KQ7", memberCount = 4, createdAt = now - 30.days)
     val nightOwls = Crew("crw_owls", "Night Owls", "WIND-7HPX", memberCount = 2, createdAt = now - 3.days)
 
-    val mapper = RideOfferStateMapper(draft, today = LocalDate(2026, 10, 22), riderZone = zone)
-
     val empty =
         reduce(
-            RideOfferResult.CrewsChanged(Cached(listOf(weekendCrew, nightOwls), now)),
+            RideOfferResult.Ticked(now, draft.departAt),
+            RideOfferResult.CrewsChanged(Cached(listOf(weekendCrew, nightOwls), now), chosen = weekendCrew.id),
             RideOfferResult.SpotChanged(nordstrand),
         )
 
@@ -52,10 +49,15 @@ internal object RideOfferPreviewData {
 
     val failed = reduce(RideOfferResult.Failed(AppError.Network), from = sending)
 
-    val noCrew = reduce(RideOfferResult.CrewsChanged(Cached(emptyList(), now)), RideOfferResult.SpotChanged(nordstrand))
+    val noCrew =
+        reduce(
+            RideOfferResult.Ticked(now, draft.departAt),
+            RideOfferResult.CrewsChanged(Cached(emptyList(), now), chosen = null),
+            RideOfferResult.SpotChanged(nordstrand),
+        )
 
     private fun reduce(
         vararg results: RideOfferResult,
         from: RideOfferState = RideOfferState(),
-    ): RideOfferState = results.fold(from, RideOfferReducer(mapper)::reduce)
+    ): RideOfferState = results.fold(from, RideOfferReducer(draft, zone)::reduce)
 }

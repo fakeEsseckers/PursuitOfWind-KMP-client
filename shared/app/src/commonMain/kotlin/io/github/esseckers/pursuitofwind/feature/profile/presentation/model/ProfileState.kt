@@ -12,6 +12,7 @@ import org.jetbrains.compose.resources.StringResource
  *   profile, wind limits converted to a new unit). Text fields keep their own cursor and start over from the form when
  *   it changes.
  * @property errors what to fix, shown once the rider has tried to save.
+ * @property validProfile the form as a profile, ready to save; null while a field needs fixing.
  * @property hasChanges whether the form differs from the saved profile (always true before there is one).
  * @property saveError why the last save failed; cleared when the next one starts.
  * @property language the app's language; it is not part of the draft and applies as soon as it is picked.
@@ -23,6 +24,7 @@ internal data class ProfileState(
     val formVersion: Int = 0,
     val kites: List<KiteChoice> = emptyList(),
     val errors: Map<ProfileField, ProfileError> = emptyMap(),
+    val validProfile: Profile? = null,
     val hasChanges: Boolean = true,
     val saving: Boolean = false,
     val saveError: StringResource? = null,

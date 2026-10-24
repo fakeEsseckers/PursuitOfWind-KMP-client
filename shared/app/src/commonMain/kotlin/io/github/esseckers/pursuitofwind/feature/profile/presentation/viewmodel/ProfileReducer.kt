@@ -2,7 +2,6 @@ package io.github.esseckers.pursuitofwind.feature.profile.presentation.viewmodel
 
 import io.github.esseckers.pursuitofwind.core.mvi.Reducer
 import io.github.esseckers.pursuitofwind.core.ui.message
-import io.github.esseckers.pursuitofwind.data.model.Profile
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.mapper.ProfileFormMapper
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileCheck
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileEdit
@@ -11,7 +10,7 @@ import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.Prof
 
 /**
  * Folds each result into the form and recomputes what follows from it: the kite chips, the errors once the rider has
- * tried to save, and whether anything changed. The first [ProfileResult.Loaded] fills the form; later ones (after a
+ * tried to save, the profile to save, and whether anything changed. The first [ProfileResult.Loaded] fills the form; later ones (after a
  * save) only update what the form is compared with, so a draft is never overwritten.
  */
 internal object ProfileReducer : Reducer<ProfileState, ProfileResult> {
@@ -65,16 +64,16 @@ internal object ProfileReducer : Reducer<ProfileState, ProfileResult> {
 
     private fun ProfileForm.windLimits(): Pair<String, String> = minWind to maxWind
 
-    private fun validProfile(form: ProfileForm): Profile? = (ProfileFormMapper.check(form) as? ProfileCheck.Valid)?.profile
-
     private fun ProfileState.derived(): ProfileState {
-        val check = if (inputs.submitted) ProfileFormMapper.check(form) else null
+        val check = ProfileFormMapper.check(form)
+        val valid = (check as? ProfileCheck.Valid)?.profile
         val saved = inputs.saved
         return copy(
             kites = ProfileFormMapper.kiteChoices(form).takeUnless { it == kites } ?: kites,
-            errors = (check as? ProfileCheck.Invalid)?.errors.orEmpty(),
+            errors = if (inputs.submitted) (check as? ProfileCheck.Invalid)?.errors.orEmpty() else emptyMap(),
+            validProfile = valid,
             // The same profile typed differently (`62,5` for 62.5 kg) is no change.
-            hasChanges = saved == null || (form != ProfileFormMapper.formOf(saved) && validProfile(form) != saved),
+            hasChanges = saved == null || (form != ProfileFormMapper.formOf(saved) && valid != saved),
         )
     }
 }
