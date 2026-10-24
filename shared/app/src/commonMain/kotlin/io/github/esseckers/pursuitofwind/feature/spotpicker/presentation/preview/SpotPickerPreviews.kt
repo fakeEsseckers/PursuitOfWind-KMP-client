@@ -1,9 +1,10 @@
-package io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.view
+package io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.preview
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.PursuitOfWindTheme
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerState
+import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.view.SpotPickerScreen
 
 // One preview per state of the spot picker, on the data in SpotPickerPreviewData.
 

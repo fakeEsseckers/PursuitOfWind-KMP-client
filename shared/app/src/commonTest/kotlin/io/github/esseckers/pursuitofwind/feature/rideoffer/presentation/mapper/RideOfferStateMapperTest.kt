@@ -7,9 +7,9 @@ import io.github.esseckers.pursuitofwind.core.ui.TimeRange
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.CrewOption
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.OfferSummary
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.RideOfferState
-import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.view.RideOfferPreviewData
-import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.view.RideOfferPreviewData.nightOwls
-import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.view.RideOfferPreviewData.weekendCrew
+import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.preview.RideOfferPreviewData
+import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.preview.RideOfferPreviewData.nightOwls
+import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.preview.RideOfferPreviewData.weekendCrew
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.viewmodel.RideOfferReducer
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.viewmodel.RideOfferResult
 import kotlinx.datetime.DayOfWeek

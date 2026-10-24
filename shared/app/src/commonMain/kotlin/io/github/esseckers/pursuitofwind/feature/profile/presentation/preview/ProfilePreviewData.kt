@@ -1,4 +1,4 @@
-package io.github.esseckers.pursuitofwind.feature.profile.presentation.view
+package io.github.esseckers.pursuitofwind.feature.profile.presentation.preview
 
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Profile

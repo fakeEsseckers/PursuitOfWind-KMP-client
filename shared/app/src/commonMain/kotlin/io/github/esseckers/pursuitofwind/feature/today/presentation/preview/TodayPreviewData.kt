@@ -1,4 +1,4 @@
-package io.github.esseckers.pursuitofwind.feature.today.presentation.view
+package io.github.esseckers.pursuitofwind.feature.today.presentation.preview
 
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.error_network

@@ -1,4 +1,4 @@
-package io.github.esseckers.pursuitofwind.feature.crew.presentation.view
+package io.github.esseckers.pursuitofwind.feature.crew.presentation.preview
 
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.crew_invite_invalid

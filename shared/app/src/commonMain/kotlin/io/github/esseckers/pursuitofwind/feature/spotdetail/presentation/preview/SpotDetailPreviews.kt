@@ -1,9 +1,10 @@
-package io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.view
+package io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.preview
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.PursuitOfWindTheme
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState
+import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.view.SpotDetailScreen
 
 // One preview per state of the spot detail screen, on the data in SpotDetailPreviewData.
 

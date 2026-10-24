@@ -1,9 +1,10 @@
-package io.github.esseckers.pursuitofwind.feature.crew.presentation.view
+package io.github.esseckers.pursuitofwind.feature.crew.presentation.preview
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.PursuitOfWindTheme
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState
+import io.github.esseckers.pursuitofwind.feature.crew.presentation.view.CrewScreen
 
 // One preview per state of the Crew tab, on the data in CrewPreviewData.
 

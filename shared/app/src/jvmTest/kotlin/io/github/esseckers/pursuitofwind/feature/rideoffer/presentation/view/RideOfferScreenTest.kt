@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.Density
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.PursuitOfWindTheme
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.RideOfferIntent
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.RideOfferState
+import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.preview.RideOfferPreviewData
 import io.github.esseckers.pursuitofwind.testing.PHONE_DENSITY
 import io.github.esseckers.pursuitofwind.testing.PHONE_SIZE
 import io.github.esseckers.pursuitofwind.testing.checkTexts

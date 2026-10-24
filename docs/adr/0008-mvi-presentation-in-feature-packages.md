@@ -45,4 +45,4 @@ The first screen (Today, Issue #7) put its ViewModel, state rules, data combinat
 ## Update: mappers and Routes (October 2026)
 
 - **The state mapper belongs to the reducer.** Only the reducer calls it; its functions take the inputs and parameters and return the state. Decisions the ViewModel acts on (which crew a ride goes to, when the car leaves) are made in the ViewModel and reach the state as results; what the ViewModel needs from the mapper (the checked profile, what the spot picker saves) comes with the state.
-- **Routes live in `presentation/navigation`.** A Route connects a Screen to its ViewModel and takes the navigation lambdas, so it sits apart from `view`, which keeps the stateless Screens and previews.
+- **Routes live in `presentation/navigation`, previews in `presentation/preview`.** A Route connects a Screen to its ViewModel and takes the navigation lambdas; previews and their sample states serve tooling and UI tests. Both sit apart from `view`, which keeps the stateless Screens and their parts.

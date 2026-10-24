@@ -32,8 +32,8 @@ feature/today/
     navigation/TodayRoute.kt    // collects state and effects, takes navigation lambdas (onOpenSpot); no layout
     view/TodayScreen.kt         // stateless: (state, onIntent) -> UI
     view/TodayCards.kt          // larger pieces of the screen, when TodayScreen would grow too long
-    view/TodayPreviewData.kt    // sample states for previews and UI tests
-    view/TodayPreviews.kt       // one @Preview per state, light and dark
+    preview/TodayPreviewData.kt // sample states for previews and UI tests
+    preview/TodayPreviews.kt    // one @Preview per state, light and dark
   di/TodayModule.kt             // factory<TodayRepository>, viewModel { }; listed in app/di/AppModules.kt
 ```
 

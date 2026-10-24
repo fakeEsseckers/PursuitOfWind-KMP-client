@@ -25,9 +25,10 @@ import io.github.esseckers.pursuitofwind.core.designsystem.theme.PursuitOfWindTh
 import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewIntent
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState
-import io.github.esseckers.pursuitofwind.feature.crew.presentation.view.CrewPreviewData.alex
-import io.github.esseckers.pursuitofwind.feature.crew.presentation.view.CrewPreviewData.andreisRide
-import io.github.esseckers.pursuitofwind.feature.crew.presentation.view.CrewPreviewData.details
+import io.github.esseckers.pursuitofwind.feature.crew.presentation.preview.CrewPreviewData
+import io.github.esseckers.pursuitofwind.feature.crew.presentation.preview.CrewPreviewData.alex
+import io.github.esseckers.pursuitofwind.feature.crew.presentation.preview.CrewPreviewData.andreisRide
+import io.github.esseckers.pursuitofwind.feature.crew.presentation.preview.CrewPreviewData.details
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.viewmodel.CrewReducer
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.viewmodel.CrewResult
 import io.github.esseckers.pursuitofwind.testing.PHONE_DENSITY

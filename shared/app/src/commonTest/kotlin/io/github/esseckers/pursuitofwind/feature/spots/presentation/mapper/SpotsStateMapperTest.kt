@@ -11,9 +11,9 @@ import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotEd
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsInputs
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsState.Content
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsState.Notice
-import io.github.esseckers.pursuitofwind.feature.spots.presentation.view.SpotsPreviewData.lakeWeiss
-import io.github.esseckers.pursuitofwind.feature.spots.presentation.view.SpotsPreviewData.nordstrand
-import io.github.esseckers.pursuitofwind.feature.spots.presentation.view.SpotsPreviewData.saltLagoon
+import io.github.esseckers.pursuitofwind.feature.spots.presentation.preview.SpotsPreviewData.lakeWeiss
+import io.github.esseckers.pursuitofwind.feature.spots.presentation.preview.SpotsPreviewData.nordstrand
+import io.github.esseckers.pursuitofwind.feature.spots.presentation.preview.SpotsPreviewData.saltLagoon
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

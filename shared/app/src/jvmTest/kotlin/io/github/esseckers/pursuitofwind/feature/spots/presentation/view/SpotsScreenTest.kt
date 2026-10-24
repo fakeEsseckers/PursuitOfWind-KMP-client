@@ -26,6 +26,7 @@ import io.github.esseckers.pursuitofwind.core.designsystem.theme.PursuitOfWindTh
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsIntent
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsState
+import io.github.esseckers.pursuitofwind.feature.spots.presentation.preview.SpotsPreviewData
 import io.github.esseckers.pursuitofwind.testing.PHONE_DENSITY
 import io.github.esseckers.pursuitofwind.testing.PHONE_SIZE
 import io.github.esseckers.pursuitofwind.testing.checkTexts

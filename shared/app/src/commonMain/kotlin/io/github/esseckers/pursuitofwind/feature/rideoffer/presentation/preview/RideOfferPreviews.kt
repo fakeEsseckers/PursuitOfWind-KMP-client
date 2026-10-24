@@ -1,9 +1,10 @@
-package io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.view
+package io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.preview
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.PursuitOfWindTheme
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.RideOfferState
+import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.view.RideOfferScreen
 
 // One preview per state of the ride offer form, on the data in RideOfferPreviewData.
 

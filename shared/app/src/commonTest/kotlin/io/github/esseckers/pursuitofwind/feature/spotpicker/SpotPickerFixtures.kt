@@ -5,7 +5,7 @@ import io.github.esseckers.pursuitofwind.data.model.MySpot
 import io.github.esseckers.pursuitofwind.data.model.Spot
 import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.model.SpotPickerSnapshot
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerInputs
-import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.view.SpotPickerPreviewData
+import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.preview.SpotPickerPreviewData
 import kotlin.time.Duration
 import kotlin.time.Instant
 

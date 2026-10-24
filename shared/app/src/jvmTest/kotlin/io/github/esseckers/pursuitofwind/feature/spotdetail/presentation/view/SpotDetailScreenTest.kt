@@ -36,6 +36,7 @@ import io.github.esseckers.pursuitofwind.core.designsystem.theme.PursuitOfWindTh
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.Selection
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailIntent
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState
+import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.preview.SpotDetailPreviewData
 import kotlinx.datetime.LocalDate
 import java.util.Locale
 import kotlin.test.AfterTest

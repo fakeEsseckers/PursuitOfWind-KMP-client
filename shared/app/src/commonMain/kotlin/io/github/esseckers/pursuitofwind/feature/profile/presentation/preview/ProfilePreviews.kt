@@ -1,10 +1,11 @@
-package io.github.esseckers.pursuitofwind.feature.profile.presentation.view
+package io.github.esseckers.pursuitofwind.feature.profile.presentation.preview
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.PursuitOfWindTheme
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileMode
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileState
+import io.github.esseckers.pursuitofwind.feature.profile.presentation.view.ProfileScreen
 
 // One preview per state of the profile form, on the data in ProfilePreviewData.
 

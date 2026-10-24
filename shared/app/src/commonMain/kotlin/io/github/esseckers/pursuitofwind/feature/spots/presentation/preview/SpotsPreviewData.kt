@@ -1,4 +1,4 @@
-package io.github.esseckers.pursuitofwind.feature.spots.presentation.view
+package io.github.esseckers.pursuitofwind.feature.spots.presentation.preview
 
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Cached

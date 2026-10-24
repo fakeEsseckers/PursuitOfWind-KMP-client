@@ -1,9 +1,10 @@
-package io.github.esseckers.pursuitofwind.feature.today.presentation.view
+package io.github.esseckers.pursuitofwind.feature.today.presentation.preview
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.PursuitOfWindTheme
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState
+import io.github.esseckers.pursuitofwind.feature.today.presentation.view.TodayScreen
 
 // One preview per state of the Today screen, on the data in TodayPreviewData.
 

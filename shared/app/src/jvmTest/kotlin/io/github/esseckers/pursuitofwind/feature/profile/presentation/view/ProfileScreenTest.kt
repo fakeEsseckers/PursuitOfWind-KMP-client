@@ -36,6 +36,7 @@ import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.Prof
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileLimits
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileMode
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileState
+import io.github.esseckers.pursuitofwind.feature.profile.presentation.preview.ProfilePreviewData
 import io.github.esseckers.pursuitofwind.testing.PHONE_DENSITY
 import io.github.esseckers.pursuitofwind.testing.PHONE_SIZE
 import io.github.esseckers.pursuitofwind.testing.checkTexts
