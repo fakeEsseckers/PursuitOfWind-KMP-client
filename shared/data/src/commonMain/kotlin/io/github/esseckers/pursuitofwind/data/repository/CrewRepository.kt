@@ -20,6 +20,8 @@ import io.github.esseckers.pursuitofwind.data.model.CrewMember
 import io.github.esseckers.pursuitofwind.data.model.Outcome
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlin.time.Clock
 
 /** The rider's crews and their members. Rides are in [RideRepository]; [sync] keeps both current. */
@@ -33,6 +35,13 @@ public class CrewRepository internal constructor(
     private val crewDao = database.crews()
     private val sync = database.syncState()
 
+    /**
+     * One change to the list of crews at a time, request and cache write together. [refreshCrews] replaces the list
+     * with the server's, so a refresh answered before a new crew was created or joined but written after it would drop
+     * that crew from the cache.
+     */
+    private val crewListChanges = Mutex()
+
     public val crews: Flow<Cached<List<Crew>>> = sync.cached(SyncKeys.CREWS, crewDao.crews().map { list -> list.map { it.toCrew() } })
 
     public fun members(crewId: String): Flow<Cached<List<CrewMember>>> =
@@ -40,20 +49,24 @@ public class CrewRepository internal constructor(
 
     public suspend fun refreshCrews(): Outcome<Unit> =
         outcome {
-            val crews = api.myCrews().items
-            database.withWriteTransaction {
-                crewDao.deleteCrews()
-                crewDao.upsertCrews(crews.map { it.toEntity() })
-                sync.markUpdated(SyncKeys.CREWS, clock.now())
+            crewListChanges.withLock {
+                val crews = api.myCrews().items
+                database.withWriteTransaction {
+                    crewDao.deleteCrews()
+                    crewDao.upsertCrews(crews.map { it.toEntity() })
+                    sync.markUpdated(SyncKeys.CREWS, clock.now())
+                }
             }
         }
 
     public suspend fun refreshMembers(crewId: String): Outcome<Unit> = outcome { store.refreshMembers(crewId) }
 
-    public suspend fun create(name: String): Outcome<Crew> = outcome { save(api.createCrew(name, newIdempotencyKey()).toEntity()) }
+    public suspend fun create(name: String): Outcome<Crew> =
+        outcome { crewListChanges.withLock { save(api.createCrew(name, newIdempotencyKey()).toEntity()) } }
 
     /** Joins with an invite code (case and surrounding spaces do not matter). Joining twice is fine. */
-    public suspend fun join(inviteCode: String): Outcome<Crew> = outcome { save(api.joinCrew(inviteCode, newIdempotencyKey()).toEntity()) }
+    public suspend fun join(inviteCode: String): Outcome<Crew> =
+        outcome { crewListChanges.withLock { save(api.joinCrew(inviteCode, newIdempotencyKey()).toEntity()) } }
 
     /**
      * Brings members and rides of [crewId] up to date from the crew feed: cheap when little changed, a full reload

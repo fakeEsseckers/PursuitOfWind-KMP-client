@@ -15,6 +15,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -141,6 +142,32 @@ class CrewAndRideRepositoryTest {
                         ?.startsWith("evt_0") == true,
                 )
                 assertEquals(2, alex.ride("crw_weekend", "rid_7f3c").seatsFree)
+            }
+        }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun `a crew created during a refresh of the list is sent after it so the refresh cannot drop it`() =
+        runTest {
+            world {
+                val alex = device()
+                alex.crews.refreshCrews().value()
+                server.networkMode = NetworkMode.SLOW
+                val start = currentTime
+
+                val refreshing = async { alex.crews.refreshCrews() }
+                runCurrent()
+                val creating = async { alex.crews.create("Night Owls") }
+                refreshing.await().value()
+                creating.await().value()
+                val crews =
+                    alex.crews.crews
+                        .first()
+                        .value
+
+                // Each answer takes 2 s in SLOW mode: run side by side, both would be done after 2 s.
+                assertTrue(currentTime - start >= 4_000, "took ${currentTime - start} ms")
+                assertEquals(listOf("Night Owls"), crews.map { it.name })
             }
         }
 

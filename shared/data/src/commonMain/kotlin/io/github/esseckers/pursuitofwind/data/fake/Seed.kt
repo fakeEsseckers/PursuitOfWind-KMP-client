@@ -11,16 +11,19 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 
 /**
- * Initial state of the fake server. Everything the fake generates later (ids, invite codes, flaky failures) comes
- * from [randomSeed], so the same seed and the same requests always give the same responses.
+ * Initial state of the fake server. Everything the fake generates later (ids, invite codes, flaky failures, what the
+ * crew members do) comes from [randomSeed], so the same seed, clock and requests always give the same responses.
  *
  * A seed is checked when it is built, so a broken seed fails at once instead of serving invalid responses.
+ *
+ * @property memberActivity how the members of [crews] act on their own; null keeps them still.
  */
 public data class Seed(
     val spots: List<SeedSpot>,
     val crews: List<SeedCrew> = emptyList(),
     val rides: List<SeedRide> = emptyList(),
     val randomSeed: Long = 1,
+    val memberActivity: MemberActivity? = null,
 ) {
     init {
         requireUnique("spot id", spots.map { it.spot.id })
@@ -42,7 +45,8 @@ public data class Seed(
     public companion object {
         /**
          * Five fictional spots on the German coast and inland, and Andrei's "Weekend Crew" (invite code `WIND-4KQ7`)
-         * with one ride two days after [now]. A new user starts with no profile and no crew.
+         * with one ride two days after [now]. Its members act on their own ([MemberActivity] defaults). A new user
+         * starts with no profile and no crew.
          */
         public fun default(now: Instant): Seed {
             val dayAfterTomorrow = Instant.fromEpochSeconds((now.epochSeconds / SECONDS_PER_DAY + 2) * SECONDS_PER_DAY)
@@ -80,6 +84,7 @@ public data class Seed(
                             createdAt = now - 1.days,
                         ),
                     ),
+                memberActivity = MemberActivity(),
             )
         }
 

@@ -90,6 +90,12 @@ internal class FakeState(
     val rides = mutableMapOf<String, Ride>()
     val idempotency = mutableMapOf<IdempotencyScope, StoredResponse>()
     val pushTokens = mutableMapOf<String, PushTokenRequestDto>()
+
+    /** Model runs served per spot: each forecast request is the next one. */
+    val forecastRuns = mutableMapOf<String, Int>()
+
+    /** The seeded crew members. They cannot sign in; [CrewLife] acts for them. */
+    val seedMemberIds: Set<String> = seed.crews.flatMap { crew -> crew.members.map { it.userId } }.toSet()
     private var sequence = 0
     private var eventSequence = 0
 

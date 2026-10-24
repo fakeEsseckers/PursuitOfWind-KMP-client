@@ -3,17 +3,18 @@ package io.github.esseckers.pursuitofwind.data.fake.internal
 import io.github.esseckers.pursuitofwind.contract.CreateRideRequestDto
 import io.github.esseckers.pursuitofwind.contract.ProblemCode
 import io.github.esseckers.pursuitofwind.contract.RideCancelledEventDto
-import io.github.esseckers.pursuitofwind.contract.RideCreatedEventDto
 import io.github.esseckers.pursuitofwind.contract.RideDto
 import io.github.esseckers.pursuitofwind.contract.RideListDto
 import io.github.esseckers.pursuitofwind.contract.RideStatusDto
-import io.github.esseckers.pursuitofwind.contract.SeatReleasedEventDto
-import io.github.esseckers.pursuitofwind.contract.SeatTakenEventDto
 import io.ktor.http.HttpStatusCode
 
-/** Rides and seats. Every change bumps the ride's version and goes into the crew feed. */
+/**
+ * Rides and seats. Every change bumps the ride's version and goes into the crew feed. A rider's try for the last free
+ * seat may lose to a crew member ([CrewLife.contestLastSeat]).
+ */
 internal class RideRoutes(
     private val state: FakeState,
+    private val life: CrewLife,
 ) {
     fun list(call: FakeCall): FakeResponse {
         val crew = state.crew(call.pathParameter("crewId")).also { state.requireMember(it, call.userId) }
@@ -30,9 +31,7 @@ internal class RideRoutes(
         val request = call.decode(CreateRideRequestDto.serializer())
         check422(request.spotId in state.spots) { "spotId ${request.spotId} is not in the catalog" }
         Validation.ride(request)
-        val ride = Ride(state.nextId("rid"), crew.id, call.userId, request, call.now)
-        state.rides[ride.id] = ride
-        state.addEvent(crew) { id -> RideCreatedEventDto(id, crew.id, call.now, state.person(call.userId), state.rideDto(ride)) }
+        val ride = state.offerRide(crew, call.userId, request, call.now)
         return json(RideDto.serializer(), state.rideDto(ride), HttpStatusCode.Created)
     }
 
@@ -54,6 +53,7 @@ internal class RideRoutes(
 
     fun takeSeat(call: FakeCall): FakeResponse {
         val (ride, crew) = memberRide(call)
+        life.contestLastSeat(ride, crew, call.userId, call.now)
         val refusal =
             when {
                 ride.status == RideStatusDto.CANCELLED -> {
@@ -76,23 +76,14 @@ internal class RideRoutes(
                 }
             }
         if (refusal != null) throw refusal
-        ride.passengerIds += call.userId
-        ride.version++
-        state.addEvent(crew) { id ->
-            SeatTakenEventDto(id, crew.id, call.now, state.person(call.userId), ride.id, ride.version, ride.seatsFree)
-        }
+        state.takeSeat(ride, crew, call.userId, call.now)
         return json(RideDto.serializer(), state.rideDto(ride), HttpStatusCode.Created)
     }
 
     /** Releasing a seat the rider does not have changes nothing. */
     fun releaseSeat(call: FakeCall): FakeResponse {
         val (ride, crew) = memberRide(call)
-        if (ride.passengerIds.remove(call.userId)) {
-            ride.version++
-            state.addEvent(crew) { id ->
-                SeatReleasedEventDto(id, crew.id, call.now, state.person(call.userId), ride.id, ride.version, ride.seatsFree)
-            }
-        }
+        state.releaseSeat(ride, crew, call.userId, call.now)
         return json(RideDto.serializer(), state.rideDto(ride))
     }
 

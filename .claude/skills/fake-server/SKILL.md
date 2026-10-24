@@ -16,11 +16,12 @@ The whole data layer — serialization, headers, token refresh, error mapping, r
 | `FakePursuitOfWindServer(clock, seed, dispatcher)` | public entry point: `engine` (`internal/FakeEngine`, keeps no request history), `BASE_URL`, `networkMode`; handles one request at a time under a `Mutex` |
 | `NetworkMode` | `NORMAL`, `SLOW` (2 s on the injected dispatcher), `FLAKY` (30% `503` + `Retry-After: 1`, seeded), `OFFLINE` (throws `kotlinx.io.IOException`) |
 | `ControllableClock` | a `kotlin.time.Clock` with `advanceBy(duration)` and `set(instant)`; tests give it to the fake and the app |
-| `Seed`, `SeedSpot`, `SeedCrew`, `SeedMember`, `SeedRide`, `ForecastProfile` | deterministic initial state; `Seed.default(now)` has five spots, the Weekend Crew (`WIND-4KQ7`) and one ride |
+| `Seed`, `SeedSpot`, `SeedCrew`, `SeedMember`, `SeedRide`, `ForecastProfile`, `MemberActivity` | deterministic initial state; `Seed.default(now)` has five spots, the Weekend Crew (`WIND-4KQ7`), one ride, and members who act on their own |
 | `internal/Router` | method + path → `ApiRoute` and path parameters |
 | `internal/FakeApi` | one handler per `ApiRoute` (checked complete at startup), Bearer authentication, `Idempotency-Key` storage and replay |
 | `internal/*Routes` | `AuthRoutes`, `ProfileRoutes`, `SpotRoutes`, `CrewRoutes`, `RideRoutes`: the operations |
-| `internal/FakeState` | users, tokens, profiles, followed spots, crews with their feeds, rides, idempotency records |
+| `internal/FakeState` | users, tokens, profiles, followed spots, crews with their feeds, rides, idempotency records, model runs per spot; `RideChanges.kt` holds the ride changes routes and members share |
+| `internal/CrewLife` | the seeded members acting: caught up before every request, plus the race for a ride's last seat |
 | `internal/ForecastGenerator` | hourly forecasts for `ecmwf`, `icon`, `gfs` as a pure function of seed, spot, hour, model and model run; `SunTimes` sets `isDaylight` |
 | `internal/Validation` | the spec's field limits and cross-field rules, failing with `422 VALIDATION_FAILED` |
 
@@ -48,7 +49,8 @@ There is no demo mode (`docs/adr/0010-live-fake-backend-instead-of-demo-mode.md`
 
 - **Every forecast request is a new model run.** `SpotRoutes` counts runs per spot and stamps `generatedAt` with the request time. A run moves each hour's wind by up to `ForecastProfile.runDriftKn` and the direction by up to `runDriftDeg`, smoothly over six-hour stretches, mostly the same way for all three models. Hours under way move a quarter as much as hours three days out. `Seed.default` uses 4 kn and 15°, so a pull to refresh always shows a slightly different forecast and a verdict on the edge can flip, as with real model updates.
 - Profiles in tests that need fixed numbers leave `runDriftKn` and `runDriftDeg` at zero (`steadyBreeze()` in the app's tests does); then every run is identical.
-- Crew members acting on their own (offering rides, taking seats) arrives with the Crew screen (the third pull request of Issue #9).
+- **Crew members act on their own** (`MemberActivity`, `internal/CrewLife`; ADR 0010's update). Every one to three minutes of the clock a seeded member takes a free seat, offers a ride on a window the decision engine calls GO for them (at most three rides coming up per crew), or now and then gives up a seat for good. `FakeApi.handle` calls `CrewLife.catchUp(now)` first, so actions happen at their own times as any client sees them; after a long pause, at most three. When a rider asks for the last free seat, `contestLastSeat` lets a member who could take it get it first in `lastSeatRace` of the tries, and the rider gets `409 SEATS_FULL`.
+- Tests that need a still crew use `Seed.default(now).copy(memberActivity = null)`; tests of the race set `lastSeatRace` to 1.0 or 0.0. Nothing happens while the clock stands still.
 
 ## Environments
 

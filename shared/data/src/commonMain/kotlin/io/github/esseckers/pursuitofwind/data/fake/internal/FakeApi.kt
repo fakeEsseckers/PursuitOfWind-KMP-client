@@ -19,7 +19,8 @@ internal class FakeApi(
     private val profile = ProfileRoutes(state)
     private val spots = SpotRoutes(state, forecastSeed = seed.randomSeed)
     private val crews = CrewRoutes(state)
-    private val rides = RideRoutes(state)
+    private val life = CrewLife(state, seed.memberActivity, seed.randomSeed)
+    private val rides = RideRoutes(state, life)
 
     private val handlers: Map<ApiRoute, (FakeCall) -> FakeResponse> =
         mapOf(
@@ -51,6 +52,8 @@ internal class FakeApi(
     }
 
     fun handle(call: FakeCall): FakeResponse {
+        // What the crew members did since the last request happens first, so every answer shows it.
+        life.catchUp(call.now)
         val userId = if (call.route.requiresAuth) auth.authenticate(call.bearerToken, call.now) else ""
         // Only authenticated mutations declare Idempotency-Key; on the token endpoints the header is ignored.
         val key = call.idempotencyKey?.takeIf { call.route.requiresAuth && call.route.method != "GET" }
