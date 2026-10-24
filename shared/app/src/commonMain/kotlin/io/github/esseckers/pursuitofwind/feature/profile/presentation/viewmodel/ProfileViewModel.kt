@@ -28,9 +28,10 @@ import kotlinx.coroutines.launch
 internal class ProfileViewModel(
     private val repository: ProfileEditRepository,
 ) : MviViewModel<ProfileState, ProfileIntent, ProfileResult, ProfileEffect>(ProfileState(), ProfileReducer) {
+
     override fun onIntent(intent: ProfileIntent) {
         when (intent) {
-            is ProfileIntent.Edit -> dispatch(ProfileResult.Edited(intent.edit))
+            is ProfileIntent.Edit -> dispatchResult(ProfileResult.Edited(intent.edit))
             ProfileIntent.Save -> save()
             is ProfileIntent.ChooseLanguage -> chooseLanguage(intent.language)
         }
@@ -50,29 +51,28 @@ internal class ProfileViewModel(
     /** One save at a time; a tap while the form is loading or saving does nothing. */
     private fun save() {
         if (currentState.loading || currentState.saving) return
-        dispatch(ProfileResult.Submitted)
-        val profile = (ProfileFormMapper.check(currentState.form) as? ProfileCheck.Valid)?.profile
-        when (profile) {
+        dispatchResult(ProfileResult.Submitted)
+        when (val profile = (ProfileFormMapper.check(currentState.form) as? ProfileCheck.Valid)?.profile) {
             // Not valid: the errors show now.
             null -> Unit
 
-            currentState.inputs.saved -> post(ProfileEffect.Saved)
+            currentState.inputs.saved -> postEffect(ProfileEffect.Saved)
 
             else -> store(profile)
         }
     }
 
     private fun store(profile: Profile) {
-        dispatch(ProfileResult.SaveStarted)
+        dispatchResult(ProfileResult.SaveStarted)
         viewModelScope.launch {
             // Ends the save whatever happens, so a cancelled one never blocks the next.
             var outcome: Outcome<Profile> = Outcome.Failure(AppError.Unknown("Saving did not finish"))
             try {
                 outcome = repository.save(profile)
             } finally {
-                dispatch(ProfileResult.SaveFinished(error = outcome.errorOrNull(), saved = outcome.valueOrNull()))
+                dispatchResult(ProfileResult.SaveFinished(error = outcome.errorOrNull(), saved = outcome.valueOrNull()))
             }
-            if (outcome is Outcome.Success) post(ProfileEffect.Saved)
+            if (outcome is Outcome.Success) postEffect(ProfileEffect.Saved)
         }
     }
 }

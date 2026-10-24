@@ -45,8 +45,8 @@ class MviViewModelTest {
 
         override fun onIntent(intent: Intent) {
             when (intent) {
-                is Intent.Add -> dispatch(intent.amount)
-                Intent.Ping -> post("pong at $currentState")
+                is Intent.Add -> dispatchResult(intent.amount)
+                Intent.Ping -> postEffect("pong at $currentState")
             }
         }
 

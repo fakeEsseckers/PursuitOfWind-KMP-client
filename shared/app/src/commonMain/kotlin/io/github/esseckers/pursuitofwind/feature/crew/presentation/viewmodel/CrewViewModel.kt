@@ -58,14 +58,14 @@ internal class CrewViewModel(
         when (intent) {
             CrewIntent.Refresh -> refresh()
             is CrewIntent.ChooseCrew -> choose(intent.crewId)
-            CrewIntent.StartCreate -> dispatch(CrewResult.DialogShown(CrewDialog.Create()))
-            CrewIntent.StartJoin -> dispatch(CrewResult.DialogShown(CrewDialog.Join()))
-            CrewIntent.CloseDialog -> dispatch(CrewResult.DialogDismissed)
+            CrewIntent.StartCreate -> dispatchResult(CrewResult.DialogShown(CrewDialog.Create()))
+            CrewIntent.StartJoin -> dispatchResult(CrewResult.DialogShown(CrewDialog.Join()))
+            CrewIntent.CloseDialog -> dispatchResult(CrewResult.DialogDismissed)
             is CrewIntent.CreateCrew -> submit(created = true) { repository.create(intent.name.trim()) }
             is CrewIntent.JoinCrew -> submit(created = false) { repository.join(intent.inviteCode) }
-            CrewIntent.ShareInvite -> currentState.inputs.shownCrew()?.let { post(CrewEffect.ShareInvite(it.name, it.inviteCode)) }
+            CrewIntent.ShareInvite -> currentState.inputs.shownCrew()?.let { postEffect(CrewEffect.ShareInvite(it.name, it.inviteCode)) }
             is CrewIntent.TakeSeat, is CrewIntent.LeaveRide, is CrewIntent.CancelRide, CrewIntent.ConfirmCancel -> onRide(intent)
-            is CrewIntent.OpenSpot -> post(CrewEffect.OpenSpot(intent.spotId, intent.date))
+            is CrewIntent.OpenSpot -> postEffect(CrewEffect.OpenSpot(intent.spotId, intent.date))
         }
     }
 
@@ -82,20 +82,20 @@ internal class CrewViewModel(
     /** One refresh at a time; a pull while one runs does nothing. */
     private fun refresh() {
         if (currentState.inputs.refresh.refreshing) return
-        dispatch(CrewResult.RefreshStarted)
+        dispatchResult(CrewResult.RefreshStarted)
         viewModelScope.launch {
             // Ends the refresh whatever happens, so a cancelled one never blocks the next.
             var error: AppError? = AppError.Unknown("Refresh did not finish")
             try {
                 error = repository.refreshAll(currentState.inputs.chosen)
             } finally {
-                dispatch(CrewResult.RefreshFinished(error))
+                dispatchResult(CrewResult.RefreshFinished(error))
             }
         }
     }
 
     private fun choose(crewId: String) {
-        dispatch(CrewResult.Chosen(crewId))
+        dispatchResult(CrewResult.Chosen(crewId))
         shown.value = currentState.inputs.shownCrew()?.id
         viewModelScope.launch { repository.refresh(crewId) }
     }
@@ -106,20 +106,20 @@ internal class CrewViewModel(
         request: suspend () -> Outcome<Crew>,
     ) {
         if (currentState.inputs.dialog?.sending == true) return
-        dispatch(CrewResult.DialogSending)
+        dispatchResult(CrewResult.DialogSending)
         viewModelScope.launch {
             when (val outcome = request()) {
                 is Outcome.Success -> {
                     val crew = outcome.value
-                    dispatch(CrewResult.Chosen(crew.id))
+                    dispatchResult(CrewResult.Chosen(crew.id))
                     shown.value = crew.id
-                    dispatch(CrewResult.DialogShown(null))
-                    post(if (created) CrewEffect.Created(crew.name, crew.inviteCode) else CrewEffect.Joined(crew.name))
+                    dispatchResult(CrewResult.DialogShown(null))
+                    postEffect(if (created) CrewEffect.Created(crew.name, crew.inviteCode) else CrewEffect.Joined(crew.name))
                     repository.refresh(crew.id)
                 }
 
                 is Outcome.Failure -> {
-                    dispatch(CrewResult.DialogFailed(CrewStateMapper.failure(outcome.error)))
+                    dispatchResult(CrewResult.DialogFailed(CrewStateMapper.failure(outcome.error)))
                 }
             }
         }
@@ -145,7 +145,7 @@ internal class CrewViewModel(
                 }
 
                 RideAction.CANCEL -> {
-                    dispatch(
+                    dispatchResult(
                         CrewResult.DialogShown(CrewDialog.ConfirmCancel(ride.id, ride.spotName, ride.passengers.size)),
                     )
                 }
@@ -155,18 +155,18 @@ internal class CrewViewModel(
 
     private fun cancel() {
         val dialog = currentState.inputs.dialog as? CrewDialog.ConfirmCancel ?: return
-        dispatch(CrewResult.DialogShown(null))
-        dispatch(CrewResult.CancelStarted(dialog.rideId))
+        dispatchResult(CrewResult.DialogShown(null))
+        dispatchResult(CrewResult.CancelStarted(dialog.rideId))
         launchWrite {
             val error = repository.cancelRide(dialog.rideId)
-            dispatch(CrewResult.CancelFinished(dialog.rideId))
+            dispatchResult(CrewResult.CancelFinished(dialog.rideId))
             report(error)
         }
     }
 
     /** Tells the rider why a change of a ride failed, if it did. */
     private fun report(error: AppError?) {
-        if (error != null) post(CrewEffect.Failed(CrewStateMapper.failure(error)))
+        if (error != null) postEffect(CrewEffect.Failed(CrewStateMapper.failure(error)))
     }
 
     /** A change the rider made: it finishes even when the rider leaves the tab and this ViewModel is cleared. */

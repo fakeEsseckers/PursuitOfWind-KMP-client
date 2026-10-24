@@ -33,13 +33,14 @@ internal class RideOfferViewModel(
     private val clock: Clock,
     private val tick: Duration = 1.minutes,
 ) : MviViewModel<RideOfferState, RideOfferIntent, RideOfferResult, RideOfferEffect>(RideOfferState(), RideOfferReducer(mapper)) {
+
     override fun onIntent(intent: RideOfferIntent) {
         val inputs = currentState.inputs
         when (intent) {
-            is RideOfferIntent.ChooseCrew -> dispatch(RideOfferResult.Chosen(intent.crewId))
-            RideOfferIntent.FewerSeats -> dispatch(RideOfferResult.SeatsChanged(inputs.seats - 1))
-            RideOfferIntent.MoreSeats -> dispatch(RideOfferResult.SeatsChanged(inputs.seats + 1))
-            is RideOfferIntent.ChangeMeetingPoint -> dispatch(RideOfferResult.MeetingPointChanged(intent.text))
+            is RideOfferIntent.ChooseCrew -> dispatchResult(RideOfferResult.Chosen(intent.crewId))
+            RideOfferIntent.FewerSeats -> dispatchResult(RideOfferResult.SeatsChanged(inputs.seats - 1))
+            RideOfferIntent.MoreSeats -> dispatchResult(RideOfferResult.SeatsChanged(inputs.seats + 1))
+            is RideOfferIntent.ChangeMeetingPoint -> dispatchResult(RideOfferResult.MeetingPointChanged(intent.text))
             RideOfferIntent.Submit -> submit()
         }
     }
@@ -57,13 +58,13 @@ internal class RideOfferViewModel(
         if (!currentState.canSubmit || crew == null) return
         // The time is read now, not at the last tick, so a ride offered just after the quarter hour does not leave in the
         // past, and the form shows the departure that is sent.
-        dispatch(RideOfferResult.Ticked(clock.now()))
+        dispatchResult(RideOfferResult.Ticked(clock.now()))
         val departAt = mapper.departure(currentState.inputs)
-        dispatch(RideOfferResult.Sending)
+        dispatchResult(RideOfferResult.Sending)
         val plan = RidePlan(draft.spotId, draft.windowStart, draft.windowEnd, departAt, inputs.meetingPoint.trim(), inputs.seats)
         viewModelScope.launch {
             val error = repository.offer(crew.id, plan)
-            if (error == null) post(RideOfferEffect.Offered) else dispatch(RideOfferResult.Failed(error))
+            if (error == null) postEffect(RideOfferEffect.Offered) else dispatchResult(RideOfferResult.Failed(error))
         }
     }
 

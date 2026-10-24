@@ -25,8 +25,8 @@ internal class SpotPickerViewModel(
 ) : MviViewModel<SpotPickerState, SpotPickerIntent, SpotPickerResult, SpotPickerEffect>(SpotPickerState(), SpotPickerReducer) {
     override fun onIntent(intent: SpotPickerIntent) {
         when (intent) {
-            is SpotPickerIntent.Toggle -> dispatch(SpotPickerResult.Toggled(intent.spotId))
-            is SpotPickerIntent.ChangeDrive -> dispatch(SpotPickerResult.DriveChanged(intent.spotId, intent.minutes))
+            is SpotPickerIntent.Toggle -> dispatchResult(SpotPickerResult.Toggled(intent.spotId))
+            is SpotPickerIntent.ChangeDrive -> dispatchResult(SpotPickerResult.DriveChanged(intent.spotId, intent.minutes))
             SpotPickerIntent.Refresh -> refresh()
             SpotPickerIntent.Done -> done()
         }
@@ -43,7 +43,7 @@ internal class SpotPickerViewModel(
     /** One refresh at a time; a tap while one runs joins it, and none starts while saving. */
     private fun refresh() {
         if (currentState.inputs.refresh.refreshing || currentState.saving) return
-        dispatch(SpotPickerResult.RefreshStarted)
+        dispatchResult(SpotPickerResult.RefreshStarted)
         refreshJob =
             viewModelScope.launch {
                 // Ends the refresh whatever happens, so a cancelled one never blocks the next.
@@ -51,7 +51,7 @@ internal class SpotPickerViewModel(
                 try {
                     error = repository.refresh()
                 } finally {
-                    dispatch(SpotPickerResult.RefreshFinished(error))
+                    dispatchResult(SpotPickerResult.RefreshFinished(error))
                 }
             }
     }
@@ -61,10 +61,10 @@ internal class SpotPickerViewModel(
         if (currentState.saving) return
         val changes = SpotPickerStateMapper.changes(currentState.inputs)
         if (changes.isEmpty()) {
-            post(SpotPickerEffect.Finished)
+            postEffect(SpotPickerEffect.Finished)
             return
         }
-        dispatch(SpotPickerResult.SaveStarted)
+        dispatchResult(SpotPickerResult.SaveStarted)
         viewModelScope.launch {
             var error: AppError? = AppError.Unknown("Saving did not finish")
             try {
@@ -72,9 +72,9 @@ internal class SpotPickerViewModel(
                 refreshJob?.join()
                 error = repository.save(changes)
             } finally {
-                dispatch(SpotPickerResult.SaveFinished(error))
+                dispatchResult(SpotPickerResult.SaveFinished(error))
             }
-            if (error == null) post(SpotPickerEffect.Finished)
+            if (error == null) postEffect(SpotPickerEffect.Finished)
         }
     }
 }

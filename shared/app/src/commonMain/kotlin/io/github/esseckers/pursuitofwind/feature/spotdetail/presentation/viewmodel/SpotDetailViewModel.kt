@@ -45,8 +45,8 @@ internal class SpotDetailViewModel(
     override fun onIntent(intent: SpotDetailIntent) {
         when (intent) {
             SpotDetailIntent.Refresh -> refresh()
-            is SpotDetailIntent.SelectHour -> dispatch(SpotDetailResult.Selected(Selection.Hour(intent.start)))
-            is SpotDetailIntent.SelectDay -> dispatch(SpotDetailResult.Selected(Selection.Day(intent.date)))
+            is SpotDetailIntent.SelectHour -> dispatchResult(SpotDetailResult.Selected(Selection.Hour(intent.start)))
+            is SpotDetailIntent.SelectDay -> dispatchResult(SpotDetailResult.Selected(Selection.Day(intent.date)))
         }
     }
 
@@ -64,14 +64,14 @@ internal class SpotDetailViewModel(
     private fun refresh() {
         if (currentState.inputs.refresh.refreshing) return
         // Cache stamps are stored in milliseconds; a finer start would never count as reflected in them.
-        dispatch(SpotDetailResult.RefreshStarted(at = Instant.fromEpochMilliseconds(clock.now().toEpochMilliseconds())))
+        dispatchResult(SpotDetailResult.RefreshStarted(at = Instant.fromEpochMilliseconds(clock.now().toEpochMilliseconds())))
         viewModelScope.launch {
             // Ends the refresh whatever happens, so a cancelled one never blocks the next.
             var error: AppError? = AppError.Unknown("Refresh did not finish")
             try {
                 error = repository.refresh(spotId)
             } finally {
-                dispatch(SpotDetailResult.RefreshFinished(error))
+                dispatchResult(SpotDetailResult.RefreshFinished(error))
             }
         }
     }

@@ -40,7 +40,7 @@ import kotlinx.coroutines.withContext
  * error, for example `AppError.Conflict(SEATS_FULL)` when someone else took the last seat first; `ALREADY_JOINED`
  * counts as success, because the seat is the rider's.
  */
-public class RideRepository internal constructor(
+class RideRepository internal constructor(
     private val api: PursuitOfWindApi,
     private val database: PursuitOfWindDatabase,
     private val store: CrewStore,
@@ -54,12 +54,12 @@ public class RideRepository internal constructor(
     private val seatChanges = Mutex()
 
     /** Rides of [crewId] by departure, including cancelled ones (shown crossed out) until they end. */
-    public fun rides(crewId: String): Flow<Cached<List<Ride>>> =
+    fun rides(crewId: String): Flow<Cached<List<Ride>>> =
         sync.cached(SyncKeys.rides(crewId), rides.rides(crewId).map { list -> list.map { it.toRide() } })
 
-    public suspend fun refresh(crewId: String): Outcome<Unit> = outcome { store.refreshRides(crewId) }
+    suspend fun refresh(crewId: String): Outcome<Unit> = outcome { store.refreshRides(crewId) }
 
-    public suspend fun offer(
+    suspend fun offer(
         crewId: String,
         plan: RidePlan,
     ): Outcome<Ride> =
@@ -77,12 +77,12 @@ public class RideRepository internal constructor(
         }
 
     /** Driver only; cancelling a cancelled ride returns it unchanged. */
-    public suspend fun cancel(rideId: String): Outcome<Ride> = outcome { keep(api.cancelRide(rideId, newIdempotencyKey())) }
+    suspend fun cancel(rideId: String): Outcome<Ride> = outcome { keep(api.cancelRide(rideId, newIdempotencyKey())) }
 
-    public suspend fun takeSeat(rideId: String): Outcome<Ride> = changeSeat(rideId, take = true)
+    suspend fun takeSeat(rideId: String): Outcome<Ride> = changeSeat(rideId, take = true)
 
     /** Releasing a seat the rider does not have changes nothing. */
-    public suspend fun releaseSeat(rideId: String): Outcome<Ride> = changeSeat(rideId, take = false)
+    suspend fun releaseSeat(rideId: String): Outcome<Ride> = changeSeat(rideId, take = false)
 
     private suspend fun changeSeat(
         rideId: String,

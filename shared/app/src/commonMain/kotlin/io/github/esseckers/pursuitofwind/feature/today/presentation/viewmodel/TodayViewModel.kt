@@ -40,10 +40,10 @@ internal class TodayViewModel(
     override fun onIntent(intent: TodayIntent) {
         when (intent) {
             TodayIntent.Refresh -> refresh()
-            is TodayIntent.OpenSpot -> post(TodayEffect.OpenSpot(intent.spotId, intent.date))
-            TodayIntent.SetUpProfile -> post(TodayEffect.OpenProfile)
-            TodayIntent.PickSpots -> post(TodayEffect.PickSpots)
-            is TodayIntent.OfferRide -> post(TodayEffect.OfferRide(intent.offer))
+            is TodayIntent.OpenSpot -> postEffect(TodayEffect.OpenSpot(intent.spotId, intent.date))
+            TodayIntent.SetUpProfile -> postEffect(TodayEffect.OpenProfile)
+            TodayIntent.PickSpots -> postEffect(TodayEffect.PickSpots)
+            is TodayIntent.OfferRide -> postEffect(TodayEffect.OfferRide(intent.offer))
         }
     }
 
@@ -66,14 +66,14 @@ internal class TodayViewModel(
         if (currentState.inputs.refresh.refreshing) return
         // Cache stamps are stored in milliseconds; a finer start would never count as reflected in them.
         val at = Instant.fromEpochMilliseconds(clock.now().toEpochMilliseconds())
-        dispatch(TodayResult.RefreshStarted(at = at, favorites = TodayRefreshPolicy.favorites(snapshot)))
+        dispatchResult(TodayResult.RefreshStarted(at = at, favorites = TodayRefreshPolicy.favorites(snapshot)))
         viewModelScope.launch {
             // Ends the refresh whatever happens, so a cancelled one never blocks the next.
             var result = RefreshResult(forecastError = AppError.Unknown("Refresh did not finish"))
             try {
                 result = repository.refresh()
             } finally {
-                dispatch(TodayResult.RefreshFinished(result))
+                dispatchResult(TodayResult.RefreshFinished(result))
             }
         }
     }

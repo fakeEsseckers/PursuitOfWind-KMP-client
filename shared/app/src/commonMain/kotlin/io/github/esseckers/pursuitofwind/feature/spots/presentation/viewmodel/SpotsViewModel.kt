@@ -69,11 +69,11 @@ internal class SpotsViewModel(
             }
 
             is SpotsIntent.OpenSpot -> {
-                post(SpotsEffect.OpenSpot(intent.spotId))
+                postEffect(SpotsEffect.OpenSpot(intent.spotId))
             }
 
             SpotsIntent.AddSpots -> {
-                post(SpotsEffect.AddSpots)
+                postEffect(SpotsEffect.AddSpots)
             }
         }
     }
@@ -86,14 +86,14 @@ internal class SpotsViewModel(
     /** One refresh at a time; a second pull while one runs does nothing. */
     private fun refresh() {
         if (currentState.inputs.refresh.refreshing) return
-        dispatch(SpotsResult.RefreshStarted)
+        dispatchResult(SpotsResult.RefreshStarted)
         viewModelScope.launch {
             // Ends the refresh whatever happens, so a cancelled one never blocks the next.
             var error: AppError? = AppError.Unknown("Refresh did not finish")
             try {
                 error = repository.refresh()
             } finally {
-                dispatch(SpotsResult.RefreshFinished(error))
+                dispatchResult(SpotsResult.RefreshFinished(error))
             }
         }
     }
@@ -106,7 +106,7 @@ internal class SpotsViewModel(
         if (spotId in inputs.removing) return
         val edit = change(SpotsStateMapper.editOf(inputs, spotId) ?: return)
         wanted[spotId] = edit
-        dispatch(SpotsResult.Edited(spotId, edit))
+        dispatchResult(SpotsResult.Edited(spotId, edit))
         if (spotId !in inputs.saving) launchWrite(spotId) { save(spotId) }
     }
 
@@ -126,10 +126,10 @@ internal class SpotsViewModel(
         // Here what is wanted was sent, or the spot is being removed, or the save failed: nothing is left to send.
         wanted.remove(spotId)
         if (error == null) {
-            dispatch(SpotsResult.SaveFinished(spotId, saved))
+            dispatchResult(SpotsResult.SaveFinished(spotId, saved))
         } else {
-            dispatch(SpotsResult.SaveFailed(spotId))
-            post(SpotsEffect.SaveFailed(error.message()))
+            dispatchResult(SpotsResult.SaveFailed(spotId))
+            postEffect(SpotsEffect.SaveFailed(error.message()))
         }
     }
 
@@ -147,15 +147,15 @@ internal class SpotsViewModel(
         val removed = RemovedSpot(spotId, name, edit.driveMinutes.minutes, edit.favorite)
         // A save still running stops after its current request instead of following the spot again.
         wanted.remove(spotId)
-        dispatch(SpotsResult.RemoveStarted(spotId))
+        dispatchResult(SpotsResult.RemoveStarted(spotId))
         launchWrite(spotId) {
             val error = repository.remove(spotId)
             if (error == null) {
-                dispatch(SpotsResult.RemoveFinished(spotId, repository.current()))
-                post(SpotsEffect.Removed(removed))
+                dispatchResult(SpotsResult.RemoveFinished(spotId, repository.current()))
+                postEffect(SpotsEffect.Removed(removed))
             } else {
-                dispatch(SpotsResult.RemoveFailed(spotId))
-                post(SpotsEffect.SaveFailed(error.message()))
+                dispatchResult(SpotsResult.RemoveFailed(spotId))
+                postEffect(SpotsEffect.SaveFailed(error.message()))
             }
         }
     }
@@ -169,7 +169,7 @@ internal class SpotsViewModel(
                     ?.value
                     .orEmpty()
                     .any { it.spot.id == spot.id }
-            if (!followed) repository.update(spot.id, spot.drive, spot.favorite)?.let { post(SpotsEffect.SaveFailed(it.message())) }
+            if (!followed) repository.update(spot.id, spot.drive, spot.favorite)?.let { postEffect(SpotsEffect.SaveFailed(it.message())) }
         }
     }
 
