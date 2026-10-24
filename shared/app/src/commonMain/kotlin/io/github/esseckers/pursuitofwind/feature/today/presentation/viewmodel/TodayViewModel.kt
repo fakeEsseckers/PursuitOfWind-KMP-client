@@ -2,6 +2,7 @@ package io.github.esseckers.pursuitofwind.feature.today.presentation.viewmodel
 
 import androidx.lifecycle.viewModelScope
 import io.github.esseckers.pursuitofwind.core.mvi.MviViewModel
+import io.github.esseckers.pursuitofwind.core.mvi.launchFinishing
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.feature.today.domain.model.RefreshResult
 import io.github.esseckers.pursuitofwind.feature.today.domain.model.TodaySnapshot
@@ -18,7 +19,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import kotlin.time.Clock
 import kotlin.time.Duration
@@ -40,10 +40,10 @@ internal class TodayViewModel(
     override fun onIntent(intent: TodayIntent) {
         when (intent) {
             TodayIntent.Refresh -> refresh()
-            is TodayIntent.OpenSpot -> post(TodayEffect.OpenSpot(intent.spotId, intent.date))
-            TodayIntent.SetUpProfile -> post(TodayEffect.OpenProfile)
-            TodayIntent.PickSpots -> post(TodayEffect.PickSpots)
-            is TodayIntent.OfferRide -> post(TodayEffect.OfferRide(intent.offer))
+            is TodayIntent.OpenSpot -> postEffect(TodayEffect.OpenSpot(intent.spotId, intent.date))
+            TodayIntent.SetUpProfile -> postEffect(TodayEffect.OpenProfile)
+            TodayIntent.PickSpots -> postEffect(TodayEffect.PickSpots)
+            is TodayIntent.OfferRide -> postEffect(TodayEffect.OfferRide(intent.offer))
         }
     }
 
@@ -66,16 +66,11 @@ internal class TodayViewModel(
         if (currentState.inputs.refresh.refreshing) return
         // Cache stamps are stored in milliseconds; a finer start would never count as reflected in them.
         val at = Instant.fromEpochMilliseconds(clock.now().toEpochMilliseconds())
-        dispatch(TodayResult.RefreshStarted(at = at, favorites = TodayRefreshPolicy.favorites(snapshot)))
-        viewModelScope.launch {
-            // Ends the refresh whatever happens, so a cancelled one never blocks the next.
-            var result = RefreshResult(forecastError = AppError.Unknown("Refresh did not finish"))
-            try {
-                result = repository.refresh()
-            } finally {
-                dispatch(TodayResult.RefreshFinished(result))
-            }
-        }
+        dispatchResult(TodayResult.RefreshStarted(at = at, favorites = TodayRefreshPolicy.favorites(snapshot)))
+        viewModelScope.launchFinishing(
+            unfinished = RefreshResult(forecastError = AppError.Unknown("Refresh did not finish")),
+            work = { repository.refresh() },
+        ) { result -> dispatchResult(TodayResult.RefreshFinished(result)) }
     }
 
     /** The clock's time now and after every [tick]. Repeated readings are dropped, so a stopped clock costs nothing. */

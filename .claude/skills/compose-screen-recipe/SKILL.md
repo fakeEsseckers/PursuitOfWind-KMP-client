@@ -41,7 +41,7 @@ A screen without one-off events has no `Effect` file and declares `Nothing`. A s
 
 Shared code next to `feature/`:
 
-- `core/mvi` — `MviViewModel`, `Reducer`, `CollectEffects`.
+- `core/mvi` — `MviViewModel`, `Reducer`, `CollectEffects`, `launchFinishing`.
 - `core/designsystem` — `theme`, `component`, `icon` (see below).
 - `core/ui` — formatting and labels used by several screens (`AppError.message()`, `clockTime`, `windRangeText`, `durationText`, `driveText`, `formatTenths`, `DayLabel`, `TimeRange`, `updatedText`, `Freshness`).
 - `core/resources` — the generated `Res` (strings live in `composeResources/values` and `values-ru`).
@@ -51,10 +51,11 @@ Shared code next to `feature/`:
 
 - Every screen ViewModel extends `MviViewModel<State, Intent, Result, Effect>` and is obtained with `koinViewModel()` in the Route.
 - The view renders `state` and calls `onIntent(intent)`. No public mutable state, no suspend functions in the API.
-- The ViewModel never sets the state. It turns intents and observed data into `Result`s and calls `dispatch(result)`; the `Reducer` folds each one into the next state. The reducer is pure: no clock, no I/O, no coroutines. It is tested with plain values.
+- The ViewModel never sets the state. It turns intents and observed data into `Result`s and calls `dispatchResult(result)`; the `Reducer` folds each one into the next state. The reducer is pure: no clock, no I/O, no coroutines. It is tested with plain values.
 - Data the screen observes goes in `bind(): Flow<Result>`. It runs while the view collects `state` and stops 5 s after the last collector leaves, so a screen in the background stops observing and coming back starts it again.
+- Work a screen starts and must always end (a refresh, a save) runs in `viewModelScope.launchFinishing(unfinished, work) { result -> ... }` (`core/mvi`): the last block gets the result, or `unfinished` when the work is cancelled or throws, so a `...Started` result always gets its `...Finished` and the screen never stays refreshing or saving.
 - When the state is derived from several inputs (data, clock, refresh status), keep the inputs in the state (`TodayState.inputs`) and let the reducer recompute the rest with the feature's state mapper. Do not combine flows in the ViewModel. The reducer keeps the previous `content` instance when the new one is equal: the state changes on every tick, and Compose compares unstable UI models by instance, so this is what lets unchanged cards skip recomposition.
-- Effects: `post(effect)` for one-off events (navigate, show a snackbar), collected in the Route with lifecycle awareness. A screen without them declares `Nothing`. A failed refresh on Today is state (a notice above cached data), not an effect.
+- Effects: `postEffect(effect)` for one-off events (navigate, show a snackbar), collected in the Route with lifecycle awareness. A screen without them declares `Nothing`. A failed refresh on Today is state (a notice above cached data), not an effect.
 - Repositories are the source of truth. The feature's repository interface (in `domain`) exposes cached flows and a `refresh()`; the ViewModel never keeps its own copy of the data.
 - Refresh from `bind()` (`onStart`) when it is due (`TodayRefreshPolicy.isDue`: never refreshed, the last one failed, older than `REFRESH_AFTER`, the clock went back, or data missing), not from `init`. One refresh runs at a time. While the screen is shown, data that needs fetching at once (a favorite chosen in the picker while Today stayed below it: `TodayRefreshPolicy.hasNewFavorite`) starts a refresh from the observed flow; remember what the last refresh covered, so a failure offline does not loop.
 - A refresh never throws into `viewModelScope`: failures come back as `AppError`s (storage exceptions as `AppError.Unknown`, logged with Kermit). Keep errors that only affect part of the screen apart (Today: crew problems do not mark the forecast as failed).

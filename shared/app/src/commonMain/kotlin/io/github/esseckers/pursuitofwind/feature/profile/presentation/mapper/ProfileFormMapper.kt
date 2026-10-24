@@ -74,9 +74,9 @@ internal object ProfileFormMapper {
         val name = form.name.trim()
         if (name.isEmpty()) errors[ProfileField.NAME] = ProfileError.NAME_MISSING
         val weight = parseNumber(form.weightKg)
-        when {
-            weight == null -> errors[ProfileField.WEIGHT] = ProfileError.WEIGHT_MISSING
-            weight !in WEIGHT_RANGE -> errors[ProfileField.WEIGHT] = ProfileError.WEIGHT_OUT_OF_RANGE
+        when (weight) {
+            null -> errors[ProfileField.WEIGHT] = ProfileError.WEIGHT_MISSING
+            !in WEIGHT_RANGE -> errors[ProfileField.WEIGHT] = ProfileError.WEIGHT_OUT_OF_RANGE
         }
         val (minWind, maxWind) = windLimits(form, errors)
         if (errors.isNotEmpty() || weight == null) return ProfileCheck.Invalid(errors)

@@ -2,6 +2,7 @@ package io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.viewmo
 
 import androidx.lifecycle.viewModelScope
 import io.github.esseckers.pursuitofwind.core.mvi.MviViewModel
+import io.github.esseckers.pursuitofwind.core.mvi.launchFinishing
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.repository.SpotPickerRepository
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.mapper.SpotPickerStateMapper
@@ -12,7 +13,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.launch
 
 /**
  * The spot picker in MVI. While it is shown, the cached catalog and followed spots come in as results; the first time
@@ -25,8 +25,8 @@ internal class SpotPickerViewModel(
 ) : MviViewModel<SpotPickerState, SpotPickerIntent, SpotPickerResult, SpotPickerEffect>(SpotPickerState(), SpotPickerReducer) {
     override fun onIntent(intent: SpotPickerIntent) {
         when (intent) {
-            is SpotPickerIntent.Toggle -> dispatch(SpotPickerResult.Toggled(intent.spotId))
-            is SpotPickerIntent.ChangeDrive -> dispatch(SpotPickerResult.DriveChanged(intent.spotId, intent.minutes))
+            is SpotPickerIntent.Toggle -> dispatchResult(SpotPickerResult.Toggled(intent.spotId))
+            is SpotPickerIntent.ChangeDrive -> dispatchResult(SpotPickerResult.DriveChanged(intent.spotId, intent.minutes))
             SpotPickerIntent.Refresh -> refresh()
             SpotPickerIntent.Done -> done()
         }
@@ -43,17 +43,12 @@ internal class SpotPickerViewModel(
     /** One refresh at a time; a tap while one runs joins it, and none starts while saving. */
     private fun refresh() {
         if (currentState.inputs.refresh.refreshing || currentState.saving) return
-        dispatch(SpotPickerResult.RefreshStarted)
+        dispatchResult(SpotPickerResult.RefreshStarted)
         refreshJob =
-            viewModelScope.launch {
-                // Ends the refresh whatever happens, so a cancelled one never blocks the next.
-                var error: AppError? = AppError.Unknown("Refresh did not finish")
-                try {
-                    error = repository.refresh()
-                } finally {
-                    dispatch(SpotPickerResult.RefreshFinished(error))
-                }
-            }
+            viewModelScope.launchFinishing(
+                unfinished = AppError.Unknown("Refresh did not finish"),
+                work = { repository.refresh() },
+            ) { error -> dispatchResult(SpotPickerResult.RefreshFinished(error)) }
     }
 
     /** Saves what changed, then finishes; with nothing changed, finishes at once. One save at a time. */
@@ -61,20 +56,20 @@ internal class SpotPickerViewModel(
         if (currentState.saving) return
         val changes = SpotPickerStateMapper.changes(currentState.inputs)
         if (changes.isEmpty()) {
-            post(SpotPickerEffect.Finished)
+            postEffect(SpotPickerEffect.Finished)
             return
         }
-        dispatch(SpotPickerResult.SaveStarted)
-        viewModelScope.launch {
-            var error: AppError? = AppError.Unknown("Saving did not finish")
-            try {
+        dispatchResult(SpotPickerResult.SaveStarted)
+        viewModelScope.launchFinishing(
+            unfinished = AppError.Unknown("Saving did not finish"),
+            work = {
                 // A refresh that replaces the followed spots after this save would drop what was just chosen.
                 refreshJob?.join()
-                error = repository.save(changes)
-            } finally {
-                dispatch(SpotPickerResult.SaveFinished(error))
-            }
-            if (error == null) post(SpotPickerEffect.Finished)
+                repository.save(changes)
+            },
+        ) { error ->
+            dispatchResult(SpotPickerResult.SaveFinished(error))
+            if (error == null) postEffect(SpotPickerEffect.Finished)
         }
     }
 }

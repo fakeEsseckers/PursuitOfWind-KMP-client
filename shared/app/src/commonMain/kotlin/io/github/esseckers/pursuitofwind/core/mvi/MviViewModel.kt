@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
@@ -22,13 +21,14 @@ import kotlin.time.Duration.Companion.seconds
  * Base of every screen's ViewModel (MVI, without a library).
  *
  * - The view renders [state] and sends [Intent]s to [onIntent]; it never changes the state itself.
- * - The ViewModel turns intents, and the data it observes in [bind], into [Result]s and passes them to [dispatch].
+ * - The ViewModel turns intents, and the data it observes in [bind], into [Result]s and passes them to [dispatchResult].
  * - [reducer] folds each result into the next [State], one at a time.
  * - One-off [Effect]s (navigate, show a message) go out through [effects], each delivered to one collector once;
  *   effects sent while nobody collects wait for the next collector. A screen without them uses `Nothing`.
  *
  * [bind] is collected while the screen is shown: from the first collector of [state] until [STOP_AFTER] after the last
  * one leaves. A screen in the background stops observing data, and a configuration change does not restart it.
+ * [bind] must not collect [state] itself: that collector would count as one more subscriber, and [bind] would never stop.
  */
 internal abstract class MviViewModel<State, Intent, Result, Effect>(
     initialState: State,
@@ -51,8 +51,7 @@ internal abstract class MviViewModel<State, Intent, Result, Effect>(
             SharingStarted
                 .WhileSubscribed(STOP_AFTER.inWholeMilliseconds)
                 .command(mutableState.subscriptionCount)
-                .distinctUntilChanged()
-                .collectLatest { command -> if (command == SharingCommand.START) bind().collect(::dispatch) }
+                .collectLatest { command -> if (command == SharingCommand.START) bind().collect(::dispatchResult) }
         }
     }
 
@@ -61,11 +60,11 @@ internal abstract class MviViewModel<State, Intent, Result, Effect>(
     /** Results from the data the screen observes while it is shown. */
     protected open fun bind(): Flow<Result> = emptyFlow()
 
-    protected fun dispatch(result: Result) {
+    protected fun dispatchResult(result: Result) {
         mutableState.update { reducer.reduce(it, result) }
     }
 
-    protected fun post(effect: Effect) {
+    protected fun postEffect(effect: Effect) {
         effectChannel.trySend(effect)
     }
 

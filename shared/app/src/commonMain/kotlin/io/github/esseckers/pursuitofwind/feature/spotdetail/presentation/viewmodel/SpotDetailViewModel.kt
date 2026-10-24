@@ -2,6 +2,7 @@ package io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.viewmo
 
 import androidx.lifecycle.viewModelScope
 import io.github.esseckers.pursuitofwind.core.mvi.MviViewModel
+import io.github.esseckers.pursuitofwind.core.mvi.launchFinishing
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.repository.SpotDetailRepository
@@ -17,7 +18,6 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlin.time.Clock
@@ -45,8 +45,8 @@ internal class SpotDetailViewModel(
     override fun onIntent(intent: SpotDetailIntent) {
         when (intent) {
             SpotDetailIntent.Refresh -> refresh()
-            is SpotDetailIntent.SelectHour -> dispatch(SpotDetailResult.Selected(Selection.Hour(intent.start)))
-            is SpotDetailIntent.SelectDay -> dispatch(SpotDetailResult.Selected(Selection.Day(intent.date)))
+            is SpotDetailIntent.SelectHour -> dispatchResult(SpotDetailResult.Selected(Selection.Hour(intent.start)))
+            is SpotDetailIntent.SelectDay -> dispatchResult(SpotDetailResult.Selected(Selection.Day(intent.date)))
         }
     }
 
@@ -64,16 +64,11 @@ internal class SpotDetailViewModel(
     private fun refresh() {
         if (currentState.inputs.refresh.refreshing) return
         // Cache stamps are stored in milliseconds; a finer start would never count as reflected in them.
-        dispatch(SpotDetailResult.RefreshStarted(at = Instant.fromEpochMilliseconds(clock.now().toEpochMilliseconds())))
-        viewModelScope.launch {
-            // Ends the refresh whatever happens, so a cancelled one never blocks the next.
-            var error: AppError? = AppError.Unknown("Refresh did not finish")
-            try {
-                error = repository.refresh(spotId)
-            } finally {
-                dispatch(SpotDetailResult.RefreshFinished(error))
-            }
-        }
+        dispatchResult(SpotDetailResult.RefreshStarted(at = Instant.fromEpochMilliseconds(clock.now().toEpochMilliseconds())))
+        viewModelScope.launchFinishing(
+            unfinished = AppError.Unknown("Refresh did not finish"),
+            work = { repository.refresh(spotId) },
+        ) { error -> dispatchResult(SpotDetailResult.RefreshFinished(error)) }
     }
 
     /** The clock's time now and after every [tick]. Repeated readings are dropped, so a stopped clock costs nothing. */
