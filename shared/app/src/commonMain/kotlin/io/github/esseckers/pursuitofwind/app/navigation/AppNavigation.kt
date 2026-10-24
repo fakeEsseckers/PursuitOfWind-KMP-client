@@ -27,13 +27,17 @@ import io.github.esseckers.pursuitofwind.app.language.AppLanguageScope
 import io.github.esseckers.pursuitofwind.core.designsystem.icon.AppIcons
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Sizes
 import io.github.esseckers.pursuitofwind.core.resources.Res
+import io.github.esseckers.pursuitofwind.core.resources.tab_crew
 import io.github.esseckers.pursuitofwind.core.resources.tab_profile
 import io.github.esseckers.pursuitofwind.core.resources.tab_spots
 import io.github.esseckers.pursuitofwind.core.resources.tab_today
 import io.github.esseckers.pursuitofwind.data.model.AppLanguage
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
+import io.github.esseckers.pursuitofwind.feature.crew.presentation.view.CrewRoute
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileMode
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.view.ProfileRoute
+import io.github.esseckers.pursuitofwind.feature.rideoffer.domain.model.RideDraft
+import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.view.RideOfferRoute
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.view.SpotDetailRoute
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.view.SpotPickerRoute
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.view.SpotsRoute
@@ -41,11 +45,12 @@ import io.github.esseckers.pursuitofwind.feature.today.presentation.view.TodayRo
 import io.github.esseckers.pursuitofwind.feature.welcome.presentation.view.WelcomeScreen
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
+import kotlin.time.Instant
 
 /**
  * The app's screens and how they connect (Navigation 3). A rider without a profile starts at Welcome and goes through
- * onboarding (profile, then spots) to Today; everyone else starts at Today. Today, Spots and Profile are tabs in a
- * bottom bar, shown while one of them is on top. Everything shows in the rider's language (`AppLanguage`).
+ * onboarding (profile, then spots) to Today; everyone else starts at Today. Today, Spots, Crew and Profile are tabs
+ * in a bottom bar, shown while one of them is on top. Everything shows in the rider's language (`AppLanguage`).
  *
  * The back stack is a list of [Destination]s in saved state; every entry gets its own ViewModel store, so a screen's
  * ViewModel lives exactly as long as the screen is on the stack. Features do not know each other: this is the only
@@ -110,13 +115,36 @@ private fun entries(navigator: Navigator): (NavKey) -> NavEntry<NavKey> =
                 onOpenSpot = { spotId, date -> navigator.open(Destination.SpotDetail(spotId.value, date)) },
                 onOpenProfile = { navigator.selectTab(Destination.Profile) },
                 onPickSpots = { navigator.open(Destination.PickSpots) },
+                onOfferRide = { offer ->
+                    val key =
+                        Destination.OfferRide(
+                            spotId = offer.spotId.value,
+                            windowStart = offer.windowStart.epochSeconds,
+                            windowEnd = offer.windowEnd.epochSeconds,
+                            departAt = offer.departAt.epochSeconds,
+                        )
+                    navigator.open(key)
+                },
             )
+        }
+        entry<Destination.OfferRide> { key ->
+            val draft =
+                RideDraft(
+                    spotId = SpotId(key.spotId),
+                    windowStart = Instant.fromEpochSeconds(key.windowStart),
+                    windowEnd = Instant.fromEpochSeconds(key.windowEnd),
+                    departAt = Instant.fromEpochSeconds(key.departAt),
+                )
+            RideOfferRoute(draft = draft, onDone = navigator::back, onBack = navigator::back)
         }
         entry<Destination.Spots> {
             SpotsRoute(
                 onOpenSpot = { spotId -> navigator.open(Destination.SpotDetail(spotId.value)) },
                 onAddSpots = { navigator.open(Destination.PickSpots) },
             )
+        }
+        entry<Destination.Crew> {
+            CrewRoute(onOpenSpot = { spotId, date -> navigator.open(Destination.SpotDetail(spotId.value, date)) })
         }
         entry<Destination.Profile> { ProfileRoute(mode = ProfileMode.TAB) }
         entry<Destination.SpotDetail> { key ->
@@ -146,6 +174,7 @@ private fun TabBar(
 private fun tabLook(tab: Destination): Pair<ImageVector, StringResource> =
     when (tab) {
         Destination.Spots -> AppIcons.Pin to Res.string.tab_spots
+        Destination.Crew -> AppIcons.Group to Res.string.tab_crew
         Destination.Profile -> AppIcons.Person to Res.string.tab_profile
         else -> AppIcons.Wind to Res.string.tab_today
     }
@@ -153,6 +182,7 @@ private fun tabLook(tab: Destination): Pair<ImageVector, StringResource> =
 private fun tabName(tab: Destination): String =
     when (tab) {
         Destination.Spots -> "spots"
+        Destination.Crew -> "crew"
         Destination.Profile -> "profile"
         else -> "today"
     }

@@ -43,6 +43,7 @@ internal class TodayViewModel(
             is TodayIntent.OpenSpot -> post(TodayEffect.OpenSpot(intent.spotId, intent.date))
             TodayIntent.SetUpProfile -> post(TodayEffect.OpenProfile)
             TodayIntent.PickSpots -> post(TodayEffect.PickSpots)
+            is TodayIntent.OfferRide -> post(TodayEffect.OfferRide(intent.offer))
         }
     }
 

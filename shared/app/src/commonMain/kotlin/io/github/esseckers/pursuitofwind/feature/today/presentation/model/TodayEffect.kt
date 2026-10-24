@@ -16,4 +16,9 @@ internal sealed interface TodayEffect {
 
     /** Navigate to the spot picker. */
     data object PickSpots : TodayEffect
+
+    /** Navigate to the form that offers [offer] to the crew. */
+    data class OfferRide(
+        val offer: RideOfferUi,
+    ) : TodayEffect
 }

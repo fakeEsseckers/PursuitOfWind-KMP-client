@@ -157,6 +157,7 @@ private fun ReadyDays(
             DayCard(
                 day = day,
                 onOpenSpot = { spotId -> onIntent(TodayIntent.OpenSpot(spotId, day.date)) },
+                onOfferRide = { offer -> onIntent(TodayIntent.OfferRide(offer)) },
                 modifier = Modifier.semantics { customActions = refreshAction },
             )
         }

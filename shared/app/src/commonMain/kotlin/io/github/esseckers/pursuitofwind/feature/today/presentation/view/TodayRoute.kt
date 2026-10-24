@@ -8,6 +8,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.esseckers.pursuitofwind.core.mvi.CollectEffects
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
+import io.github.esseckers.pursuitofwind.feature.today.presentation.model.RideOfferUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayEffect
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayIntent
 import io.github.esseckers.pursuitofwind.feature.today.presentation.viewmodel.TodayViewModel
@@ -16,13 +17,14 @@ import org.koin.compose.viewmodel.koinViewModel
 
 /**
  * Connects [TodayScreen] to its [TodayViewModel]. [onOpenSpot] navigates to a spot's forecast, [onOpenProfile] to the
- * profile and [onPickSpots] to the spot picker. No layout here.
+ * profile, [onPickSpots] to the spot picker and [onOfferRide] to the form that offers the crew a ride. No layout here.
  */
 @Composable
 internal fun TodayRoute(
     onOpenSpot: (SpotId, LocalDate) -> Unit,
     onOpenProfile: () -> Unit,
     onPickSpots: () -> Unit,
+    onOfferRide: (RideOfferUi) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: TodayViewModel = koinViewModel(),
 ) {
@@ -32,6 +34,7 @@ internal fun TodayRoute(
             is TodayEffect.OpenSpot -> onOpenSpot(effect.spotId, effect.date)
             TodayEffect.OpenProfile -> onOpenProfile()
             TodayEffect.PickSpots -> onPickSpots()
+            is TodayEffect.OfferRide -> onOfferRide(effect.offer)
         }
     }
     val lifecycle = LocalLifecycleOwner.current.lifecycle

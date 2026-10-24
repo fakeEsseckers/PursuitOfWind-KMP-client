@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -13,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -39,6 +41,8 @@ import io.github.esseckers.pursuitofwind.core.resources.ride_you_departed
 import io.github.esseckers.pursuitofwind.core.resources.ride_you_drive
 import io.github.esseckers.pursuitofwind.core.resources.ride_you_ride
 import io.github.esseckers.pursuitofwind.core.resources.today_alternative
+import io.github.esseckers.pursuitofwind.core.resources.today_im_going
+import io.github.esseckers.pursuitofwind.core.resources.today_im_going_description
 import io.github.esseckers.pursuitofwind.core.resources.today_kite
 import io.github.esseckers.pursuitofwind.core.resources.today_leave_by
 import io.github.esseckers.pursuitofwind.core.resources.today_leave_now
@@ -55,6 +59,7 @@ import io.github.esseckers.pursuitofwind.engine.model.Confidence
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.engine.model.Verdict
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.DayUi
+import io.github.esseckers.pursuitofwind.feature.today.presentation.model.RideOfferUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.RideUi
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
@@ -62,13 +67,14 @@ import org.jetbrains.compose.resources.stringResource
 /**
  * The answer for one day. Screen readers read the whole card as one item, and can jump between days as headings.
  * [onOpenSpot] opens the hourly forecast of a spot: tapping a GO card opens its spot, the spots listed on a card open
- * their own.
+ * their own. A GO card with a crew offers "I'm going" ([onOfferRide]).
  */
 @Composable
 internal fun DayCard(
     day: DayUi,
     onOpenSpot: (SpotId) -> Unit,
     modifier: Modifier = Modifier,
+    onOfferRide: (RideOfferUi) -> Unit = {},
 ) {
     val cardModifier =
         modifier
@@ -76,7 +82,7 @@ internal fun DayCard(
             .semantics(mergeDescendants = true) { heading() }
             .testTag("today.day.${day.date}")
     when (day) {
-        is DayUi.Go -> GoCard(day, onOpenSpot, cardModifier)
+        is DayUi.Go -> GoCard(day, onOpenSpot, onOfferRide, cardModifier)
         is DayUi.NoGo -> NoGoCard(day, onOpenSpot, cardModifier)
     }
 }
@@ -85,6 +91,7 @@ internal fun DayCard(
 private fun GoCard(
     day: DayUi.Go,
     onOpenSpot: (SpotId) -> Unit,
+    onOfferRide: (RideOfferUi) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     VerdictCard(
@@ -114,7 +121,7 @@ private fun GoCard(
         confidenceHint(day.confidence)?.let { Text(text = it, style = MaterialTheme.typography.bodyMedium) }
         if (day.rides.isNotEmpty() || day.hasCrew || day.alternatives.isNotEmpty()) {
             HorizontalDivider(color = LocalContentColor.current.copy(alpha = DIVIDER_ALPHA))
-            Rides(day)
+            Rides(day, onOfferRide)
             day.alternatives.forEach { alternative ->
                 LinkRow(
                     text = stringResource(Res.string.today_alternative, alternative.spotName, alternative.window.toString()),
@@ -136,11 +143,23 @@ private fun confidenceHint(confidence: Confidence): String? =
     }
 
 @Composable
-private fun Rides(day: DayUi.Go) {
+private fun Rides(
+    day: DayUi.Go,
+    onOfferRide: (RideOfferUi) -> Unit,
+) {
     if (day.rides.isEmpty() && day.hasCrew) {
         IconLine(icon = AppIcons.Car, text = stringResource(Res.string.today_no_rides), style = MaterialTheme.typography.bodyMedium)
     }
     day.rides.forEach { ride -> RideLine(ride) }
+    day.offer?.let { offer ->
+        val description = stringResource(Res.string.today_im_going_description, day.spotName)
+        FilledTonalButton(
+            onClick = { onOfferRide(offer) },
+            modifier = Modifier.semantics { contentDescription = description }.testTag("today.offer.${day.date}"),
+        ) {
+            Text(text = stringResource(Res.string.today_im_going), style = MaterialTheme.typography.labelLarge)
+        }
+    }
 }
 
 @Composable

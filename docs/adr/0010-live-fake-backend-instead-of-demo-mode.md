@@ -32,3 +32,11 @@ Two things changed. The owner will show the product with onboarding flows and sp
 - Negative: a background check that runs every hour gets a new run each time, so a GO window's start can move by an hour. Notifications (ADR 0011) must recognize the same window by spot, date and overlap, not by its exact start.
 - ADRs 0004–0009 mention demo mode as part of the plan at the time. They are records and stay as written; only 0005 links here, because its forecast rule changed.
 - Revisit when: the real server exists; then the fake stays for tests and offline development only.
+
+## Update: crew members act (Issue #9)
+
+- **What they do.** `Seed.memberActivity` (`MemberActivity`, on in `Seed.default`, null keeps a crew still) makes the seeded members act every one to three minutes of the server's clock: take a free seat in a ride of their crew, offer a ride to a spot where `DecisionEngine` finds a GO window for a typical member in the next two days (at most three rides coming up per crew), or now and then give up a seat, after which they stay out of that ride. Nobody is in two cars at the same time.
+- **When.** `CrewLife` runs before every request and catches up on what was due since the last one, stamping each action with its own time, so every answer shows what happened until then. After a long pause it does at most three things, not a day's worth.
+- **The race.** When a rider asks for the last free seat of a ride, a member who could take it gets it first in `lastSeatRace` of the tries (half by default), and the rider gets `409 SEATS_FULL`. The app shows the seat at once, puts it back and says someone was faster.
+- **Still deterministic.** Gaps, choices and race outcomes come from the seed; the same seed, clock and requests give the same crew life. Tests that need a still crew pass `memberActivity = null`.
+- Considered: a timer inside the fake that acts in the background — truer to a real server, but it would need a running coroutine and real time, and tests would lose exact answers; acting on requests gives the same picture to every client, which only sees the server through requests anyway. A race that always takes the last seat — easier to show, but the rider would never get one.

@@ -39,7 +39,7 @@ Allowed dependency direction: `contract` and `windengine` are independent leaves
    - `LocalNotifier` — show / cancel local notifications
    - `BackgroundRefreshScheduler` — schedule periodic evaluation
    - `SecureTokenStore` — Keystore AES-GCM + DataStore on Android, Keychain on iOS
-   - `ShareLauncher` — share an invite link
+   - `ShareLauncher` — the system share sheet for an invitation (`:shared:app` `core/platform`, bound in `startPursuitOfWind` and `MainViewController`)
    - `PushTokenRegistrar` — no-op in this phase
 2. **expect/actual only for small factories**: Room database builder, Ktor engine, DataStore path, platform name. No `expect class` with logic.
 3. Never put Android or iOS types in `commonMain` signatures.

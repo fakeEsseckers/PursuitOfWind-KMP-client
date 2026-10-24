@@ -3,6 +3,7 @@ package io.github.esseckers.pursuitofwind.feature.today.presentation.mapper
 import io.github.esseckers.pursuitofwind.core.ui.DayLabel
 import io.github.esseckers.pursuitofwind.core.ui.TimeRange
 import io.github.esseckers.pursuitofwind.data.model.Person
+import io.github.esseckers.pursuitofwind.data.model.Ride
 import io.github.esseckers.pursuitofwind.data.model.RideStatus
 import io.github.esseckers.pursuitofwind.data.model.WindUnit
 import io.github.esseckers.pursuitofwind.engine.model.Confidence
@@ -23,6 +24,7 @@ import io.github.esseckers.pursuitofwind.feature.today.hour
 import io.github.esseckers.pursuitofwind.feature.today.mySpot
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.AlternativeUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.DayUi
+import io.github.esseckers.pursuitofwind.feature.today.presentation.model.RideOfferUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.RideUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.SpotReasonUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.WindRange
@@ -135,6 +137,28 @@ class DayCardsMapperTest {
             saturday.rides,
         )
         assertTrue(saturday.hasCrew)
+    }
+
+    @Test
+    fun `with a crew a GO day offers a ride for its riding time unless the rider already drives or rides`() {
+        fun offer(vararg rides: Ride) =
+            assertIs<DayUi.Go>(cards(rides = CrewRides(rides.toList(), hasCrew = true, userId = me.userId))[2]).offer
+        val andrei = ride("andrei", departHour = 10)
+
+        assertEquals(RideOfferUi(SpotId("nordstrand-bay"), at(SATURDAY, 13), at(SATURDAY, 17), at(SATURDAY, 10, 30)), offer())
+        assertEquals(offer(), offer(andrei))
+        assertEquals(null, offer(ride("mine").copy(driver = me)))
+        assertEquals(null, offer(andrei.withPassengers(me)))
+        assertEquals(null, assertIs<DayUi.Go>(cards()[2]).offer)
+    }
+
+    @Test
+    fun `once the time to leave has passed an offered ride leaves at the next quarter hour`() {
+        val windyToday = day(THURSDAY) { hour -> if (hour < 10) 12.0 else 18.0 }
+        val crew = CrewRides(emptyList(), hasCrew = true, userId = me.userId)
+        val today = assertIs<DayUi.Go>(cards(forecasts = mapOf("nordstrand-bay" to windyToday), rides = crew).single())
+
+        assertEquals(RideOfferUi(SpotId("nordstrand-bay"), at(THURSDAY, 10, 30), at(THURSDAY, 17), at(THURSDAY, 8, 15)), today.offer)
     }
 
     @Test

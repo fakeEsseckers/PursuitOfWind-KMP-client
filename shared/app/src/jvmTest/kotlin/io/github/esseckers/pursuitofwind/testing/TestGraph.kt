@@ -1,6 +1,7 @@
 package io.github.esseckers.pursuitofwind.testing
 
 import io.github.esseckers.pursuitofwind.app.di.appModules
+import io.github.esseckers.pursuitofwind.core.platform.ShareLauncher
 import io.github.esseckers.pursuitofwind.data.Environment
 import io.github.esseckers.pursuitofwind.data.fake.ControllableClock
 import io.github.esseckers.pursuitofwind.data.fake.FakePursuitOfWindServer
@@ -14,16 +15,21 @@ import org.koin.dsl.module
 
 /**
  * The app's own Koin graph for [Environment.Fake] at [clock], with the fake backend seeded by [steadyBreeze]: the real
- * data layer (HTTP to the in-app server, in-memory Room, DataStore), so screen tests need no fake repositories.
- * [overrides] replace definitions of the graph, such as the HTTP engine with [HeldRequests.engine].
+ * data layer (HTTP to the in-app server, in-memory Room, DataStore), so screen tests need no fake repositories. The
+ * platform's share sheet is a [RecordingShareLauncher]. [overrides] replace definitions of the graph, such as the HTTP
+ * engine with [HeldRequests.engine].
  */
 internal fun testGraph(
     clock: ControllableClock,
     vararg overrides: Module,
 ): KoinApplication =
     koinApplication {
-        val server = module { single { FakePursuitOfWindServer(get(), steadyBreeze(clock)) } }
-        modules(appModules(Environment.Fake, clock) + server + overrides)
+        val platform =
+            module {
+                single { FakePursuitOfWindServer(get(), steadyBreeze(clock)) }
+                single<ShareLauncher> { RecordingShareLauncher() }
+            }
+        modules(appModules(Environment.Fake, clock) + platform + overrides)
     }
 
 /** The default seed (spots, Weekend Crew, Andrei's Saturday ride) with 18 kn from 240° everywhere, so verdicts are known. */
