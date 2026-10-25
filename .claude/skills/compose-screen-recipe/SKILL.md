@@ -43,9 +43,10 @@ A screen without one-off events has no `Effect` file and declares `Nothing`. A s
 Shared code next to `feature/`:
 
 - `core/mvi` — `MviViewModel`, `Reducer`; `core` (`Extensions.kt`) — `CollectEffects`, `launchFinishing`, `Clock.ticks`.
+- `core/domain` — rules several features share, with their `*Entity` types: `RideRulesMapper` (role, departure, end, the action a ride offers).
 - `core/refresh` — `RefreshStatus` (a screen's refresh: `started`, `finished`, `shownError`), `RefreshNotice` and `RefreshNoticeMapper` (offline, failed, stale); the banner is `RefreshNoticeBanner` in the design system.
 - `core/designsystem` — `theme`, `component`, `icon` (see below).
-- `core/ui` — formatting and labels used by several screens (`AppError.message()`, `clockTime`, `windRangeText`, `durationText`, `driveText`, `formatTenths`, `DayLabel`, `TimeRange`, `updatedText`, `Freshness`).
+- `core/ui` — formatting and labels used by several screens (`AppError.message()`, `clockTime`, `windRangeText`, `durationText`, `driveText`, `formatTenths`, `DayLabel`, `TimeRange`, `updatedText`, `Freshness`, `rideDriverText`, `rideSeatsText`), and how steppers move (`Step`, `StepRange`, `StepperUi`, `SPOT_DRIVE_STEPS`): an intent says which way, the ViewModel or reducer applies the range.
 - `core/resources` — the generated `Res` (strings live in `composeResources/values` and `values-ru`).
 - `app` — `App()`, `appModules()`, `navigation` (destinations, `AppNavigation`, `Navigator`), platform entry points.
 

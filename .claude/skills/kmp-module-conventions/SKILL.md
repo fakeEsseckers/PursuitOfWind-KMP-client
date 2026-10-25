@@ -40,6 +40,7 @@ Allowed dependency direction: `contract` and `windengine` are independent leaves
    - `BackgroundRefreshScheduler` — schedule periodic evaluation
    - `SecureTokenStore` — Keystore AES-GCM + DataStore on Android, Keychain on iOS
    - `ShareLauncher` — the system share sheet for an invitation (`:shared:app` `core/platform`, bound in `startPursuitOfWind` and `MainViewController`)
+   - `AppLocale` — the app's language for resources (`:shared:app` `app/language`, bound in the same places; `RecordingAppLocale` in tests)
    - `PushTokenRegistrar` — no-op in this phase
 2. **expect/actual only for small factories**: Room database builder, Ktor engine, DataStore path, platform name. No `expect class` with logic.
 3. Never put Android or iOS types in `commonMain` signatures.
@@ -64,12 +65,14 @@ io.github.esseckers.pursuitofwind/
   core/
     Extensions.kt           # CollectEffects, launchFinishing, Clock.ticks: helpers every screen uses
     mvi/                    # MviViewModel, Reducer
+    domain/                 # rules several features share (RideRulesMapper) and their *Entity types
+    refresh/                # a screen's refresh status and the notice above its content
     designsystem/           # theme/, component/, icon/
     ui/                     # formatting and labels shared by screens
     resources/              # generated Res (packageOfResClass)
   feature/<screen>/         # today, spotdetail, profile, spots, crew, settings
     domain/entity/          # the feature's domain types, named *Entity
-    domain/mapper/          # pure rules over those types that one layer uses (`RefreshErrorMapper`), with tests
+    domain/mapper/          # pure rules over those types that one layer uses (`RefreshErrorMapper`, `TodayEvaluationMapper`), with tests
     domain/repository/      # the repository interface the feature needs
     data/repository/        # its implementation over the :shared:data repositories
     presentation/model/     # State, Intent, Effect, UI models
