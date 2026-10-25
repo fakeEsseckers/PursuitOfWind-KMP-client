@@ -19,7 +19,6 @@ import io.github.esseckers.pursuitofwind.engine.model.ModelId
 import io.github.esseckers.pursuitofwind.engine.model.ModelWind
 import io.github.esseckers.pursuitofwind.engine.model.Sector
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
-import io.github.esseckers.pursuitofwind.engine.model.ThunderRisk
 import io.github.esseckers.pursuitofwind.engine.model.WindSpeed
 import kotlinx.datetime.TimeZone
 import kotlinx.serialization.builtins.ListSerializer
@@ -92,6 +91,6 @@ internal fun ForecastHourEntity.toForecastHour(): ForecastHour =
             },
         precipMm = precipitationMm,
         tempC = temperatureC,
-        thunderRisk = ThunderRisk.valueOf(thunderRisk),
+        thunderRisk = cachedThunderRisk(thunderRisk),
         isDaylight = isDaylight,
     )

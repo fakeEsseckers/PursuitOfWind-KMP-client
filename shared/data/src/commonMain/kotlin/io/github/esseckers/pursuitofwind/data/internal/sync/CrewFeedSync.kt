@@ -188,12 +188,19 @@ internal class CrewFeedSync(
         if (ride.version < version) rides.upsert(listOf(change(ride).copy(version = version)))
     }
 
+    /** The ride an event changes and the cache must already hold; every event type is named, so a new one is decided. */
     private fun CrewEventDto.rideId(): String? =
         when (this) {
             is SeatTakenEventDto -> rideId
+
             is SeatReleasedEventDto -> rideId
+
             is RideCancelledEventDto -> rideId
-            else -> null
+
+            // Brings its ride along.
+            is RideCreatedEventDto -> null
+
+            is MemberJoinedEventDto, is UnknownCrewEventDto -> null
         }
 
     private companion object {

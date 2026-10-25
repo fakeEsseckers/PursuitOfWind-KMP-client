@@ -7,7 +7,6 @@ import io.github.esseckers.pursuitofwind.contract.RideStatusDto
 import io.github.esseckers.pursuitofwind.data.internal.local.RideEntity
 import io.github.esseckers.pursuitofwind.data.model.Person
 import io.github.esseckers.pursuitofwind.data.model.Ride
-import io.github.esseckers.pursuitofwind.data.model.RideStatus
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import kotlinx.serialization.builtins.ListSerializer
 import kotlin.time.Instant
@@ -51,7 +50,7 @@ internal fun RideEntity.toRide(): Ride {
         seatsTotal = seatsTotal,
         seatsFree = seats,
         passengers = people.map { Person(it.userId, it.displayName) },
-        status = RideStatus.valueOf(status),
+        status = cachedRideStatus(status),
         createdAt = Instant.fromEpochMilliseconds(createdAt),
         pending = pendingSeat != null,
     )
