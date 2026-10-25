@@ -10,8 +10,10 @@ import kotlin.time.Instant
 
 /** What happened, as the reducer sees it. */
 internal sealed interface CrewResult {
+    /** The rider's crews are [cached], and the ViewModel shows [shown] (null without a crew). */
     data class CrewsChanged(
         val cached: Cached<List<Crew>>,
+        val shown: String?,
     ) : CrewResult
 
     data class DetailsChanged(
@@ -24,8 +26,10 @@ internal sealed interface CrewResult {
         val error: AppError?,
     ) : CrewResult
 
+    /** The rider picked, created or joined [crewId], and the ViewModel shows [shown]. */
     data class Chosen(
         val crewId: String,
+        val shown: String?,
     ) : CrewResult
 
     data class Ticked(

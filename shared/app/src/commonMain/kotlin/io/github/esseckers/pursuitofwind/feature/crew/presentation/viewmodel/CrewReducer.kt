@@ -23,7 +23,7 @@ internal class CrewReducer(
         val next =
             when (result) {
                 is CrewResult.CrewsChanged -> {
-                    inputs.copy(crews = result.cached)
+                    inputs.copy(crews = result.cached, shown = result.shown)
                 }
 
                 is CrewResult.DetailsChanged -> {
@@ -41,7 +41,7 @@ internal class CrewReducer(
                 }
 
                 is CrewResult.Chosen -> {
-                    inputs.copy(chosen = result.crewId)
+                    inputs.copy(chosen = result.crewId, shown = result.shown)
                 }
 
                 is CrewResult.Ticked -> {

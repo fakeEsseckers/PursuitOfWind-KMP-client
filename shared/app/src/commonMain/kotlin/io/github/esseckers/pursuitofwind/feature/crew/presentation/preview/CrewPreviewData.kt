@@ -84,8 +84,8 @@ internal object CrewPreviewData {
     val ready =
         reduce(
             CrewResult.Ticked(now),
-            CrewResult.CrewsChanged(Cached(listOf(weekendCrew, nightOwls), fetchedAt)),
-            CrewResult.Chosen(weekendCrew.id),
+            CrewResult.CrewsChanged(Cached(listOf(weekendCrew, nightOwls), fetchedAt), shown = weekendCrew.id),
+            CrewResult.Chosen(weekendCrew.id, shown = weekendCrew.id),
             CrewResult.DetailsChanged(details),
             CrewResult.RefreshFinished(null),
         )
@@ -117,10 +117,10 @@ internal object CrewPreviewData {
     val offline = reduce(CrewResult.RefreshFinished(AppError.Network), from = ready)
 
     /** Alex belongs to no crew. */
-    val noCrew = reduce(CrewResult.CrewsChanged(Cached(emptyList(), fetchedAt)), CrewResult.RefreshFinished(null))
+    val noCrew = reduce(CrewResult.CrewsChanged(Cached(emptyList(), fetchedAt), shown = null), CrewResult.RefreshFinished(null))
 
     /** Nothing cached and no connection. */
-    val error = reduce(CrewResult.CrewsChanged(Cached(emptyList(), null)), CrewResult.RefreshFinished(AppError.Network))
+    val error = reduce(CrewResult.CrewsChanged(Cached(emptyList(), null), shown = null), CrewResult.RefreshFinished(AppError.Network))
 
     val creating = reduce(CrewResult.DialogShown(CrewDialog.Create()), from = noCrew)
 

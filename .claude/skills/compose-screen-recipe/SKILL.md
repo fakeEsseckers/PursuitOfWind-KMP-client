@@ -42,7 +42,7 @@ A screen without one-off events has no `Effect` file and declares `Nothing`. A s
 
 Shared code next to `feature/`:
 
-- `core/mvi` — `MviViewModel`, `Reducer`, `CollectEffects`, `launchFinishing`.
+- `core/mvi` — `MviViewModel`, `Reducer`, `CollectEffects`, `launchFinishing`, `Clock.ticks`.
 - `core/designsystem` — `theme`, `component`, `icon` (see below).
 - `core/ui` — formatting and labels used by several screens (`AppError.message()`, `clockTime`, `windRangeText`, `durationText`, `driveText`, `formatTenths`, `DayLabel`, `TimeRange`, `updatedText`, `Freshness`).
 - `core/resources` — the generated `Res` (strings live in `composeResources/values` and `values-ru`).

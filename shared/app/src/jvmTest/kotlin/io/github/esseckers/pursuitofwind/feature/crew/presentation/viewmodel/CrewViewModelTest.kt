@@ -12,10 +12,14 @@ import io.github.esseckers.pursuitofwind.core.resources.crew_seat_taken
 import io.github.esseckers.pursuitofwind.data.fake.ControllableClock
 import io.github.esseckers.pursuitofwind.data.fake.FakePursuitOfWindServer
 import io.github.esseckers.pursuitofwind.data.fake.NetworkMode
+import io.github.esseckers.pursuitofwind.data.model.AppError
+import io.github.esseckers.pursuitofwind.data.model.Cached
+import io.github.esseckers.pursuitofwind.data.model.Crew
 import io.github.esseckers.pursuitofwind.data.model.RidePlan
 import io.github.esseckers.pursuitofwind.data.repository.CrewRepository
 import io.github.esseckers.pursuitofwind.data.repository.ProfileRepository
 import io.github.esseckers.pursuitofwind.data.repository.RideRepository
+import io.github.esseckers.pursuitofwind.feature.crew.domain.repository.CrewsRepository
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewDialog
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewEffect
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewIntent
@@ -35,8 +39,11 @@ import io.github.esseckers.pursuitofwind.testing.releaseMainDispatcher
 import io.github.esseckers.pursuitofwind.testing.steadyBreeze
 import io.github.esseckers.pursuitofwind.testing.testGraph
 import io.github.esseckers.pursuitofwind.testing.value
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -49,6 +56,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
@@ -86,10 +95,14 @@ class CrewViewModelTest {
         koin = testGraph(clock, module { single { FakePursuitOfWindServer(get(), race) } }).koin
     }
 
-    private fun viewModel(poll: Duration = Duration.INFINITE): CrewViewModel =
+    private fun viewModel(
+        poll: Duration = Duration.INFINITE,
+        tick: Duration = Duration.INFINITE,
+        repository: CrewsRepository = koin.get(),
+    ): CrewViewModel =
         ViewModelProvider.create(
             viewModels,
-            viewModelFactory { initializer { CrewViewModel(repository = koin.get(), clock = clock, riderZone = BERLIN, poll = poll) } },
+            viewModelFactory { initializer { CrewViewModel(repository, clock, riderZone = BERLIN, poll = poll, tick = tick) } },
         )[CrewViewModel::class]
 
     private suspend fun joined() {
@@ -111,7 +124,7 @@ class CrewViewModelTest {
                 val crew = (ready.content as Content.Ready).crew
                 assertEquals("Weekend Crew", crew.name)
                 assertEquals(listOf("Andrei", "Mira", "Jonas"), crew.members.take(3).map { it.name })
-                assertEquals(RideAction.TAKE_SEAT, ready.ride("rid_7f3c").action)
+                assertEquals(RideAction.TAKE_SEAT, ready.ride(SEEDED_RIDE).action)
                 cancelAndIgnoreRemainingEvents()
             }
             viewModel.effects.test(timeout = TURBINE_TIMEOUT) { assertEquals(CrewEffect.Joined("Weekend Crew"), awaitItem()) }
@@ -166,16 +179,16 @@ class CrewViewModelTest {
             val viewModel = viewModel()
 
             viewModel.state.test(timeout = TURBINE_TIMEOUT) {
-                awaitState { it.rides().any { ride -> ride.id == "rid_7f3c" } }
+                awaitState { it.rides().any { ride -> ride.id == SEEDED_RIDE } }
                 // The seat shows as pending while the request runs; Room may fold that into the answer, so it is not awaited.
-                viewModel.onIntent(CrewIntent.TakeSeat("rid_7f3c"))
-                val seated = awaitState { it.ride("rid_7f3c").let { ride -> !ride.pending && ride.action == RideAction.LEAVE } }
-                assertEquals(listOf(PersonUi("Mira", false), PersonUi("Alex", true)), seated.ride("rid_7f3c").passengers)
-                assertEquals(1, seated.ride("rid_7f3c").seatsFree)
+                viewModel.onIntent(CrewIntent.TakeSeat(SEEDED_RIDE))
+                val seated = awaitState { it.ride(SEEDED_RIDE).let { ride -> !ride.pending && ride.action == RideAction.LEAVE } }
+                assertEquals(listOf(PersonUi("Mira", false), PersonUi("Alex", true)), seated.ride(SEEDED_RIDE).passengers)
+                assertEquals(1, seated.ride(SEEDED_RIDE).seatsFree)
 
-                viewModel.onIntent(CrewIntent.LeaveRide("rid_7f3c"))
-                val left = awaitState { it.ride("rid_7f3c").let { ride -> !ride.pending && ride.action == RideAction.TAKE_SEAT } }
-                assertEquals(2, left.ride("rid_7f3c").seatsFree)
+                viewModel.onIntent(CrewIntent.LeaveRide(SEEDED_RIDE))
+                val left = awaitState { it.ride(SEEDED_RIDE).let { ride -> !ride.pending && ride.action == RideAction.TAKE_SEAT } }
+                assertEquals(2, left.ride(SEEDED_RIDE).seatsFree)
                 cancelAndIgnoreRemainingEvents()
             }
         }
@@ -188,12 +201,12 @@ class CrewViewModelTest {
             val viewModel = viewModel()
 
             viewModel.state.test(timeout = TURBINE_TIMEOUT) {
-                awaitState { it.rides().any { ride -> ride.id == "rid_7f3c" && ride.seatsFree == 1 } }
-                viewModel.onIntent(CrewIntent.TakeSeat("rid_7f3c"))
-                val full = awaitState { it.ride("rid_7f3c").let { ride -> !ride.pending && ride.seatsFree == 0 } }
+                awaitState { it.rides().any { ride -> ride.id == SEEDED_RIDE && ride.seatsFree == 1 } }
+                viewModel.onIntent(CrewIntent.TakeSeat(SEEDED_RIDE))
+                val full = awaitState { it.ride(SEEDED_RIDE).let { ride -> !ride.pending && ride.seatsFree == 0 } }
 
-                assertEquals(listOf(PersonUi("Mira", false), PersonUi("Jonas", false)), full.ride("rid_7f3c").passengers)
-                assertEquals(null, full.ride("rid_7f3c").action)
+                assertEquals(listOf(PersonUi("Mira", false), PersonUi("Jonas", false)), full.ride(SEEDED_RIDE).passengers)
+                assertEquals(null, full.ride(SEEDED_RIDE).action)
                 cancelAndIgnoreRemainingEvents()
             }
             viewModel.effects.test(timeout = TURBINE_TIMEOUT) { assertEquals(CrewEffect.Failed(Res.string.crew_seat_taken), awaitItem()) }
@@ -218,6 +231,73 @@ class CrewViewModelTest {
                 val cancelled = awaitState { it.ride(ride.id).cancelled }
                 assertEquals(null, cancelled.ride(ride.id).action)
                 assertEquals(null, cancelled.dialog)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `a crew made beside another is on screen at once and the other does not show in between`() =
+        runTest(dispatcher) {
+            joined()
+            val viewModel = viewModel()
+
+            viewModel.state.test(timeout = TURBINE_TIMEOUT) {
+                awaitState { (it.content as? Content.Ready)?.crew?.name == "Weekend Crew" }
+                viewModel.onIntent(CrewIntent.StartCreate)
+                viewModel.onIntent(CrewIntent.CreateCrew("Night Owls"))
+                awaitState { it.inputs.dialog?.sending == true }
+                val afterwards = mutableListOf<CrewState>()
+                while ((afterwards.lastOrNull()?.content as? Content.Ready)?.crew?.name != "Night Owls") afterwards += awaitItem()
+
+                val closed = afterwards.dropWhile { it.inputs.dialog != null }
+                assertTrue(closed.none { (it.content as? Content.Ready)?.crew?.name == "Weekend Crew" }, closed.toString())
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `a crew just made stays on screen while a list read before it was saved comes in`() =
+        runTest(dispatcher) {
+            joined()
+            val real = koin.get<CrewsRepository>()
+            val lists = MutableSharedFlow<Cached<List<Crew>>>(replay = 1)
+            val weekendOnly = real.crews.first()
+            lists.emit(weekendOnly)
+            // The new crew's first refresh waits for the test, and with it the end of the guard.
+            val refreshed = CompletableDeferred<Unit>()
+            val repository =
+                object : CrewsRepository by real {
+                    override val crews = lists
+
+                    override suspend fun refresh(crewId: String): AppError? {
+                        refreshed.await()
+                        return real.refresh(crewId)
+                    }
+                }
+            val viewModel = viewModel(repository = repository)
+
+            viewModel.state.test(timeout = TURBINE_TIMEOUT) {
+                awaitState { (it.content as? Content.Ready)?.crew?.name == "Weekend Crew" && it.inputs.refresh.finished }
+                viewModel.onIntent(CrewIntent.StartCreate)
+                viewModel.onIntent(CrewIntent.CreateCrew("Night Owls"))
+                val both = real.crews.first { it.value.size == 2 }
+                val owls = both.value.single { it.name == "Night Owls" }.id
+                awaitState { it.inputs.shown == owls && it.inputs.dialog == null }
+
+                // The same crews, read before Night Owls was saved, arrive after it.
+                val stale = weekendOnly.copy(updatedAt = (weekendOnly.updatedAt ?: clock.now()) - 1.minutes)
+                lists.emit(stale)
+                val waiting = awaitState { it.inputs.crews == stale }
+                assertEquals(owls, waiting.inputs.shown)
+                assertEquals(Content.Loading, waiting.content)
+
+                lists.emit(both)
+                awaitState { (it.content as? Content.Ready)?.crew?.name == "Night Owls" }
+
+                // Once its first refresh is done, the list decides again: a crew gone from it no longer shows.
+                refreshed.complete(Unit)
+                lists.emit(weekendOnly.copy(updatedAt = clock.now() + 1.minutes))
+                awaitState { (it.content as? Content.Ready)?.crew?.name == "Weekend Crew" }
                 cancelAndIgnoreRemainingEvents()
             }
         }
@@ -256,6 +336,22 @@ class CrewViewModelTest {
 
                 // A ride offered, or a seat taken or given up: nothing else changes the rides here.
                 awaitState { it.rides() != before }
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `a ride turns departed as the clock moves on while the feed is not fetched`() =
+        runTest(dispatcher) {
+            joined()
+            val viewModel = viewModel(tick = 1.minutes)
+
+            viewModel.state.test(timeout = TURBINE_TIMEOUT) {
+                awaitState { state -> state.rides().any { it.id == SEEDED_RIDE && !it.departed } && state.inputs.refresh.finished }
+                // Saturday 06:00 UTC to Monday 09:00 UTC: Andrei left at 08:30 for the window from 11:00.
+                clock.advanceBy(2.days + 3.hours)
+
+                awaitState { state -> state.rides().any { it.id == SEEDED_RIDE && it.departed } }
                 cancelAndIgnoreRemainingEvents()
             }
         }
@@ -305,5 +401,8 @@ class CrewViewModelTest {
     private companion object {
         /** Room, DataStore and the HTTP engine run on real threads here; leave room for a cold JVM on CI. */
         val TURBINE_TIMEOUT = 10.seconds
+
+        /** Andrei's ride in the seed, leaving the day after tomorrow at 08:30 UTC. */
+        const val SEEDED_RIDE = "rid_7f3c"
     }
 }

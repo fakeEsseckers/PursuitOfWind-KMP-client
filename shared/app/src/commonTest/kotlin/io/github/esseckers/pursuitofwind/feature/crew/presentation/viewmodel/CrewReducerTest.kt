@@ -68,7 +68,7 @@ class CrewReducerTest {
 
     @Test
     fun `choosing another crew shows it once its details arrive`() {
-        val chosen = reduce(CrewResult.Chosen(CrewPreviewData.nightOwls.id))
+        val chosen = reduce(CrewResult.Chosen(CrewPreviewData.nightOwls.id, shown = CrewPreviewData.nightOwls.id))
         val loaded = reduce(CrewResult.DetailsChanged(CrewPreviewData.details.copy(crewId = CrewPreviewData.nightOwls.id)), from = chosen)
 
         assertEquals(CrewState.Content.Loading, chosen.content)
