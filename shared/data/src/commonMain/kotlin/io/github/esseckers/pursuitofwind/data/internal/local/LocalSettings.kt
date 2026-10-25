@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import io.github.esseckers.pursuitofwind.contract.ContractJson
 import io.github.esseckers.pursuitofwind.contract.RiderProfileDto
+import io.github.esseckers.pursuitofwind.data.internal.mapping.cachedProfile
 import io.github.esseckers.pursuitofwind.data.model.AppLanguage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -36,17 +37,20 @@ internal class LocalSettings(
     private val store: DataStore<Preferences>,
     private val scope: CoroutineScope? = null,
 ) : AutoCloseable {
-    /** Null until the profile was fetched once. */
+    /**
+     * Null until the profile was fetched once. A stored profile that cannot be read at all counts as never fetched, so
+     * the next refresh replaces it; a failure to read the file is a [StorageException].
+     */
     val profile: Flow<StoredProfile?> =
         store.data
+            .storageErrors()
             .map { preferences ->
                 preferences[PROFILE_UPDATED_AT]?.let { updatedAt ->
-                    StoredProfile(
-                        profile = preferences[PROFILE]?.let { ContractJson.decodeFromString(RiderProfileDto.serializer(), it) },
-                        updatedAt = Instant.fromEpochMilliseconds(updatedAt),
-                    )
+                    val stored = preferences[PROFILE]
+                    val profile = stored?.let(::cachedProfile)
+                    if (stored != null && profile == null) null else StoredProfile(profile, Instant.fromEpochMilliseconds(updatedAt))
                 }
-            }.storageErrors()
+            }
 
     /** The app's language; a device choice, so a new owner of the cache keeps it. */
     val language: Flow<AppLanguage> = store.data.map { AppLanguage.of(it[LANGUAGE]) }.storageErrors()

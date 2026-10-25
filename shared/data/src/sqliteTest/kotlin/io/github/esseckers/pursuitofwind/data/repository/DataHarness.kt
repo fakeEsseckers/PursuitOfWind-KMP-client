@@ -37,7 +37,9 @@ internal class DataHarness(
     /** The disk under the database and the settings file; it can fill up or fail. */
     val disk = DeviceDisk()
     val database = PursuitOfWindDatabase.build(inMemoryDatabaseBuilder(), dispatcher, disk.database(BundledSQLiteDriver()))
-    private val settingsFile = LocalSettings.dataStore(temporaryFilePath("${Uuid.random()}.preferences_pb"), scope)
+
+    /** The settings file as stored, under [settings]. */
+    val settingsFile = LocalSettings.dataStore(temporaryFilePath("${Uuid.random()}.preferences_pb"), scope)
     val settings = LocalSettings(disk.settings(settingsFile), scope)
     val userCache = UserCache(database, settings)
     val network = NetworkHarness(engine, onSignedIn = userCache::claimFor)
