@@ -28,6 +28,7 @@ import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewInt
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewRideUi
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState.Content
+import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.MemberUi
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.PersonUi
 import io.github.esseckers.pursuitofwind.feature.spotdetail.BERLIN
 import io.github.esseckers.pursuitofwind.feature.spotdetail.NORDSTRAND
@@ -42,6 +43,7 @@ import io.github.esseckers.pursuitofwind.testing.value
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -100,6 +102,22 @@ class CrewViewModelTest {
             viewModelFactory { initializer { CrewViewModel(repository, clock, riderZone = BERLIN) } },
         )[CrewViewModel::class]
 
+    /** The real crews of the graph, with [lists] as the cached list and a crew's refresh waiting for [refreshed]. */
+    private fun crewsWith(
+        lists: Flow<Cached<List<Crew>>>,
+        refreshed: CompletableDeferred<Unit>,
+    ): CrewsRepository {
+        val real = koin.get<CrewsRepository>()
+        return object : CrewsRepository by real {
+            override val crews = lists
+
+            override suspend fun refresh(crewId: String): AppError? {
+                refreshed.await()
+                return real.refresh(crewId)
+            }
+        }
+    }
+
     private suspend fun joined() {
         koin.get<ProfileRepository>().save(alex()).value()
         crews.join("WIND-4KQ7").value()
@@ -114,7 +132,8 @@ class CrewViewModelTest {
                 awaitState { it.content == Content.NoCrew }
                 viewModel.onIntent(CrewIntent.StartJoin)
                 viewModel.onIntent(CrewIntent.JoinCrew(" wind-4kq7 "))
-                val ready = awaitState { state -> state.rides().isNotEmpty() && state.dialog == null }
+                // Members and rides are cached one after the other; the tab is complete once both are in.
+                val ready = awaitState { state -> state.rides().isNotEmpty() && state.members().size >= 3 && state.dialog == null }
 
                 val crew = (ready.content as Content.Ready).crew
                 assertEquals("Weekend Crew", crew.name)
@@ -259,6 +278,22 @@ class CrewViewModelTest {
         }
 
     @Test
+    fun `a cached crew shows after loading and the tab never says there is no crew in between`() =
+        runTest(dispatcher) {
+            joined()
+            koin.get<CrewRepository>().refreshCrews().value()
+            val viewModel = viewModel()
+
+            viewModel.state.test(timeout = TURBINE_TIMEOUT) {
+                val seen = mutableListOf<CrewState>()
+                while (seen.lastOrNull()?.content !is Content.Ready) seen += awaitItem()
+
+                assertTrue(seen.none { it.content == Content.NoCrew }, seen.map { it.content::class.simpleName }.toString())
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
     fun `a crew made beside another is on screen at once and the other does not show in between`() =
         runTest(dispatcher) {
             joined()
@@ -286,18 +321,9 @@ class CrewViewModelTest {
             val lists = MutableSharedFlow<Cached<List<Crew>>>(replay = 1)
             val weekendOnly = real.crews.first()
             lists.emit(weekendOnly)
-            // The new crew's first refresh waits for the test, and with it the end of the guard.
+            // The new crew's first refresh waits for the test.
             val refreshed = CompletableDeferred<Unit>()
-            val repository =
-                object : CrewsRepository by real {
-                    override val crews = lists
-
-                    override suspend fun refresh(crewId: String): AppError? {
-                        refreshed.await()
-                        return real.refresh(crewId)
-                    }
-                }
-            val viewModel = viewModel(repository = repository)
+            val viewModel = viewModel(repository = crewsWith(lists, refreshed))
 
             viewModel.state.test(timeout = TURBINE_TIMEOUT) {
                 awaitState { (it.content as? Content.Ready)?.crew?.name == "Weekend Crew" && it.inputs.refresh.finished }
@@ -317,10 +343,32 @@ class CrewViewModelTest {
                 lists.emit(both)
                 awaitState { (it.content as? Content.Ready)?.crew?.name == "Night Owls" }
 
-                // Once its first refresh is done, the list decides again: a crew gone from it no longer shows.
-                refreshed.complete(Unit)
+                // The list has held it, so the list decides again: a crew gone from it no longer shows, even while its
+                // first refresh is still waiting.
                 lists.emit(weekendOnly.copy(updatedAt = clock.now() + 1.minutes))
                 awaitState { (it.content as? Content.Ready)?.crew?.name == "Weekend Crew" }
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `a crew just made that the cache does not hold after its first refresh gives way to the list`() =
+        runTest(dispatcher) {
+            joined()
+            val lists = MutableSharedFlow<Cached<List<Crew>>>(replay = 1)
+            lists.emit(crews.crews.first())
+            val refreshed = CompletableDeferred<Unit>()
+            val viewModel = viewModel(repository = crewsWith(lists, refreshed))
+
+            viewModel.state.test(timeout = TURBINE_TIMEOUT) {
+                awaitState { (it.content as? Content.Ready)?.crew?.name == "Weekend Crew" && it.inputs.refresh.finished }
+                viewModel.onIntent(CrewIntent.StartCreate)
+                viewModel.onIntent(CrewIntent.CreateCrew("Night Owls"))
+                awaitState { it.inputs.dialog == null && it.inputs.shown != "crw_weekend" }
+
+                // The cache never gets it (left at once on another device): after its first refresh, the list decides.
+                refreshed.complete(Unit)
+                awaitState { it.inputs.shown == "crw_weekend" && (it.content as? Content.Ready)?.crew?.name == "Weekend Crew" }
                 cancelAndIgnoreRemainingEvents()
             }
         }
@@ -442,6 +490,8 @@ class CrewViewModelTest {
             .orEmpty()
 
     private fun CrewState.ride(id: String): CrewRideUi = rides().single { it.id == id }
+
+    private fun CrewState.members(): List<MemberUi> = (content as? Content.Ready)?.crew?.members.orEmpty()
 
     private suspend fun ReceiveTurbine<CrewState>.awaitState(predicate: (CrewState) -> Boolean): CrewState {
         while (true) {

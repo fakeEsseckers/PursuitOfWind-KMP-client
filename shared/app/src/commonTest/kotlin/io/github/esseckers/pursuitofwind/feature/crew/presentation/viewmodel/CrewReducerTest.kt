@@ -93,16 +93,29 @@ class CrewReducerTest {
     }
 
     @Test
-    fun `a crew just made shows before the list holds it and the list decides once its first refresh is done`() {
-        val arrived = reduce(CrewResult.Arrived("crw_new"))
-        val listedBefore = reduce(CrewResult.CrewsChanged(crews(CrewPreviewData.weekendCrew, CrewPreviewData.nightOwls)), from = arrived)
-        val settled = reduce(CrewResult.ArrivalSettled("crw_new"), from = listedBefore)
+    fun `a crew just made shows before the list holds it and the list decides once it does`() {
+        val new = Crew("crw_new", "Dawn Patrol", "WIND-9ZZZ", memberCount = 1, createdAt = CrewPreviewData.now)
+        val arrived = reduce(CrewResult.Arrived(new.id))
+        val readBefore = reduce(CrewResult.CrewsChanged(crews(CrewPreviewData.weekendCrew, CrewPreviewData.nightOwls)), from = arrived)
+        val holding = reduce(CrewResult.CrewsChanged(crews(CrewPreviewData.weekendCrew, new)), from = readBefore)
+        val leftLater = reduce(CrewResult.CrewsChanged(crews(CrewPreviewData.weekendCrew)), from = holding)
+
+        assertEquals(new.id, arrived.inputs.shown)
+        assertEquals(new.id, readBefore.inputs.shown)
+        assertEquals(new.id, holding.inputs.shown)
+        assertNull(holding.inputs.arriving)
+        // From here the list decides: a crew gone from it no longer shows.
+        assertEquals(CrewPreviewData.weekendCrew.id, leftLater.inputs.shown)
+    }
+
+    @Test
+    fun `a crew just made that the cache does not hold after its first refresh gives way to the list`() {
+        val arrived = reduce(CrewResult.Arrived("crw_new"), CrewResult.CrewsChanged(crews(CrewPreviewData.weekendCrew)))
+        val missing = reduce(CrewResult.ArrivalMissing("crw_new"), from = arrived)
 
         assertEquals("crw_new", arrived.inputs.shown)
-        assertEquals("crw_new", listedBefore.inputs.shown)
-        // It never came into the list: the rider's choice is gone, so the first crew shows.
-        assertNull(settled.inputs.arriving)
-        assertEquals(CrewPreviewData.weekendCrew.id, settled.inputs.shown)
+        assertNull(missing.inputs.arriving)
+        assertEquals(CrewPreviewData.weekendCrew.id, missing.inputs.shown)
     }
 
     private fun crews(vararg crews: Crew): Cached<List<Crew>> = Cached(crews.toList(), CrewPreviewData.now)

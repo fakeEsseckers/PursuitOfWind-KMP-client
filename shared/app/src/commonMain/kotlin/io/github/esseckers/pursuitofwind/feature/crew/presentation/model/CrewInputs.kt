@@ -9,9 +9,9 @@ import kotlin.time.Instant
 
 /**
  * What [CrewState] is computed from: the cached [crews] (null until they arrive), the crew the rider [chosen], a crew
- * just made or joined that is [arriving] until its first refresh is done, the crew [shown] on screen, the [details] of
- * that crew, how the refresh is going, the rides being [cancelling], the open [dialog], and the time [now], which tells
- * rides that have left.
+ * just made or joined that is [arriving] until the list holds it (or the cache turns out not to after its first
+ * refresh), the crew [shown] on screen, the [details] of that crew, how the refresh is going, the rides being
+ * [cancelling], the open [dialog], and the time [now], which tells rides that have left.
  *
  * The reducer works out [shown]: the [arriving] crew while the list does not hold it yet (a list read before it was
  * saved can still come in and would otherwise put the old crew back for a moment), else [crewToShow].

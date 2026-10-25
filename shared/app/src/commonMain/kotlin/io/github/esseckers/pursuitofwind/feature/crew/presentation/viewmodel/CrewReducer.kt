@@ -24,7 +24,10 @@ internal class CrewReducer(
         val next =
             when (result) {
                 is CrewResult.CrewsChanged -> {
-                    inputs.copy(crews = result.cached).withShown()
+                    // Once the list holds the crew just made or joined, the list decides again: lists come in the order
+                    // they were read, so none from before it was saved can follow.
+                    val arriving = inputs.arriving?.takeUnless { id -> result.cached.value.any { it.id == id } }
+                    inputs.copy(crews = result.cached, arriving = arriving).withShown()
                 }
 
                 is CrewResult.DetailsChanged -> {
@@ -49,20 +52,8 @@ internal class CrewReducer(
                     inputs.copy(now = result.now)
                 }
 
-                is CrewResult.DialogShown -> {
-                    inputs.copy(dialog = result.dialog)
-                }
-
-                CrewResult.DialogDismissed -> {
-                    inputs.copy(dialog = inputs.dialog?.takeIf { it.sending })
-                }
-
-                CrewResult.DialogSending -> {
-                    inputs.copy(dialog = inputs.dialog?.withSending(true, error = null))
-                }
-
-                is CrewResult.DialogFailed -> {
-                    inputs.copy(dialog = inputs.dialog?.withSending(false, error = result.reason))
+                is CrewResult.DialogResult -> {
+                    inputs.copy(dialog = dialog(inputs.dialog, result))
                 }
 
                 is CrewResult.CancelStarted -> {
@@ -77,12 +68,29 @@ internal class CrewReducer(
         return if (computed.content == state.content) computed.copy(content = state.content) else computed
     }
 
-    /** The crew the rider wants: one picked, or one just made or joined until its first refresh is done. */
+    /** The crew the rider wants: one picked, or one just made or joined until the list holds it. */
     private fun CrewInputs.choose(choice: CrewResult.Choice): CrewInputs =
         when (choice) {
-            is CrewResult.Chosen -> copy(chosen = choice.crewId, arriving = null)
-            is CrewResult.Arrived -> copy(chosen = choice.crewId, arriving = choice.crewId)
-            is CrewResult.ArrivalSettled -> copy(arriving = arriving?.takeUnless { it == choice.crewId })
+            is CrewResult.Chosen -> {
+                copy(chosen = choice.crewId, arriving = null)
+            }
+
+            is CrewResult.Arrived -> {
+                copy(
+                    chosen = choice.crewId,
+                    arriving =
+                        choice.crewId.takeUnless { id ->
+                            crews?.value.orEmpty().any {
+                                it.id ==
+                                    id
+                            }
+                        },
+                )
+            }
+
+            is CrewResult.ArrivalMissing -> {
+                copy(arriving = arriving?.takeUnless { it == choice.crewId })
+            }
         }
 
     /** The crew on screen: one [CrewInputs.arriving] that the list does not hold yet, else [crewToShow]. */
@@ -91,6 +99,17 @@ internal class CrewReducer(
         val waiting = arriving?.takeIf { id -> listed.none { it.id == id } }
         return copy(shown = waiting ?: crewToShow(listed, chosen)?.id)
     }
+
+    private fun dialog(
+        open: CrewDialog?,
+        result: CrewResult.DialogResult,
+    ): CrewDialog? =
+        when (result) {
+            is CrewResult.DialogShown -> result.dialog
+            CrewResult.DialogDismissed -> open?.takeIf { it.sending }
+            CrewResult.DialogSending -> open?.withSending(true, error = null)
+            is CrewResult.DialogFailed -> open?.withSending(false, error = result.reason)
+        }
 
     private fun CrewDialog.withSending(
         sending: Boolean,

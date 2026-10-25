@@ -29,6 +29,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -113,8 +114,14 @@ internal class CrewViewModel(
                     dispatchResult(CrewResult.DialogShown(null))
                     postEffect(if (created) CrewEffect.Created(crew.name, crew.inviteCode) else CrewEffect.Joined(crew.name))
                     repository.refresh(crew.id)
-                    // A list read before the save has come in by now; from here the list decides.
-                    dispatchResult(CrewResult.ArrivalSettled(crew.id))
+                    // Not in the cache even now (left on another device, another account): the list decides.
+                    if (repository.crews
+                            .first()
+                            .value
+                            .none { it.id == crew.id }
+                    ) {
+                        dispatchResult(CrewResult.ArrivalMissing(crew.id))
+                    }
                 }
 
                 is Outcome.Failure -> {

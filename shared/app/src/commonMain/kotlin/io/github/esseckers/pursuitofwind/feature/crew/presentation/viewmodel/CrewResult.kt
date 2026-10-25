@@ -38,8 +38,11 @@ internal sealed interface CrewResult {
         val crewId: String,
     ) : Choice
 
-    /** The first refresh of [crewId], which [Arrived], is done: from here the cached list decides what shows. */
-    data class ArrivalSettled(
+    /**
+     * The cache still does not hold [crewId], which [Arrived], after its first refresh (left on another device, say):
+     * the list decides what shows, so the tab never waits for it for good.
+     */
+    data class ArrivalMissing(
         val crewId: String,
     ) : Choice
 
@@ -47,21 +50,24 @@ internal sealed interface CrewResult {
         val now: Instant,
     ) : CrewResult
 
+    /** A change of the dialog over the tab. */
+    sealed interface DialogResult : CrewResult
+
     /** [dialog] opens over the tab; null closes the one that is open. */
     data class DialogShown(
         val dialog: CrewDialog?,
-    ) : CrewResult
+    ) : DialogResult
 
     /** The rider closes the open dialog; one that is sending stays until its request ends. */
-    data object DialogDismissed : CrewResult
+    data object DialogDismissed : DialogResult
 
     /** The open create or join dialog sends its request. */
-    data object DialogSending : CrewResult
+    data object DialogSending : DialogResult
 
     /** The open create or join dialog failed with [reason] and stays open. */
     data class DialogFailed(
         val reason: StringResource,
-    ) : CrewResult
+    ) : DialogResult
 
     data class CancelStarted(
         val rideId: String,
