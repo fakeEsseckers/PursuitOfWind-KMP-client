@@ -7,17 +7,15 @@ import io.github.esseckers.pursuitofwind.core.ui.TimeRange
 import io.github.esseckers.pursuitofwind.core.ui.clockTime
 import io.github.esseckers.pursuitofwind.core.ui.dayLabelOf
 import io.github.esseckers.pursuitofwind.core.ui.rounded
-import io.github.esseckers.pursuitofwind.data.model.MySpot
 import io.github.esseckers.pursuitofwind.data.model.Profile
 import io.github.esseckers.pursuitofwind.data.model.RideStatus
-import io.github.esseckers.pursuitofwind.engine.DecisionEngine
 import io.github.esseckers.pursuitofwind.engine.model.DayDecision
-import io.github.esseckers.pursuitofwind.engine.model.ForecastHour
 import io.github.esseckers.pursuitofwind.engine.model.SessionWindow
 import io.github.esseckers.pursuitofwind.engine.model.SpotConfig
-import io.github.esseckers.pursuitofwind.engine.model.SpotForecast
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.today.domain.entity.CrewRidesEntity
+import io.github.esseckers.pursuitofwind.feature.today.domain.entity.DayEvaluationEntity
+import io.github.esseckers.pursuitofwind.feature.today.domain.entity.SpotForecastEntity
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.AlternativeUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.DayUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.RideOfferUi
@@ -30,55 +28,39 @@ import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 
-/** Today and the next two days. */
-internal const val DAYS_SHOWN = 3
-
-/** A favorite spot with its cached forecast hours. */
-internal data class SpotWithForecast(
-    val spot: MySpot,
-    val hours: List<ForecastHour>,
-)
-
 /**
- * Runs the decision engine on the cached data and formats the first [DAYS_SHOWN] days for display. Session windows are
- * shown in the spot's local time, because that is where they happen; departures and the "today" label use [riderZone],
- * where the rider is.
+ * Formats the engine's days (`TodayEvaluationMapper`) for display, with the crew's rides to each GO day's spot. Session
+ * windows are shown in the spot's local time, because that is where they happen; departures and the "today" label use
+ * [riderZone], where the rider is.
  */
 internal class DayCardsMapper(
     private val profile: Profile,
-    spots: List<SpotWithForecast>,
+    spots: List<SpotForecastEntity>,
     private val crew: CrewRidesEntity,
     private val now: Instant,
     private val riderZone: TimeZone,
 ) {
     private val configs: Map<SpotId, SpotConfig> = spots.associate { it.spot.spot.id to it.spot.toSpotConfig() }
-    private val hours: Map<SpotId, List<ForecastHour>> = spots.associate { it.spot.spot.id to it.hours }
     private val today: LocalDate = now.toLocalDateTime(riderZone).date
 
-    fun map(): List<DayUi> {
-        val forecasts = configs.map { (id, config) -> SpotForecast(config, hours.getValue(id)) }
-        return DecisionEngine
-            .decideDays(forecasts, profile.rider, now)
-            // A spot behind the rider's time zone can still be on the rider's yesterday.
-            .filter { it.date >= today }
-            .take(DAYS_SHOWN)
-            .map { decision ->
-                when (decision) {
-                    is DayDecision.Go -> decision.toUi()
-                    is DayDecision.NoGo -> decision.toUi()
-                }
+    fun map(days: List<DayEvaluationEntity>): List<DayUi> =
+        days.map { day ->
+            when (val decision = day.decision) {
+                is DayDecision.Go -> decision.toUi(day)
+                is DayDecision.NoGo -> decision.toUi()
             }
-    }
+        }
 
-    private fun DayDecision.Go.toUi(): DayUi.Go {
+    private fun DayDecision.Go.toUi(day: DayEvaluationEntity): DayUi.Go {
         val rides = ridesTo(window.spotId, date)
+        val takingPart = rides.any { it.role != RideRoleEntity.NONE }
         return DayUi.Go(
             date = date,
             label = label(date),
             spotId = window.spotId,
             spotName = nameOf(window.spotId),
             window = window.ridingTime(),
-            wind = windRange(window),
+            wind = windRange(day),
             kiteM2 = recommendedKiteM2,
             leaveBy = leaveBy.clockTime(riderZone),
             leaveNow = now >= leaveBy,
@@ -86,14 +68,7 @@ internal class DayCardsMapper(
             rides = rides,
             hasCrew = crew.hasCrew,
             alternatives = alternatives.map { AlternativeUi(it.spotId, nameOf(it.spotId), it.ridingTime()) },
-            offer =
-                if (crew.hasCrew &&
-                    rides.none { it.role != RideRoleEntity.NONE }
-                ) {
-                    RideOfferUi(window.spotId, window.usableStart, window.end, leaveBy)
-                } else {
-                    null
-                },
+            offer = if (crew.hasCrew && !takingPart) RideOfferUi(window.spotId, window.usableStart, window.end, leaveBy) else null,
         )
     }
 
@@ -106,20 +81,12 @@ internal class DayCardsMapper(
             nextGoDay = nextGoDay?.let(::label),
         )
 
-    /** The lowest and highest consensus mean wind of the hours the rider can actually ride, in the rider's unit. */
-    private fun windRange(window: SessionWindow): WindRange? {
-        val config = configs.getValue(window.spotId)
-        val speeds =
-            hours
-                .getValue(window.spotId)
-                .filter { it.start < window.end && it.start + 1.hours > window.usableStart }
-                .map {
-                    DecisionEngine
-                        .evaluateHour(it, profile.rider, config)
-                        .wind.mean
-                        .rounded(profile.windUnit)
-                }
-        return if (speeds.isEmpty()) null else WindRange(speeds.min(), speeds.max(), profile.windUnit)
+    /** The lowest and highest wind of the hours the rider can actually ride, in the rider's unit. */
+    private fun windRange(day: DayEvaluationEntity): WindRange? {
+        val low = day.windLow
+        val high = day.windHigh
+        val unit = profile.windUnit
+        return if (low == null || high == null) null else WindRange(low.rounded(unit), high.rounded(unit), unit)
     }
 
     /** Scheduled rides of the rider's crews to [spotId] whose window starts on [date] at that spot. */

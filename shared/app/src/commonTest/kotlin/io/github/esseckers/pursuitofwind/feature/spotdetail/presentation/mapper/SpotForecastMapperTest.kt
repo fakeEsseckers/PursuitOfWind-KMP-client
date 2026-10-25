@@ -16,6 +16,7 @@ import io.github.esseckers.pursuitofwind.feature.spotdetail.SUNDAY
 import io.github.esseckers.pursuitofwind.feature.spotdetail.THREE_DAYS_OF_HOURS
 import io.github.esseckers.pursuitofwind.feature.spotdetail.alex
 import io.github.esseckers.pursuitofwind.feature.spotdetail.at
+import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.mapper.SpotEvaluationMapper
 import io.github.esseckers.pursuitofwind.feature.spotdetail.forecast
 import io.github.esseckers.pursuitofwind.feature.spotdetail.nordstrand
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.ChartWindowUi
@@ -41,7 +42,7 @@ class SpotForecastMapperTest {
         now: Instant = saturday820,
         unit: WindUnit = WindUnit.KNOTS,
         riderZone: TimeZone = BERLIN,
-    ) = SpotForecastMapper(alex(unit), nordstrand(), hours, now, riderZone)
+    ) = SpotForecastMapper(alex(unit), SpotEvaluationMapper.evaluate(alex(unit), nordstrand(), hours, now), now, riderZone)
 
     private fun SpotForecastMapper.indexAt(start: Instant): Int = chart().hours.indexOfFirst { it.start == start }
 

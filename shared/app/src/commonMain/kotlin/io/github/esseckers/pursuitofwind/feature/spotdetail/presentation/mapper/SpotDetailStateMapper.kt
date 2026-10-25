@@ -6,6 +6,7 @@ import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.spot_no_forecast
 import io.github.esseckers.pursuitofwind.core.ui.message
 import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.entity.SpotDetailSnapshotEntity
+import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.mapper.SpotEvaluationMapper
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailInputs
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState.Content
@@ -41,7 +42,8 @@ internal object SpotDetailStateMapper {
             }
 
             else -> {
-                val forecast = SpotForecastMapper(profile, spot, snapshot.forecast.value, now, riderZone)
+                val forecast =
+                    SpotForecastMapper(profile, SpotEvaluationMapper.evaluate(profile, spot, snapshot.forecast.value, now), now, riderZone)
                 if (forecast.isEmpty) {
                     loading.copy(content = waitingContent(snapshot, inputs.refresh), header = header)
                 } else {

@@ -21,6 +21,8 @@ import io.github.esseckers.pursuitofwind.feature.today.alex
 import io.github.esseckers.pursuitofwind.feature.today.at
 import io.github.esseckers.pursuitofwind.feature.today.day
 import io.github.esseckers.pursuitofwind.feature.today.domain.entity.CrewRidesEntity
+import io.github.esseckers.pursuitofwind.feature.today.domain.entity.SpotForecastEntity
+import io.github.esseckers.pursuitofwind.feature.today.domain.mapper.TodayEvaluationMapper
 import io.github.esseckers.pursuitofwind.feature.today.hour
 import io.github.esseckers.pursuitofwind.feature.today.mySpot
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.AlternativeUi
@@ -50,14 +52,11 @@ class DayCardsMapperTest {
         unit: WindUnit = WindUnit.KNOTS,
         now: Instant = THURSDAY_8AM,
         riderZone: TimeZone = BERLIN,
-    ): List<DayUi> =
-        DayCardsMapper(
-            profile = alex(unit),
-            spots = forecasts.map { (id, hours) -> SpotWithForecast(mySpot(id, name = NAMES.getValue(id)), hours) },
-            crew = rides,
-            now = now,
-            riderZone = riderZone,
-        ).map()
+    ): List<DayUi> {
+        val spots = forecasts.map { (id, hours) -> SpotForecastEntity(mySpot(id, name = NAMES.getValue(id)), hours) }
+        val days = TodayEvaluationMapper.evaluate(alex(unit), spots, now, riderZone)
+        return DayCardsMapper(profile = alex(unit), spots = spots, crew = rides, now = now, riderZone = riderZone).map(days)
+    }
 
     @Test
     fun `a GO day has the spot and the window in local time with wind and kite and when to leave`() {
@@ -194,9 +193,10 @@ class DayCardsMapperTest {
     @Test
     fun `a spot behind the time zone of the rider does not bring back yesterday`() {
         // 00:30 on Friday in Berlin, where the rider is, is still Thursday 23:30 in London, where the spot is.
-        val londonSpot = SpotWithForecast(mySpot("nordstrand-bay", zone = TimeZone.of("Europe/London")), saturdayOn())
+        val londonSpot = SpotForecastEntity(mySpot("nordstrand-bay", zone = TimeZone.of("Europe/London")), saturdayOn())
         val noRides = CrewRidesEntity(emptyList(), hasCrew = false, userId = null)
-        val cards = DayCardsMapper(alex(), listOf(londonSpot), noRides, now = at(FRIDAY, 0, 30), riderZone = BERLIN).map()
+        val days = TodayEvaluationMapper.evaluate(alex(), listOf(londonSpot), now = at(FRIDAY, 0, 30), riderZone = BERLIN)
+        val cards = DayCardsMapper(alex(), listOf(londonSpot), noRides, now = at(FRIDAY, 0, 30), riderZone = BERLIN).map(days)
 
         assertEquals(listOf(DayLabel.Today, DayLabel.Tomorrow), cards.map { it.label })
         assertTrue(cards.none { it.date < FRIDAY })

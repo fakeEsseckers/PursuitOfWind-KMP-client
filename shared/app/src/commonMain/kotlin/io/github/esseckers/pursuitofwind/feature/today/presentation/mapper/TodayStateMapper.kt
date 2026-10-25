@@ -7,7 +7,9 @@ import io.github.esseckers.pursuitofwind.core.resources.error_no_forecast
 import io.github.esseckers.pursuitofwind.core.ui.message
 import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.Profile
+import io.github.esseckers.pursuitofwind.feature.today.domain.entity.SpotForecastEntity
 import io.github.esseckers.pursuitofwind.feature.today.domain.entity.TodaySnapshotEntity
+import io.github.esseckers.pursuitofwind.feature.today.domain.mapper.TodayEvaluationMapper
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayInputs
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState.Content
@@ -54,7 +56,8 @@ internal object TodayStateMapper {
             }
 
             is SnapshotContent.Complete -> {
-                val days = DayCardsMapper(content.profile, content.spots, snapshot.crew, now, riderZone).map()
+                val evaluated = TodayEvaluationMapper.evaluate(content.profile, content.spots, now, riderZone)
+                val days = DayCardsMapper(content.profile, content.spots, snapshot.crew, now, riderZone).map(evaluated)
                 val age = content.updatedAt?.let { (now - it).coerceAtLeast(Duration.ZERO) }
                 if (days.isEmpty()) {
                     TodayState(content = waiting, isRefreshing = refreshing)
@@ -112,7 +115,7 @@ private sealed interface SnapshotContent {
     /** [updatedAt] is the fetch time of the oldest forecast among [spots]. */
     data class Complete(
         val profile: Profile,
-        val spots: List<SpotWithForecast>,
+        val spots: List<SpotForecastEntity>,
         val updatedAt: Instant?,
     ) : SnapshotContent
 }
@@ -144,7 +147,7 @@ private fun TodaySnapshotEntity.content(): SnapshotContent {
         else -> {
             SnapshotContent.Complete(
                 profile = rider,
-                spots = withForecast.map { (spot, forecast) -> SpotWithForecast(spot, forecast.value) },
+                spots = withForecast.map { (spot, forecast) -> SpotForecastEntity(spot, forecast.value) },
                 updatedAt = withForecast.mapNotNull { it.second.updatedAt }.minOrNull(),
             )
         }

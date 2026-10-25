@@ -4,13 +4,13 @@ import io.github.esseckers.pursuitofwind.core.ui.TimeRange
 import io.github.esseckers.pursuitofwind.core.ui.clockTime
 import io.github.esseckers.pursuitofwind.core.ui.dayLabelOf
 import io.github.esseckers.pursuitofwind.core.ui.rounded
-import io.github.esseckers.pursuitofwind.data.model.MySpot
 import io.github.esseckers.pursuitofwind.data.model.Profile
-import io.github.esseckers.pursuitofwind.engine.DecisionEngine
 import io.github.esseckers.pursuitofwind.engine.localHourLabel
 import io.github.esseckers.pursuitofwind.engine.model.ForecastHour
 import io.github.esseckers.pursuitofwind.engine.model.HourVerdict
 import io.github.esseckers.pursuitofwind.engine.model.SessionWindow
+import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.entity.SpotEvaluationEntity
+import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.mapper.SpotEvaluationMapper
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.ChartDayUi
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.ChartHourUi
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.ChartWindowUi
@@ -24,37 +24,30 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.math.roundToInt
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
-
-/** Today and the next two days at the spot, as on Today. */
-internal const val CHART_DAYS = 3
 
 /** The time axis has a label every this many hours. */
 private const val LABEL_EVERY_HOURS = 3
 
 /**
- * Runs the decision engine over one spot's cached forecast and formats it for the chart, the window list and the
- * details of an hour. It shows the hours that have not ended by [now], over at most [CHART_DAYS] days at the spot; a
- * last day the cache does not cover until midnight is left out, because its windows would end where the data ends.
- * Hours and windows are shown in the spot's time zone, departures and day names as the rider in [riderZone] sees them.
+ * Formats the engine's answer for one spot ([evaluation], from `SpotEvaluationMapper`) for the chart, the window list and
+ * the details of an hour. Hours and windows are shown in the spot's time zone, departures and day names as the rider in
+ * [riderZone] sees them.
  */
 internal class SpotForecastMapper(
     private val profile: Profile,
-    spot: MySpot,
-    hours: List<ForecastHour>,
+    private val evaluation: SpotEvaluationEntity,
     private val now: Instant,
     private val riderZone: TimeZone,
 ) {
-    private val config = spot.toSpotConfig()
-    private val zone = config.timeZone
+    private val zone = evaluation.zone
     private val riderToday = now.toLocalDateTime(riderZone).date
 
-    private val forecast: List<ForecastHour> = shownHours(hours, now, zone)
-    private val verdicts: List<HourVerdict> = forecast.map { DecisionEngine.evaluateHour(it, profile.rider, config) }
+    private val forecast: List<ForecastHour> = evaluation.hours
+    private val verdicts: List<HourVerdict> = evaluation.verdicts
     private val dates: List<LocalDate> = forecast.map { it.start.toLocalDateTime(zone).date }
-    private val sessions: List<SessionWindow> = DecisionEngine.findWindows(verdicts, config, profile.rider, now)
+    private val sessions: List<SessionWindow> = evaluation.windows
 
     /** True when no hour is left to show. */
     val isEmpty: Boolean get() = forecast.isEmpty()
@@ -82,8 +75,8 @@ internal class SpotForecastMapper(
             .filter { it == 0 || dates[it] != dates[it - 1] }
             .map { ChartDayUi(dates[it], dayLabelOf(dates[it], riderToday), firstHour = it) }
 
-    /** The windows the rider can still reach; one whose riding time has run out before the arrival is left out. */
-    fun windows(): List<WindowUi> = sessions.filter { it.usable > Duration.ZERO }.map(::windowUi)
+    /** The windows the rider can still reach. */
+    fun windows(): List<WindowUi> = SpotEvaluationMapper.reachableWindows(evaluation).map(::windowUi)
 
     /** The index of the hour [selection] points to. */
     fun indexOf(selection: Selection): Int =
@@ -168,34 +161,17 @@ internal class SpotForecastMapper(
     /** The first hour of [window] still on the chart: a window under way starts at the current hour. */
     private fun firstHourOf(window: SessionWindow): Int = forecast.indexOfFirst { it.start + 1.hours > window.start }.coerceAtLeast(0)
 
-    private fun firstWindowHour(): Int? = sessions.firstOrNull { it.qualifies }?.let(::firstHourOf)
+    private fun firstWindowHour(): Int? = SpotEvaluationMapper.firstWorthRiding(evaluation)?.let(::firstHourOf)
 
     /** The best window worth riding on [date], or that day's first daylight hour, or its first hour. */
-    private fun dayHour(date: LocalDate): Int? {
-        val best = sessions.filter { it.qualifies && it.start.toLocalDateTime(zone).date == date }.maxByOrNull { it.score }
-        return best?.let(::firstHourOf)
+    private fun dayHour(date: LocalDate): Int? =
+        SpotEvaluationMapper.bestWindowOn(evaluation, date)?.let(::firstHourOf)
             ?: dates.indices.firstOrNull { dates[it] == date && forecast[it].isDaylight }
             ?: dates.indexOf(date).takeIf { it >= 0 }
-    }
 }
 
 /** The lowest and highest model mean wind of the hour, in m/s; null with one model. */
 private fun ForecastHour.modelRange(): Pair<Double, Double>? {
     val means = byModel.values.map { it.mean.metersPerSecond }
     return if (means.size < 2) null else means.min() to means.max()
-}
-
-/** The hours of [hours] that have not ended by [now], over at most [CHART_DAYS] days at the spot in [zone]. */
-private fun shownHours(
-    hours: List<ForecastHour>,
-    now: Instant,
-    zone: TimeZone,
-): List<ForecastHour> {
-    val upcoming = hours.sortedBy { it.start }.filter { it.start + 1.hours > now }
-    val dates = upcoming.map { it.start.toLocalDateTime(zone).date }.distinct()
-    val days = dates.take(CHART_DAYS)
-    val coveredUntilMidnight =
-        dates.size > CHART_DAYS || upcoming.lastOrNull()?.let { (it.start + 1.hours).toLocalDateTime(zone).date > days.last() } == true
-    val shown = if (days.size > 1 && !coveredUntilMidnight) days.dropLast(1) else days
-    return upcoming.filter { it.start.toLocalDateTime(zone).date in shown }
 }

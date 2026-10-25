@@ -56,7 +56,7 @@ import io.github.esseckers.pursuitofwind.core.resources.error_title
 import io.github.esseckers.pursuitofwind.core.resources.today_loading
 import io.github.esseckers.pursuitofwind.core.resources.today_title
 import io.github.esseckers.pursuitofwind.core.ui.updatedText
-import io.github.esseckers.pursuitofwind.feature.today.presentation.mapper.DAYS_SHOWN
+import io.github.esseckers.pursuitofwind.feature.today.domain.mapper.DAYS_SHOWN
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.DayUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayIntent
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState
