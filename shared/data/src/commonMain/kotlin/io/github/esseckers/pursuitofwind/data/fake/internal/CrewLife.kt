@@ -39,6 +39,9 @@ internal class CrewLife(
 ) {
     private val random = Random(seed + RANDOM_SALT)
 
+    /** Its own stream, drawn twice per contested seat whoever wants it, so a race never shifts the members' schedule. */
+    private val seatRaces = Random(seed + SEAT_RACE_SALT)
+
     /** When the members act next; set by the first request. */
     private var nextAt: Instant? = null
 
@@ -77,8 +80,10 @@ internal class CrewLife(
                 userId != ride.driverId &&
                 userId !in ride.passengerIds
         if (!contested) return
-        val rival = seatSeekers(ride, crew, now).randomOrNull(random)
-        if (rival != null && random.nextDouble() < share) state.takeSeat(ride, crew, rival, now)
+        val seekers = seatSeekers(ride, crew, now)
+        val pick = seatRaces.nextInt(Int.MAX_VALUE)
+        val wins = seatRaces.nextDouble() < share
+        if (seekers.isNotEmpty() && wins) state.takeSeat(ride, crew, seekers[pick % seekers.size], now)
     }
 
     private fun act(at: Instant) {
@@ -216,6 +221,7 @@ internal class CrewLife(
 
     private companion object {
         const val RANDOM_SALT = 0x5EA7L
+        const val SEAT_RACE_SALT = 0x5EA70L
         const val MAX_CATCH_UP = 3
         const val MAX_UPCOMING_RIDES = 3
         const val LEAVE_WEIGHT = 1

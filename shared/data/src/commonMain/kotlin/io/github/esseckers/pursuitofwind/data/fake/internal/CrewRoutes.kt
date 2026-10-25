@@ -75,7 +75,7 @@ internal class CrewRoutes(
     private fun newInviteCode(): String =
         generateSequence {
             "WIND-" +
-                (1..INVITE_LENGTH).map { INVITE_ALPHABET[state.random.nextInt(INVITE_ALPHABET.length)] }.joinToString("")
+                (1..INVITE_LENGTH).map { INVITE_ALPHABET[state.inviteCodes.nextInt(INVITE_ALPHABET.length)] }.joinToString("")
         }.first { code -> state.crews.values.none { it.inviteCode.equals(code, ignoreCase = true) } }
 
     private companion object {

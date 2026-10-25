@@ -84,9 +84,30 @@ class CrewsAndRidesTest {
         }
 
     @Test
+    fun `another sign-in changes neither the invite code nor the id of the next crew`() =
+        runTest {
+            suspend fun FakeApiDriver.crewAfter(signIns: Int): CrewDto {
+                val tokens = (1..signIns).map { signIn(it) }
+                return send(
+                    ApiRoute.CREATE_CREW,
+                    token = tokens.last(),
+                    value = CreateCrewRequestDto("Night Owls"),
+                ).decode(CrewDto.serializer())
+            }
+
+            val afterOne = fakeDriver().crewAfter(signIns = 1)
+            val afterTwo = fakeDriver().crewAfter(signIns = 2)
+
+            assertEquals(afterOne.inviteCode, afterTwo.inviteCode)
+            assertEquals(afterOne.id, afterTwo.id)
+        }
+
+    @Test
     fun `seats go until the car is full and every change bumps the version`() =
         runTest {
-            val driver = fakeDriver()
+            // No member races for the last seat: this counts seats, and a race is a coin flip (CrewLifeTest has it).
+            val noRace = Seed.default(THURSDAY_MORNING).let { it.copy(memberActivity = it.memberActivity?.copy(lastSeatRace = 0.0)) }
+            val driver = fakeDriver(seed = noRace)
             val riders = (1..3).map { driver.signIn(it) }
             riders.forEach { driver.join(it, "WIND-4KQ7") }
 
