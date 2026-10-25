@@ -62,8 +62,15 @@ internal sealed interface Destination : NavKey {
     ) : Destination
 }
 
-/** The destinations with a tab in the bottom bar, in the bar's order. The bar shows only while one of them is on top. */
-internal val tabDestinations: List<Destination> = listOf(Destination.Today, Destination.Spots, Destination.Crew, Destination.Profile)
+/** The app's tabs, in the bar's order, and the screen each one shows. Every tab's screen carries the tab bar. */
+internal enum class AppTab(
+    val destination: Destination,
+) {
+    TODAY(Destination.Today),
+    SPOTS(Destination.Spots),
+    CREW(Destination.Crew),
+    PROFILE(Destination.Profile),
+}
 
 /**
  * How the back stack is saved. On iOS there is no reflection, so every [Destination] is registered here by hand; a new

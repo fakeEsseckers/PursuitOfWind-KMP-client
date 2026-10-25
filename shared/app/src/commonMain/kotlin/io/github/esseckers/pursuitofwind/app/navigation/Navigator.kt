@@ -31,8 +31,8 @@ internal class Navigator(
     }
 
     /** Shows the tab [tab]: Today alone, or [tab] on top of Today. Screens opened on top of the old tab close. */
-    fun selectTab(tab: Destination) {
-        show(if (tab == Destination.Today) listOf(Destination.Today) else listOf(Destination.Today, tab))
+    fun selectTab(tab: AppTab) {
+        show(if (tab == AppTab.TODAY) listOf(Destination.Today) else listOf(Destination.Today, tab.destination))
     }
 
     /** Ends onboarding: Today becomes the only screen. */
