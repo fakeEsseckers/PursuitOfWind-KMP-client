@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -102,6 +103,8 @@ private fun OfferForm(
         modifier =
             modifier
                 .fillMaxSize()
+                // Above the keyboard, so the meeting point and "Offer the ride" can be scrolled into view while typing.
+                .imePadding()
                 .verticalScroll(rememberScrollState())
                 .padding(Spacing.m)
                 .testTag("offer.form"),
