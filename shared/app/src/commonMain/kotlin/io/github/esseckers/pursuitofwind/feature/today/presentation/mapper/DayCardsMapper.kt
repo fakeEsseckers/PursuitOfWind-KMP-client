@@ -63,7 +63,7 @@ internal class DayCardsMapper(
             wind = windRange(day),
             kiteM2 = recommendedKiteM2,
             leaveBy = leaveBy.clockTime(riderZone),
-            leaveNow = now >= leaveBy,
+            leaveNow = window.mustLeaveNow(now),
             confidence = confidence,
             rides = rides,
             hasCrew = crew.hasCrew,

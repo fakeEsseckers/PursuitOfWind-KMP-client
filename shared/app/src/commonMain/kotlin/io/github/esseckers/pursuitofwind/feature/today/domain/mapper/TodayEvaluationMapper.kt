@@ -64,6 +64,6 @@ internal object TodayEvaluationMapper {
         hours: List<ForecastHour>,
         profile: Profile,
     ) = hours
-        .filter { it.start < window.end && it.start + 1.hours > window.usableStart }
+        .filter { window.hasRidingIn(it.start) }
         .map { DecisionEngine.evaluateHour(it, profile.rider, config).wind.mean }
 }

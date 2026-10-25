@@ -9,7 +9,6 @@ import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.entity.SpotEv
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 
@@ -36,7 +35,7 @@ internal object SpotEvaluationMapper {
     }
 
     /** The windows the rider can still reach; one whose riding time has run out before the arrival is left out. */
-    fun reachableWindows(evaluation: SpotEvaluationEntity): List<SessionWindow> = evaluation.windows.filter { it.usable > Duration.ZERO }
+    fun reachableWindows(evaluation: SpotEvaluationEntity): List<SessionWindow> = evaluation.windows.filter { it.isReachable }
 
     /** The first window worth riding, if any. */
     fun firstWorthRiding(evaluation: SpotEvaluationEntity): SessionWindow? = evaluation.windows.firstOrNull { it.qualifies }

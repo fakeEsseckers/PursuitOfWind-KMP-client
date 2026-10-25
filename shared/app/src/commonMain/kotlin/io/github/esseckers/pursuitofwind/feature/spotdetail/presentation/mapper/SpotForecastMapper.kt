@@ -139,7 +139,7 @@ internal class SpotForecastMapper(
 
     private fun windowUi(window: SessionWindow): WindowUi {
         val first = firstHourOf(window)
-        val riding = forecast.indices.filter { forecast[it].start < window.end && forecast[it].start + 1.hours > window.usableStart }
+        val riding = forecast.indices.filter { window.hasRidingIn(forecast[it].start) }
         val speeds = riding.map { verdicts[it].wind.mean }.ifEmpty { listOf(verdicts[first].wind.mean) }
         return WindowUi(
             start = window.start,
@@ -152,7 +152,7 @@ internal class SpotForecastMapper(
             unit = profile.windUnit,
             kiteM2 = window.recommendedKiteM2,
             leaveBy = window.leaveBy.clockTime(riderZone),
-            leaveNow = now >= window.leaveBy,
+            leaveNow = window.mustLeaveNow(now),
             confidence = window.confidence,
             qualifies = window.qualifies,
         )

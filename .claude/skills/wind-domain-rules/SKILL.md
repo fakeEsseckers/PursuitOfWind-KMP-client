@@ -27,7 +27,7 @@ The decision engine (`:shared:windengine`, package `io.github.esseckers.pursuito
 | `SpotConfig` | `SpotId`, name, IANA `timeZone`, rideableSectors (non-empty), dangerSectors, `drive: Duration`. Data quality is spot metadata for the UI; the engine does not use it |
 | `ForecastHour` | start `Instant`, `byModel: Map<ModelId, ModelWind(mean, gust, bearing)>`, precipMm, tempC, `ThunderRisk`, isDaylight |
 | `HourVerdict` | start, verdict, reasons (sorted by severity), `recommendedKiteM2` or null, consensus `HourWind` (mean, gust, bearing, modelSpread) |
-| `SessionWindow` | spotId, start, end, hours, marginalHours, leaveBy, usableStart, `usable: Duration`, confidence, score, recommendedKiteM2, `qualifies` |
+| `SessionWindow` | spotId, start, end, hours, marginalHours, leaveBy, usableStart, `usable: Duration`, confidence, score, recommendedKiteM2, `qualifies`; asked with `isReachable`, `mustLeaveNow(now)`, `hasRidingIn(hourStart)` |
 | `SpotForecast` | spot + its forecast hours; input of `decideDays` |
 | `DayDecision` | `Go(date, window, alternatives)` or `NoGo(date, primaryReason, details: List<SpotNoGo>, nextGoDay)` |
 

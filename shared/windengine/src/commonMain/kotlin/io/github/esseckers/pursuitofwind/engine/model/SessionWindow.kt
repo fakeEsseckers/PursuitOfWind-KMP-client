@@ -1,6 +1,7 @@
 package io.github.esseckers.pursuitofwind.engine.model
 
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 
 /** How much the weather models agree on the wind inside a window. */
@@ -40,4 +41,13 @@ public data class SessionWindow(
     public val score: Double,
     public val recommendedKiteM2: Double?,
     public val qualifies: Boolean,
-)
+) {
+    /** True while the rider can still get there before the window ends: some [usable] riding time is left. */
+    public val isReachable: Boolean get() = usable > Duration.ZERO
+
+    /** True once it is time to leave at [now]: [leaveBy] has come. */
+    public fun mustLeaveNow(now: Instant): Boolean = now >= leaveBy
+
+    /** True when the forecast hour that starts at [hourStart] has riding time in it, between [usableStart] and [end]. */
+    public fun hasRidingIn(hourStart: Instant): Boolean = hourStart < end && hourStart + 1.hours > usableStart
+}
