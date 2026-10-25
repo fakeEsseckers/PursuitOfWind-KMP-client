@@ -1,6 +1,7 @@
 package io.github.esseckers.pursuitofwind.data.repository
 
 import androidx.room3.RoomDatabase
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import io.github.esseckers.pursuitofwind.data.fake.ControllableClock
 import io.github.esseckers.pursuitofwind.data.internal.local.LocalSettings
 import io.github.esseckers.pursuitofwind.data.internal.local.PursuitOfWindDatabase
@@ -32,11 +33,12 @@ internal class DataHarness(
     feedPageSize: Int,
 ) : AutoCloseable {
     private val scope = CoroutineScope(dispatcher + SupervisorJob())
-    val database = PursuitOfWindDatabase.build(inMemoryDatabaseBuilder(), dispatcher)
 
-    /** The device's settings file; [FullDisk.full] makes every read and write of it fail. */
-    val disk = FullDisk(LocalSettings.dataStore(temporaryFilePath("${Uuid.random()}.preferences_pb"), scope))
-    val settings = LocalSettings(disk, scope)
+    /** The disk under the database and the settings file; it can fill up or fail. */
+    val disk = DeviceDisk()
+    val database = PursuitOfWindDatabase.build(inMemoryDatabaseBuilder(), dispatcher, disk.database(BundledSQLiteDriver()))
+    private val settingsFile = LocalSettings.dataStore(temporaryFilePath("${Uuid.random()}.preferences_pb"), scope)
+    val settings = LocalSettings(disk.settings(settingsFile), scope)
     val userCache = UserCache(database, settings)
     val network = NetworkHarness(engine, onSignedIn = userCache::claimFor)
     private val store = CrewStore(database)

@@ -31,7 +31,9 @@ public sealed interface AppError {
 
     /**
      * This device could not read or write its own data (the database, DataStore, the Keychain or Keystore), for example
-     * with the disk full. The server was not involved, so what it holds is unchanged.
+     * with the disk full. Only reported when the server holds nothing new: a read, a refresh, or a change that failed
+     * before it was sent. A change the server made succeeds even when its answer cannot be cached; the next sync
+     * caches it.
      */
     public data object Storage : AppError
 

@@ -6,6 +6,7 @@ import io.github.esseckers.pursuitofwind.contract.RideDto
 import io.github.esseckers.pursuitofwind.data.internal.local.LocalSettings
 import io.github.esseckers.pursuitofwind.data.internal.local.PursuitOfWindDatabase
 import io.github.esseckers.pursuitofwind.data.internal.local.SyncKeys
+import io.github.esseckers.pursuitofwind.data.internal.local.cacheAnswer
 import io.github.esseckers.pursuitofwind.data.internal.local.cached
 import io.github.esseckers.pursuitofwind.data.internal.mapping.toEntity
 import io.github.esseckers.pursuitofwind.data.internal.mapping.toRide
@@ -139,8 +140,9 @@ class RideRepository internal constructor(
         return if (alreadySeated) reloaded else failure
     }
 
+    /** Caches [ride], the server's answer, and returns it; a cache that cannot be written does not fail the change. */
     private suspend fun keep(ride: RideDto): Ride {
-        store.saveNewer(ride)
+        cacheAnswer { store.saveNewer(ride) }
         return ride.toEntity().toRide()
     }
 }
