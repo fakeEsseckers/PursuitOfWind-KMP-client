@@ -2,7 +2,6 @@ package io.github.esseckers.pursuitofwind.data.fake
 
 import io.github.esseckers.pursuitofwind.contract.ApiRoute
 import io.github.esseckers.pursuitofwind.contract.CreateCrewRequestDto
-import io.github.esseckers.pursuitofwind.contract.CreateRideRequestDto
 import io.github.esseckers.pursuitofwind.contract.CrewDto
 import io.github.esseckers.pursuitofwind.contract.CrewFeedDto
 import io.github.esseckers.pursuitofwind.contract.CrewListDto
@@ -14,7 +13,6 @@ import io.github.esseckers.pursuitofwind.contract.RideCancelledEventDto
 import io.github.esseckers.pursuitofwind.contract.RideDto
 import io.github.esseckers.pursuitofwind.contract.RideListDto
 import io.github.esseckers.pursuitofwind.contract.RideStatusDto
-import io.github.esseckers.pursuitofwind.contract.RiderProfileDto
 import io.github.esseckers.pursuitofwind.contract.SeatReleasedEventDto
 import io.github.esseckers.pursuitofwind.contract.SeatTakenEventDto
 import kotlinx.coroutines.test.runTest

@@ -3,8 +3,6 @@ package io.github.esseckers.pursuitofwind.feature.crew.presentation.view
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,10 +13,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -35,8 +31,6 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import io.github.esseckers.pursuitofwind.core.designsystem.component.ActionButton
 import io.github.esseckers.pursuitofwind.core.designsystem.component.AppSnackbarHost
-import io.github.esseckers.pursuitofwind.core.designsystem.component.ChoiceChip
-import io.github.esseckers.pursuitofwind.core.designsystem.component.IconLine
 import io.github.esseckers.pursuitofwind.core.designsystem.component.MessageState
 import io.github.esseckers.pursuitofwind.core.designsystem.component.RefreshNoticeBanner
 import io.github.esseckers.pursuitofwind.core.designsystem.component.SectionTitle
@@ -49,24 +43,16 @@ import io.github.esseckers.pursuitofwind.core.designsystem.theme.Spacing
 import io.github.esseckers.pursuitofwind.core.domain.entity.RideActionEntity
 import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
 import io.github.esseckers.pursuitofwind.core.resources.Res
-import io.github.esseckers.pursuitofwind.core.resources.action_create_crew
-import io.github.esseckers.pursuitofwind.core.resources.action_join_crew
 import io.github.esseckers.pursuitofwind.core.resources.action_refresh
 import io.github.esseckers.pursuitofwind.core.resources.action_retry
-import io.github.esseckers.pursuitofwind.core.resources.action_share_invite
 import io.github.esseckers.pursuitofwind.core.resources.banner_crew_offline
 import io.github.esseckers.pursuitofwind.core.resources.banner_crew_refresh_failed
 import io.github.esseckers.pursuitofwind.core.resources.crew_error_title
-import io.github.esseckers.pursuitofwind.core.resources.crew_invite_code
 import io.github.esseckers.pursuitofwind.core.resources.crew_loading
-import io.github.esseckers.pursuitofwind.core.resources.crew_member_owner
-import io.github.esseckers.pursuitofwind.core.resources.crew_member_you
-import io.github.esseckers.pursuitofwind.core.resources.crew_members
 import io.github.esseckers.pursuitofwind.core.resources.crew_no_rides
 import io.github.esseckers.pursuitofwind.core.resources.crew_none_body
 import io.github.esseckers.pursuitofwind.core.resources.crew_none_title
 import io.github.esseckers.pursuitofwind.core.resources.crew_rides
-import io.github.esseckers.pursuitofwind.core.resources.crew_switch
 import io.github.esseckers.pursuitofwind.core.resources.tab_crew
 import io.github.esseckers.pursuitofwind.core.ui.dayLabel
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewChoice
@@ -74,7 +60,6 @@ import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewInt
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState.Content
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewUi
-import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.MemberUi
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
