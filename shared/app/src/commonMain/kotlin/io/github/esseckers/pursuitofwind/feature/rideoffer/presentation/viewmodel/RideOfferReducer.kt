@@ -25,7 +25,7 @@ internal class RideOfferReducer(
                 }
 
                 is RideOfferResult.CrewsChanged -> {
-                    inputs.copy(crews = result.cached, chosen = result.chosen)
+                    inputs.copy(crews = result.cached)
                 }
 
                 is RideOfferResult.SpotChanged -> {

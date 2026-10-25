@@ -48,7 +48,11 @@ internal class RideOfferViewModel(
 
     override fun bind(): Flow<RideOfferResult> =
         merge(
-            repository.crews.map { RideOfferResult.CrewsChanged(it, crewFor(it.value, currentState.inputs.chosen)) },
+            repository.crews.map { cached ->
+                // Put in the state now, not later with the list, which could arrive after a newer pick and undo it.
+                dispatchResult(RideOfferResult.Chosen(crewFor(cached.value, currentState.inputs.chosen)))
+                RideOfferResult.CrewsChanged(cached)
+            },
             repository.spot(draft.spotId).map { RideOfferResult.SpotChanged(it) },
             clock.ticks(TICK).map { RideOfferResult.Ticked(it, departure(it)) },
         )
