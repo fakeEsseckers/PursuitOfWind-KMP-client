@@ -19,8 +19,8 @@ import io.github.esseckers.pursuitofwind.engine.model.SkillLevel
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.engine.model.ThunderRisk
 import io.github.esseckers.pursuitofwind.engine.model.WindSpeed
-import io.github.esseckers.pursuitofwind.feature.today.domain.model.CrewRides
-import io.github.esseckers.pursuitofwind.feature.today.domain.model.TodaySnapshot
+import io.github.esseckers.pursuitofwind.feature.today.domain.entity.CrewRidesEntity
+import io.github.esseckers.pursuitofwind.feature.today.domain.entity.TodaySnapshotEntity
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
@@ -147,4 +147,4 @@ internal fun todaySnapshot(
     profile: Cached<Profile?> = Cached(alex(), fetched),
     spots: Cached<List<MySpot>> = Cached(listOf(mySpot("nordstrand-bay")), fetched),
     forecasts: Map<SpotId, Cached<List<ForecastHour>>> = mapOf(SpotId("nordstrand-bay") to Cached(saturdayOn(), fetched)),
-): TodaySnapshot = TodaySnapshot(profile, spots, forecasts, CrewRides(emptyList(), hasCrew = false, userId = null))
+): TodaySnapshotEntity = TodaySnapshotEntity(profile, spots, forecasts, CrewRidesEntity(emptyList(), hasCrew = false, userId = null))

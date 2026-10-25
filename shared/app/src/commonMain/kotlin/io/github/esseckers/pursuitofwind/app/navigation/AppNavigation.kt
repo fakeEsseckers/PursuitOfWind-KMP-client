@@ -33,15 +33,15 @@ import io.github.esseckers.pursuitofwind.core.resources.tab_spots
 import io.github.esseckers.pursuitofwind.core.resources.tab_today
 import io.github.esseckers.pursuitofwind.data.model.AppLanguage
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
-import io.github.esseckers.pursuitofwind.feature.crew.presentation.view.CrewRoute
+import io.github.esseckers.pursuitofwind.feature.crew.presentation.navigation.CrewRoute
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileMode
-import io.github.esseckers.pursuitofwind.feature.profile.presentation.view.ProfileRoute
-import io.github.esseckers.pursuitofwind.feature.rideoffer.domain.model.RideDraft
+import io.github.esseckers.pursuitofwind.feature.profile.presentation.navigation.ProfileRoute
+import io.github.esseckers.pursuitofwind.feature.rideoffer.domain.entity.RideDraftEntity
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.navigation.RideOfferRoute
-import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.view.SpotDetailRoute
-import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.view.SpotPickerRoute
-import io.github.esseckers.pursuitofwind.feature.spots.presentation.view.SpotsRoute
-import io.github.esseckers.pursuitofwind.feature.today.presentation.view.TodayRoute
+import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.navigation.SpotDetailRoute
+import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.navigation.SpotPickerRoute
+import io.github.esseckers.pursuitofwind.feature.spots.presentation.navigation.SpotsRoute
+import io.github.esseckers.pursuitofwind.feature.today.presentation.navigation.TodayRoute
 import io.github.esseckers.pursuitofwind.feature.welcome.presentation.view.WelcomeScreen
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -129,7 +129,7 @@ private fun entries(navigator: Navigator): (NavKey) -> NavEntry<NavKey> =
         }
         entry<Destination.OfferRide> { key ->
             val draft =
-                RideDraft(
+                RideDraftEntity(
                     spotId = SpotId(key.spotId),
                     windowStart = Instant.fromEpochSeconds(key.windowStart),
                     windowEnd = Instant.fromEpochSeconds(key.windowEnd),

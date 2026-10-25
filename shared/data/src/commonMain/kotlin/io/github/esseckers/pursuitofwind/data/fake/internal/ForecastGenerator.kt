@@ -50,6 +50,20 @@ internal object ForecastGenerator {
     private const val FULL_TURN = 360.0
     private const val WEATHER_MODEL = 9
 
+    /** Hours under way move this share of the full drift; three days out ([FULL_DRIFT_LEAD_HOURS]) they move all of it. */
+    private const val NEAR_DRIFT_SHARE = 0.25
+    private const val FULL_DRIFT_LEAD_HOURS = 72.0
+
+    /** The share of a run's change that all three models make together. */
+    private const val SHARED_DRIFT_SHARE = 0.7
+    private const val DIRECTION_CHANNEL = 7
+
+    /** Models sit half the spread apart; on top of that each wobbles by up to a third of it. */
+    private const val MODEL_JITTER_DIVISOR = 3.0
+    private const val HUNDREDTHS = 100.0
+    private const val HASH_SEED = 1_125_899_906_842_597L
+    private const val HASH_MULTIPLIER = 31L
+
     fun hours(
         spot: SeedSpot,
         from: Instant,
@@ -161,20 +175,6 @@ internal object ForecastGenerator {
     private fun stableHash(text: String): Long = text.fold(HASH_SEED) { hash, char -> hash * HASH_MULTIPLIER + char.code }
 
     private fun Double.round2(): Double = round(this * HUNDREDTHS) / HUNDREDTHS
-
-    /** Hours under way move this share of the full drift; three days out ([FULL_DRIFT_LEAD_HOURS]) they move all of it. */
-    private const val NEAR_DRIFT_SHARE = 0.25
-    private const val FULL_DRIFT_LEAD_HOURS = 72.0
-
-    /** The share of a run's change that all three models make together. */
-    private const val SHARED_DRIFT_SHARE = 0.7
-    private const val DIRECTION_CHANNEL = 7
-
-    /** Models sit half the spread apart; on top of that each wobbles by up to a third of it. */
-    private const val MODEL_JITTER_DIVISOR = 3.0
-    private const val HUNDREDTHS = 100.0
-    private const val HASH_SEED = 1_125_899_906_842_597L
-    private const val HASH_MULTIPLIER = 31L
 }
 
 /** How a model run moves one model's wind for one hour. */

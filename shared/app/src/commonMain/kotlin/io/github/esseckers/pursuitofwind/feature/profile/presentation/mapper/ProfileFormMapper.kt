@@ -39,7 +39,7 @@ internal object ProfileFormMapper {
         )
     }
 
-    /** [form] after [edit]. Text arrives already filtered by [acceptsName] and [acceptsNumber]; steppers are clamped. */
+    /** [form] after [edit]. Text arrives already filtered by its field (name length, [acceptsNumber]); steppers are clamped. */
     fun edit(
         form: ProfileForm,
         edit: ProfileEdit,
@@ -55,9 +55,6 @@ internal object ProfileFormMapper {
             is ProfileEdit.MinWind -> form.copy(minWind = edit.text, minWindSpeed = null)
             is ProfileEdit.MaxWind -> form.copy(maxWind = edit.text, maxWindSpeed = null)
         }
-
-    /** Whether the name field takes [text]; longer names than the server allows are never typed. */
-    fun acceptsName(text: String): Boolean = text.length <= ProfileLimits.NAME_MAX_LENGTH
 
     /** The kite sizes to offer: the common ones and the rider's own, in order. Unowned sizes are off once the quiver is full. */
     fun kiteChoices(form: ProfileForm): List<KiteChoice> {

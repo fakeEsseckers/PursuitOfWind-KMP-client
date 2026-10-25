@@ -34,6 +34,7 @@ import io.github.esseckers.pursuitofwind.feature.today.at
 import io.github.esseckers.pursuitofwind.feature.today.day
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayIntent
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState
+import io.github.esseckers.pursuitofwind.feature.today.presentation.preview.TodayPreviewData
 import io.github.esseckers.pursuitofwind.feature.today.ride
 import kotlinx.datetime.LocalDate
 import java.util.Locale

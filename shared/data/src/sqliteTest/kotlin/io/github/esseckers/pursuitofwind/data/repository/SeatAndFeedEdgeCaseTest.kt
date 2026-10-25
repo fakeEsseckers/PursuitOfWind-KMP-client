@@ -25,6 +25,16 @@ import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
 
 class SeatAndFeedEdgeCaseTest {
+    private val plan =
+        RidePlan(
+            spotId = SpotId("salt-lagoon"),
+            windowStart = THURSDAY_MORNING + 2.days + 5.hours,
+            windowEnd = THURSDAY_MORNING + 2.days + 9.hours,
+            departAt = THURSDAY_MORNING + 2.days + 2.hours,
+            meetingPoint = "Station",
+            seatsTotal = 2,
+        )
+
     private suspend fun DataHarness.ride(rideId: String): Ride =
         rides
             .rides("crw_weekend")
@@ -36,16 +46,6 @@ class SeatAndFeedEdgeCaseTest {
         crews.join("WIND-4KQ7").value()
         crews.sync("crw_weekend").value()
     }
-
-    private val plan =
-        RidePlan(
-            spotId = SpotId("salt-lagoon"),
-            windowStart = THURSDAY_MORNING + 2.days + 5.hours,
-            windowEnd = THURSDAY_MORNING + 2.days + 9.hours,
-            departAt = THURSDAY_MORNING + 2.days + 2.hours,
-            meetingPoint = "Station",
-            seatsTotal = 2,
-        )
 
     @Test
     fun `released seats and cancelled rides reach other members through the feed`() =

@@ -10,8 +10,8 @@ import io.github.esseckers.pursuitofwind.data.repository.AccountRepository
 import io.github.esseckers.pursuitofwind.data.repository.CrewRepository
 import io.github.esseckers.pursuitofwind.data.repository.RideRepository
 import io.github.esseckers.pursuitofwind.data.repository.SpotRepository
-import io.github.esseckers.pursuitofwind.feature.crew.domain.model.CrewDetails
-import io.github.esseckers.pursuitofwind.feature.crew.domain.model.shownCrew
+import io.github.esseckers.pursuitofwind.feature.crew.domain.entity.CrewDetailsEntity
+import io.github.esseckers.pursuitofwind.feature.crew.domain.mapper.CrewChoiceMapper
 import io.github.esseckers.pursuitofwind.feature.crew.domain.repository.CrewsRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
@@ -27,14 +27,14 @@ internal class CrewsRepositoryImpl(
 ) : CrewsRepository {
     override val crews: Flow<Cached<List<Crew>>> = crewRepository.crews
 
-    override fun details(crewId: String): Flow<CrewDetails> =
+    override fun details(crewId: String): Flow<CrewDetailsEntity> =
         combine(crewRepository.members(crewId), rides.rides(crewId), spots.catalog, account.userId) { members, rides, catalog, user ->
-            CrewDetails(crewId, members, rides, catalog.value.associateBy { it.id }, user)
+            CrewDetailsEntity(crewId, members, rides, catalog.value.associateBy { it.id }, user)
         }
 
     override suspend fun refreshAll(chosen: String?): AppError? =
         crewRepository.refreshCrews().errorOrNull() ?: readCache {
-            shownCrew(crewRepository.crews.first().value, chosen)?.let { refresh(it.id) }
+            CrewChoiceMapper.shownCrew(crewRepository.crews.first().value, chosen)?.let { refresh(it.id) }
         }
 
     /**

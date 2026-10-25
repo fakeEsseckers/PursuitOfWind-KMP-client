@@ -4,7 +4,7 @@ import io.github.esseckers.pursuitofwind.core.ui.message
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Spot
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
-import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.model.SpotChange
+import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.entity.SpotChangeEntity
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.DriveLimits
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.PickSpotUi
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotChoice
@@ -14,7 +14,7 @@ import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.S
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerState.Notice
 import kotlin.time.Duration.Companion.minutes
 
-/** Pure rules of the spot picker: what it shows for its inputs, and what "Done" saves. */
+/** Pure rules of the spot picker: what it shows for its inputs, including what "Done" saves. */
 internal object SpotPickerStateMapper {
     fun map(inputs: SpotPickerInputs): SpotPickerState {
         val refresh = inputs.refresh
@@ -40,23 +40,8 @@ internal object SpotPickerStateMapper {
             // Cached spots win over an error: the list stays, with a notice above it.
             notice = if (content is Content.Ready) error?.let(::notice) else null,
             selectedCount = spots.count { it.selected },
-            hasChanges = changes(inputs).isNotEmpty(),
+            changes = changes(inputs),
         )
-    }
-
-    /**
-     * What "Done" saves, in catalog order: every spot whose choice differs from how it is followed. A spot that is not
-     * followed and not chosen stays as it is, whatever its drive time says.
-     */
-    fun changes(inputs: SpotPickerInputs): List<SpotChange> {
-        val snapshot = inputs.snapshot ?: return emptyList()
-        val followed = snapshot.mySpots.associateBy { it.spot.id }
-        return snapshot.catalog.value.mapNotNull { spot ->
-            val choice = inputs.choices[spot.id] ?: return@mapNotNull null
-            val mine = followed[spot.id]
-            val unchanged = mine != null && mine.favorite == choice.selected && mine.drive == choice.driveMinutes.minutes
-            if (unchanged || (mine == null && !choice.selected)) null else SpotChange(spot.id, choice.driveMinutes.minutes, choice.selected)
-        }
     }
 
     /** The rider's choice for [spotId]: their edit, else how it is followed, else not chosen with the default drive. */
@@ -70,6 +55,27 @@ internal object SpotPickerStateMapper {
             SpotChoice(selected = mine.favorite, driveMinutes = mine.drive.inWholeMinutes.toInt())
         } else {
             SpotChoice(selected = false, driveMinutes = DriveLimits.DEFAULT_MINUTES)
+        }
+    }
+
+    /**
+     * What "Done" saves, in catalog order: every spot whose choice differs from how it is followed. A spot that is not
+     * followed and not chosen stays as it is, whatever its drive time says.
+     */
+    private fun changes(inputs: SpotPickerInputs): List<SpotChangeEntity> {
+        val snapshot = inputs.snapshot ?: return emptyList()
+        val followed = snapshot.mySpots.associateBy { it.spot.id }
+        return snapshot.catalog.value.mapNotNull { spot ->
+            val choice = inputs.choices[spot.id] ?: return@mapNotNull null
+            val mine = followed[spot.id]
+            val unchanged = mine != null && mine.favorite == choice.selected && mine.drive == choice.driveMinutes.minutes
+            if (unchanged ||
+                (mine == null && !choice.selected)
+            ) {
+                null
+            } else {
+                SpotChangeEntity(spot.id, choice.driveMinutes.minutes, choice.selected)
+            }
         }
     }
 

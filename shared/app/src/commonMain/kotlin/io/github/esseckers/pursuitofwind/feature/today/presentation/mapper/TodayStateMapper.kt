@@ -7,8 +7,8 @@ import io.github.esseckers.pursuitofwind.core.ui.message
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.Profile
-import io.github.esseckers.pursuitofwind.feature.today.domain.model.RefreshResult
-import io.github.esseckers.pursuitofwind.feature.today.domain.model.TodaySnapshot
+import io.github.esseckers.pursuitofwind.feature.today.domain.entity.RefreshResultEntity
+import io.github.esseckers.pursuitofwind.feature.today.domain.entity.TodaySnapshotEntity
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.RefreshStatus
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayInputs
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState
@@ -40,7 +40,7 @@ internal object TodayStateMapper {
     }
 
     private fun map(
-        snapshot: TodaySnapshot,
+        snapshot: TodaySnapshotEntity,
         now: Instant,
         riderZone: TimeZone,
         refresh: RefreshStatus,
@@ -70,7 +70,7 @@ internal object TodayStateMapper {
 
     /** What to show while there is nothing to decide on. */
     private fun waitingContent(
-        snapshot: TodaySnapshot,
+        snapshot: TodaySnapshotEntity,
         refresh: RefreshStatus,
     ): Content {
         val forecastError = refresh.last?.forecastError
@@ -87,7 +87,7 @@ internal object TodayStateMapper {
     }
 
     private fun notice(
-        last: RefreshResult?,
+        last: RefreshResultEntity?,
         age: Duration?,
     ): Notice? =
         when {
@@ -103,7 +103,7 @@ internal object TodayStateMapper {
  * True when the cache shows everything a refresh started at [startedAt] fetched. A write lands in Room and DataStore
  * before their flows emit it, so for a moment after a refresh ends the snapshot can still be the old one.
  */
-private fun TodaySnapshot.reflects(startedAt: Instant): Boolean {
+private fun TodaySnapshotEntity.reflects(startedAt: Instant): Boolean {
     fun Cached<*>?.fresh() = this?.updatedAt?.let { it >= startedAt } == true
     return profile.fresh() && spots.fresh() && spots.value.filter { it.favorite }.all { forecasts[it.spot.id].fresh() }
 }
@@ -125,7 +125,7 @@ private sealed interface SnapshotContent {
     ) : SnapshotContent
 }
 
-private fun TodaySnapshot.content(): SnapshotContent {
+private fun TodaySnapshotEntity.content(): SnapshotContent {
     val favorites = spots.value.filter { it.favorite }
     val withForecast =
         favorites.mapNotNull { spot ->

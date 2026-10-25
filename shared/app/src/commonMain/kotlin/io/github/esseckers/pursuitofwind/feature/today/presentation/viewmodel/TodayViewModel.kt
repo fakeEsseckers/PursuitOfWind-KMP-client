@@ -4,8 +4,8 @@ import androidx.lifecycle.viewModelScope
 import io.github.esseckers.pursuitofwind.core.mvi.MviViewModel
 import io.github.esseckers.pursuitofwind.core.mvi.launchFinishing
 import io.github.esseckers.pursuitofwind.data.model.AppError
-import io.github.esseckers.pursuitofwind.feature.today.domain.model.RefreshResult
-import io.github.esseckers.pursuitofwind.feature.today.domain.model.TodaySnapshot
+import io.github.esseckers.pursuitofwind.feature.today.domain.entity.RefreshResultEntity
+import io.github.esseckers.pursuitofwind.feature.today.domain.entity.TodaySnapshotEntity
 import io.github.esseckers.pursuitofwind.feature.today.domain.repository.TodayRepository
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayEffect
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayIntent
@@ -62,13 +62,13 @@ internal class TodayViewModel(
     }
 
     /** One refresh at a time; a pull while one runs joins it. */
-    private fun refresh(snapshot: TodaySnapshot? = currentState.inputs.snapshot) {
+    private fun refresh(snapshot: TodaySnapshotEntity? = currentState.inputs.snapshot) {
         if (currentState.inputs.refresh.refreshing) return
         // Cache stamps are stored in milliseconds; a finer start would never count as reflected in them.
         val at = Instant.fromEpochMilliseconds(clock.now().toEpochMilliseconds())
         dispatchResult(TodayResult.RefreshStarted(at = at, favorites = TodayRefreshPolicy.favorites(snapshot)))
         viewModelScope.launchFinishing(
-            unfinished = RefreshResult(forecastError = AppError.Unknown("Refresh did not finish")),
+            unfinished = RefreshResultEntity(forecastError = AppError.Unknown("Refresh did not finish")),
             work = { repository.refresh() },
         ) { result -> dispatchResult(TodayResult.RefreshFinished(result)) }
     }

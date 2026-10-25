@@ -9,10 +9,11 @@ import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.MySpot
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.spots.domain.repository.SpotsRepository
-import io.github.esseckers.pursuitofwind.feature.spots.presentation.mapper.SpotsStateMapper
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.RemovedSpot
+import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotDrive
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotEdit
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsEffect
+import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsInputs
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsIntent
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsState
 import kotlinx.coroutines.Job
@@ -58,7 +59,7 @@ internal class SpotsViewModel(
             is SpotsIntent.ChangeDrive -> {
                 edit(
                     intent.spotId,
-                ) { it.copy(driveMinutes = intent.minutes.coerceIn(0, SpotsStateMapper.MAX_MINUTES)) }
+                ) { it.copy(driveMinutes = intent.minutes.coerceIn(0, SpotDrive.MAX_MINUTES)) }
             }
 
             is SpotsIntent.Remove -> {
@@ -100,7 +101,7 @@ internal class SpotsViewModel(
     ) {
         val inputs = currentState.inputs
         if (spotId in inputs.removing) return
-        val edit = change(SpotsStateMapper.editOf(inputs, spotId) ?: return)
+        val edit = change(editOf(inputs, spotId) ?: return)
         wanted[spotId] = edit
         dispatchResult(SpotsResult.Edited(spotId, edit))
         if (spotId !in inputs.saving) launchWrite(spotId) { save(spotId) }
@@ -132,7 +133,7 @@ internal class SpotsViewModel(
     private fun remove(spotId: SpotId) {
         val inputs = currentState.inputs
         if (spotId in inputs.removing) return
-        val edit = SpotsStateMapper.editOf(inputs, spotId) ?: return
+        val edit = editOf(inputs, spotId) ?: return
         val name =
             inputs.cached
                 ?.value
@@ -186,4 +187,14 @@ internal class SpotsViewModel(
                 }
             }
     }
+
+    /** The values [spotId] has now: the rider's unsaved edit, or as cached; null for a spot that is not followed. */
+    private fun editOf(
+        inputs: SpotsInputs,
+        spotId: SpotId,
+    ): SpotEdit? =
+        inputs.edits[spotId] ?: inputs.cached
+            ?.value
+            ?.firstOrNull { it.spot.id == spotId }
+            ?.let(SpotEdit::of)
 }

@@ -86,12 +86,6 @@ class ProfileFormMapperTest {
     }
 
     @Test
-    fun `names longer than the server takes are never typed`() {
-        assertTrue(ProfileFormMapper.acceptsName("a".repeat(ProfileLimits.NAME_MAX_LENGTH)))
-        assertFalse(ProfileFormMapper.acceptsName("a".repeat(ProfileLimits.NAME_MAX_LENGTH + 1)))
-    }
-
-    @Test
     fun `a new unit converts typed wind limits and leaves what is not a number`() {
         val knots = filled.copy(minWind = "14", maxWind = "3x")
         val metres = ProfileFormMapper.edit(knots, ProfileEdit.Units(WindUnit.METERS_PER_SECOND))

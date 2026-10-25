@@ -93,15 +93,15 @@ internal data class RideEntity(
     val pendingUserId: String? = null,
     val pendingUserName: String? = null,
 ) {
+    /** This row with the pending change of [other] (the row it replaces). */
+    fun withOverlayOf(other: RideEntity?): RideEntity =
+        copy(pendingSeat = other?.pendingSeat, pendingUserId = other?.pendingUserId, pendingUserName = other?.pendingUserName)
+
     companion object {
         /** Values of [pendingSeat]. */
         const val TAKE = "TAKE"
         const val RELEASE = "RELEASE"
     }
-
-    /** This row with the pending change of [other] (the row it replaces). */
-    fun withOverlayOf(other: RideEntity?): RideEntity =
-        copy(pendingSeat = other?.pendingSeat, pendingUserId = other?.pendingUserId, pendingUserName = other?.pendingUserName)
 }
 
 /** When something was last fetched ([updatedAt]) and, for crew feeds, the newest event already applied ([cursor]). */

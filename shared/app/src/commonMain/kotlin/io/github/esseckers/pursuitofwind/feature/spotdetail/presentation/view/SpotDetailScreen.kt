@@ -61,7 +61,7 @@ import org.jetbrains.compose.resources.stringResource
 import kotlin.time.Duration
 
 /**
- * One spot, hour by hour. Stateless; [SpotDetailRoute] connects it to its ViewModel. The top bar has a back button and
+ * One spot, hour by hour. Stateless; `SpotDetailRoute` connects it to its ViewModel. The top bar has a back button and
  * a refresh button, so neither gesture (system back, pull to refresh) is the only way.
  */
 @Composable

@@ -6,8 +6,8 @@ import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotEd
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsInputs
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsState
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsState.Content
-import io.github.esseckers.pursuitofwind.feature.spots.presentation.view.SpotsPreviewData.nordstrand
-import io.github.esseckers.pursuitofwind.feature.spots.presentation.view.SpotsPreviewData.saltLagoon
+import io.github.esseckers.pursuitofwind.feature.spots.presentation.preview.SpotsPreviewData.nordstrand
+import io.github.esseckers.pursuitofwind.feature.spots.presentation.preview.SpotsPreviewData.saltLagoon
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -19,14 +19,14 @@ import kotlin.time.Instant
 class SpotsReducerTest {
     private val fetchedAt = Instant.parse("2026-10-24T06:00:00Z")
 
+    private val loaded = reduce(data(nordstrand, saltLagoon), SpotsResult.RefreshFinished(null))
+
     private fun data(vararg spots: MySpot) = SpotsResult.DataChanged(Cached(spots.toList(), fetchedAt))
 
     private fun reduce(
         vararg results: SpotsResult,
         from: SpotsState = SpotsState(),
     ): SpotsState = results.fold(from, SpotsReducer::reduce)
-
-    private val loaded = reduce(data(nordstrand, saltLagoon), SpotsResult.RefreshFinished(null))
 
     private fun SpotsState.spot(name: String) = (content as Content.Ready).spots.single { it.name == name }
 

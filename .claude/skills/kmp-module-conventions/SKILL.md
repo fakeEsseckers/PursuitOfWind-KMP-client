@@ -67,19 +67,26 @@ io.github.esseckers.pursuitofwind/
     ui/                     # formatting and labels shared by screens
     resources/              # generated Res (packageOfResClass)
   feature/<screen>/         # today, spotdetail, profile, spots, crew, settings
-    domain/model/           # the feature's models
+    domain/entity/          # the feature's domain types, named *Entity
+    domain/mapper/          # pure rules over those types (`RefreshErrorMapper`, `CrewChoiceMapper`), with tests
     domain/repository/      # the repository interface the feature needs
     data/repository/        # its implementation over the :shared:data repositories
     presentation/model/     # State, Intent, Effect, UI models
-    presentation/mapper/    # pure functions: domain -> UI models, inputs -> State
+    presentation/mapper/    # state mappers (called by the reducer only) and their pure helpers
     presentation/viewmodel/ # ViewModel, Result, Reducer
-    presentation/view/      # Route, Screen, previews
+    presentation/navigation/ # Route: state and effects to the Screen, navigation lambdas out
+    presentation/view/      # Screen and its parts
+    presentation/preview/   # @Preview functions and the sample states they and UI tests use
     di/                     # the feature's Koin module
 ```
 
 Packages are not Gradle modules: a feature must not import another feature, and nothing enforces it at compile time, so reviewers check it. Test source sets mirror the same packages; shared fixtures of a feature sit at `feature/<screen>/` in `commonTest`.
 
 Prefer `internal` for anything not used by another module.
+
+## Class layout
+
+Inside a class or object: properties and `init` blocks first, then public functions, then private ones, and the companion object last. detekt's `ClassOrdering` checks what it can (properties before functions, the companion object last); public before private is kept by hand.
 
 ## Checklist before adding a dependency
 

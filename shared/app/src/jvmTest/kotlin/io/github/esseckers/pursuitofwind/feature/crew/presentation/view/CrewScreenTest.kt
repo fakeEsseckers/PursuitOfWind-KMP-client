@@ -25,9 +25,10 @@ import io.github.esseckers.pursuitofwind.core.designsystem.theme.PursuitOfWindTh
 import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewIntent
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState
-import io.github.esseckers.pursuitofwind.feature.crew.presentation.view.CrewPreviewData.alex
-import io.github.esseckers.pursuitofwind.feature.crew.presentation.view.CrewPreviewData.andreisRide
-import io.github.esseckers.pursuitofwind.feature.crew.presentation.view.CrewPreviewData.details
+import io.github.esseckers.pursuitofwind.feature.crew.presentation.preview.CrewPreviewData
+import io.github.esseckers.pursuitofwind.feature.crew.presentation.preview.CrewPreviewData.alex
+import io.github.esseckers.pursuitofwind.feature.crew.presentation.preview.CrewPreviewData.andreisRide
+import io.github.esseckers.pursuitofwind.feature.crew.presentation.preview.CrewPreviewData.details
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.viewmodel.CrewReducer
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.viewmodel.CrewResult
 import io.github.esseckers.pursuitofwind.testing.PHONE_DENSITY
@@ -46,6 +47,29 @@ import kotlin.test.assertTrue
 class CrewScreenTest {
     private val intents = mutableListOf<CrewIntent>()
     private val systemLocale = Locale.getDefault()
+
+    /** Alex has a seat in Andrei's car. */
+    private val seated =
+        CrewReducer(CrewPreviewData.zone).reduce(
+            CrewPreviewData.ready,
+            CrewResult.DetailsChanged(
+                details.copy(
+                    rides =
+                        Cached(
+                            details.rides.value.map {
+                                if (it ==
+                                    andreisRide
+                                ) {
+                                    it.copy(passengers = it.passengers + alex, seatsFree = 0)
+                                } else {
+                                    it
+                                }
+                            },
+                            null,
+                        ),
+                ),
+            ),
+        )
 
     @BeforeTest
     fun english() {
@@ -71,29 +95,6 @@ class CrewScreenTest {
     private fun ComposeUiTest.scrollTo(tag: String) {
         onNodeWithTag("crew.list").performScrollToNode(hasTestTag(tag))
     }
-
-    /** Alex has a seat in Andrei's car. */
-    private val seated =
-        CrewReducer(CrewPreviewData.zone).reduce(
-            CrewPreviewData.ready,
-            CrewResult.DetailsChanged(
-                details.copy(
-                    rides =
-                        Cached(
-                            details.rides.value.map {
-                                if (it ==
-                                    andreisRide
-                                ) {
-                                    it.copy(passengers = it.passengers + alex, seatsFree = 0)
-                                } else {
-                                    it
-                                }
-                            },
-                            null,
-                        ),
-                ),
-            ),
-        )
 
     @Test
     fun `the crew reads as headings with its invite code its rides by day and its members`() =

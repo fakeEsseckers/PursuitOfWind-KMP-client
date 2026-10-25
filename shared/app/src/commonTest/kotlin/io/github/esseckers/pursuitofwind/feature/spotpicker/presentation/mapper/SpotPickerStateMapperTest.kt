@@ -4,8 +4,8 @@ import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.error_network
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Cached
-import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.model.SpotChange
-import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.model.SpotPickerSnapshot
+import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.entity.SpotChangeEntity
+import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.entity.SpotPickerSnapshotEntity
 import io.github.esseckers.pursuitofwind.feature.spotpicker.following
 import io.github.esseckers.pursuitofwind.feature.spotpicker.inputs
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.DriveLimits
@@ -14,10 +14,10 @@ import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.S
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerInputs
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerState.Content
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerState.Notice
-import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.view.SpotPickerPreviewData.dune
-import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.view.SpotPickerPreviewData.lakeWeiss
-import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.view.SpotPickerPreviewData.nordstrand
-import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.view.SpotPickerPreviewData.saltLagoon
+import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.preview.SpotPickerPreviewData.dune
+import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.preview.SpotPickerPreviewData.lakeWeiss
+import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.preview.SpotPickerPreviewData.nordstrand
+import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.preview.SpotPickerPreviewData.saltLagoon
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -27,7 +27,7 @@ import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 
 class SpotPickerStateMapperTest {
-    private val empty = SpotPickerSnapshot(Cached(emptyList(), null), emptyList())
+    private val empty = SpotPickerSnapshotEntity(Cached(emptyList(), null), emptyList())
 
     @Test
     fun `the catalog shows by name with the followed spots chosen at their drive`() {
@@ -77,7 +77,7 @@ class SpotPickerStateMapperTest {
     fun `done follows a newly chosen spot as a favorite at its drive`() {
         val chosen = inputs().copy(choices = mapOf(saltLagoon.id to SpotChoice(selected = true, driveMinutes = 90)))
 
-        assertEquals(listOf(SpotChange(saltLagoon.id, 90.minutes, favorite = true)), SpotPickerStateMapper.changes(chosen))
+        assertEquals(listOf(SpotChangeEntity(saltLagoon.id, 90.minutes, favorite = true)), SpotPickerStateMapper.map(chosen).changes)
         assertTrue(SpotPickerStateMapper.map(chosen).hasChanges)
     }
 
@@ -85,7 +85,7 @@ class SpotPickerStateMapperTest {
     fun `a favorite that is no longer chosen stays followed but not as a favorite`() {
         val unchosen = inputs(following(nordstrand, 2.hours)).copy(choices = mapOf(nordstrand.id to SpotChoice(false, 120)))
 
-        assertEquals(listOf(SpotChange(nordstrand.id, 2.hours, favorite = false)), SpotPickerStateMapper.changes(unchosen))
+        assertEquals(listOf(SpotChangeEntity(nordstrand.id, 2.hours, favorite = false)), SpotPickerStateMapper.map(unchosen).changes)
     }
 
     @Test
@@ -93,8 +93,8 @@ class SpotPickerStateMapperTest {
         val same = inputs(following(nordstrand, 2.hours)).copy(choices = mapOf(nordstrand.id to SpotChoice(true, 120)))
         val driveOfUnchosen = inputs().copy(choices = mapOf(dune.id to SpotChoice(false, 30)))
 
-        assertEquals(emptyList(), SpotPickerStateMapper.changes(same))
-        assertEquals(emptyList(), SpotPickerStateMapper.changes(driveOfUnchosen))
+        assertEquals(emptyList(), SpotPickerStateMapper.map(same).changes)
+        assertEquals(emptyList(), SpotPickerStateMapper.map(driveOfUnchosen).changes)
     }
 
     @Test
@@ -109,7 +109,7 @@ class SpotPickerStateMapperTest {
                     ),
             )
 
-        assertEquals(listOf(dune.id, nordstrand.id, saltLagoon.id), SpotPickerStateMapper.changes(chosen).map { it.spotId })
+        assertEquals(listOf(dune.id, nordstrand.id, saltLagoon.id), SpotPickerStateMapper.map(chosen).changes.map { it.spotId })
     }
 
     @Test

@@ -30,7 +30,12 @@ internal data class RefreshStatus(
 internal data class SpotEdit(
     val driveMinutes: Int,
     val favorite: Boolean,
-)
+) {
+    companion object {
+        /** How [spot] is followed now. */
+        fun of(spot: MySpot): SpotEdit = SpotEdit(driveMinutes = spot.drive.inWholeMinutes.toInt(), favorite = spot.favorite)
+    }
+}
 
 /** A spot just removed, with what it takes to follow it again as it was. */
 internal data class RemovedSpot(

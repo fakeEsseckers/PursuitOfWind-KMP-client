@@ -6,18 +6,18 @@ import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.MySpot
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.RefreshStatus
+import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotDrive
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotEdit
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsInputs
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsState.Content
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsState.Notice
-import io.github.esseckers.pursuitofwind.feature.spots.presentation.view.SpotsPreviewData.lakeWeiss
-import io.github.esseckers.pursuitofwind.feature.spots.presentation.view.SpotsPreviewData.nordstrand
-import io.github.esseckers.pursuitofwind.feature.spots.presentation.view.SpotsPreviewData.saltLagoon
+import io.github.esseckers.pursuitofwind.feature.spots.presentation.preview.SpotsPreviewData.lakeWeiss
+import io.github.esseckers.pursuitofwind.feature.spots.presentation.preview.SpotsPreviewData.nordstrand
+import io.github.esseckers.pursuitofwind.feature.spots.presentation.preview.SpotsPreviewData.saltLagoon
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
@@ -91,7 +91,7 @@ class SpotsStateMapperTest {
                     edits =
                         mapOf(
                             nordstrand.spot.id to SpotEdit(0, true),
-                            saltLagoon.spot.id to SpotEdit(SpotsStateMapper.MAX_STEPPED_MINUTES, true),
+                            saltLagoon.spot.id to SpotEdit(SpotDrive.MAX_STEPPED_MINUTES, true),
                             lakeWeiss.spot.id to SpotEdit(900, true),
                         ),
                 ).spots()
@@ -101,25 +101,5 @@ class SpotsStateMapperTest {
         assertFalse(bounds.getValue("Salt Lagoon").canLengthen)
         assertTrue(bounds.getValue("Lake Weiss").canShorten)
         assertFalse(bounds.getValue("Lake Weiss").canLengthen)
-    }
-
-    @Test
-    fun `a drive steps by a quarter hour up to a day trip and down to zero`() {
-        assertEquals(135, SpotsStateMapper.longer(120))
-        assertEquals(720, SpotsStateMapper.longer(710))
-        assertEquals(720, SpotsStateMapper.longer(720))
-        assertEquals(900, SpotsStateMapper.longer(900))
-        assertEquals(105, SpotsStateMapper.shorter(120))
-        assertEquals(0, SpotsStateMapper.shorter(10))
-        assertEquals(885, SpotsStateMapper.shorter(900))
-    }
-
-    @Test
-    fun `the values of a spot are the edit or else the cache`() {
-        val inputs = inputs(nordstrand).copy(edits = mapOf(nordstrand.spot.id to SpotEdit(135, false)))
-
-        assertEquals(SpotEdit(135, false), SpotsStateMapper.editOf(inputs, nordstrand.spot.id))
-        assertEquals(SpotEdit(120, true), SpotsStateMapper.editOf(inputs(nordstrand), nordstrand.spot.id))
-        assertNull(SpotsStateMapper.editOf(inputs(nordstrand), saltLagoon.spot.id))
     }
 }

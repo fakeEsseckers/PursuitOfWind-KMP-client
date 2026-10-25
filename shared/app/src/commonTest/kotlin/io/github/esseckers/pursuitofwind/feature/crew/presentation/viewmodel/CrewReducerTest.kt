@@ -4,8 +4,8 @@ import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.crew_invite_invalid
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewDialog
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState
-import io.github.esseckers.pursuitofwind.feature.crew.presentation.view.CrewPreviewData
-import io.github.esseckers.pursuitofwind.feature.crew.presentation.view.CrewPreviewData.zone
+import io.github.esseckers.pursuitofwind.feature.crew.presentation.preview.CrewPreviewData
+import io.github.esseckers.pursuitofwind.feature.crew.presentation.preview.CrewPreviewData.zone
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

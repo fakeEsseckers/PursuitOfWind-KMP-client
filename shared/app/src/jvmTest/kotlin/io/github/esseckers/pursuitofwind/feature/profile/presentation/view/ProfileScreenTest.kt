@@ -33,8 +33,10 @@ import io.github.esseckers.pursuitofwind.data.model.WindUnit
 import io.github.esseckers.pursuitofwind.engine.model.SkillLevel
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileEdit
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileIntent
+import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileLimits
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileMode
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileState
+import io.github.esseckers.pursuitofwind.feature.profile.presentation.preview.ProfilePreviewData
 import io.github.esseckers.pursuitofwind.testing.PHONE_DENSITY
 import io.github.esseckers.pursuitofwind.testing.PHONE_SIZE
 import io.github.esseckers.pursuitofwind.testing.checkTexts
@@ -114,6 +116,17 @@ class ProfileScreenTest {
 
             assertEquals(listOf(ProfileEdit.Weight("62,5")), edits())
             onNodeWithTag("profile.weight").assert(hasText("62,5"))
+        }
+
+    @Test
+    fun `names longer than the server takes are never typed`() =
+        runComposeUiTest {
+            show(ProfilePreviewData.empty, mode = ProfileMode.SET_UP)
+
+            onNodeWithTag("profile.name").performTextInput("a".repeat(ProfileLimits.NAME_MAX_LENGTH + 1))
+            onNodeWithTag("profile.name").performTextInput("a".repeat(ProfileLimits.NAME_MAX_LENGTH))
+
+            assertEquals(listOf(ProfileEdit.Name("a".repeat(ProfileLimits.NAME_MAX_LENGTH))), edits())
         }
 
     @Test

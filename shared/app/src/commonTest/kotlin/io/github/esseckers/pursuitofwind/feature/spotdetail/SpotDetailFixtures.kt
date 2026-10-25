@@ -16,7 +16,7 @@ import io.github.esseckers.pursuitofwind.engine.model.SkillLevel
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.engine.model.ThunderRisk
 import io.github.esseckers.pursuitofwind.engine.model.WindSpeed
-import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.model.SpotDetailSnapshot
+import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.entity.SpotDetailSnapshotEntity
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
@@ -102,4 +102,4 @@ internal fun snapshot(
     hours: List<ForecastHour> = saturdayOn(),
     spot: MySpot? = nordstrand(),
     profile: Profile? = alex(),
-): SpotDetailSnapshot = SpotDetailSnapshot(Cached(profile, fetched), Cached(spot, fetched), Cached(hours, fetched))
+): SpotDetailSnapshotEntity = SpotDetailSnapshotEntity(Cached(profile, fetched), Cached(spot, fetched), Cached(hours, fetched))

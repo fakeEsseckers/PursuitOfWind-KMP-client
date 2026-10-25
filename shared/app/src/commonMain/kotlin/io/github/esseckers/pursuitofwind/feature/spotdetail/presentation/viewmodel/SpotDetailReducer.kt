@@ -53,6 +53,7 @@ internal class SpotDetailReducer(
             next -> {
                 previous
             }
+
             is Content.Ready if next is Content.Ready -> {
                 Content.Ready(
                     chart = if (next.chart == previous.chart) previous.chart else next.chart,

@@ -7,8 +7,8 @@ import io.github.esseckers.pursuitofwind.feature.spotpicker.following
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.DriveLimits
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerState
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerState.Content
-import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.view.SpotPickerPreviewData.dune
-import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.view.SpotPickerPreviewData.nordstrand
+import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.preview.SpotPickerPreviewData.dune
+import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.preview.SpotPickerPreviewData.nordstrand
 import io.github.esseckers.pursuitofwind.feature.spotpicker.snapshot
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -20,13 +20,13 @@ import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 
 class SpotPickerReducerTest {
+    private val loaded =
+        reduce(SpotPickerResult.DataChanged(snapshot(following(nordstrand, 2.hours))), SpotPickerResult.RefreshFinished(null))
+
     private fun reduce(
         vararg results: SpotPickerResult,
         from: SpotPickerState = SpotPickerState(),
     ): SpotPickerState = results.fold(from, SpotPickerReducer::reduce)
-
-    private val loaded =
-        reduce(SpotPickerResult.DataChanged(snapshot(following(nordstrand, 2.hours))), SpotPickerResult.RefreshFinished(null))
 
     private fun SpotPickerState.spot(id: String) = (content as Content.Ready).spots.single { it.id.value == id }
 

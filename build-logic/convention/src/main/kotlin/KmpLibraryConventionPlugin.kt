@@ -6,7 +6,9 @@ import io.github.esseckers.pursuitofwind.buildlogic.libs
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.ExtensionAware
+import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.configure
+import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 /**
@@ -18,6 +20,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
  * - iOS device and Apple-silicon simulator targets. Intel simulators are not targeted (Tier 3 in Kotlin 2.4).
  * - JVM is opt-in per module (`jvm()`): only modules the server reuses or tests on the JVM need it.
  * - Warnings fail the build.
+ * - JVM and Android host tests run in UTC, whatever the machine's zone.
  */
 class KmpLibraryConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
@@ -45,6 +48,11 @@ class KmpLibraryConventionPlugin : Plugin<Project> {
                 sourceSets.getByName("commonTest").dependencies {
                     implementation(libs.findLibrary("kotlin-test").get())
                 }
+            }
+
+            // JVM and Android host tests run in UTC, as on CI: a test that relies on the machine's zone fails everywhere.
+            tasks.withType<Test>().configureEach {
+                systemProperty("user.timezone", "UTC")
             }
         }
     }

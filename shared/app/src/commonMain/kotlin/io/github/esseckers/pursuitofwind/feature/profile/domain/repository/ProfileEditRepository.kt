@@ -13,11 +13,11 @@ internal interface ProfileEditRepository {
     /** The saved profile, null while the rider has none. Emits again after every save. */
     val profile: Flow<Profile?>
 
-    /** Saves [profile] on the server and in the cache. Never throws, apart from cancellation. */
-    suspend fun save(profile: Profile): Outcome<Profile>
-
     /** The app's language, a choice of this device that applies at once. */
     val language: Flow<AppLanguage>
+
+    /** Saves [profile] on the server and in the cache. Never throws, apart from cancellation. */
+    suspend fun save(profile: Profile): Outcome<Profile>
 
     suspend fun setLanguage(language: AppLanguage): Outcome<Unit>
 }

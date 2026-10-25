@@ -1,7 +1,7 @@
 package io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.viewmodel
 
 import io.github.esseckers.pursuitofwind.core.ui.Freshness
-import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.model.SpotDetailSnapshot
+import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.entity.SpotDetailSnapshotEntity
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.RefreshStatus
 import kotlin.time.Instant
 
@@ -13,7 +13,7 @@ internal object SpotDetailRefreshPolicy {
      * after Today refreshed fetches nothing.
      */
     fun isDue(
-        snapshot: SpotDetailSnapshot,
+        snapshot: SpotDetailSnapshotEntity,
         refresh: RefreshStatus,
         now: Instant,
     ): Boolean {

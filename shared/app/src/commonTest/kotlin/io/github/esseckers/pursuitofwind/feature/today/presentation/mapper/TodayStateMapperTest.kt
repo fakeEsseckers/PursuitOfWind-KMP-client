@@ -14,8 +14,8 @@ import io.github.esseckers.pursuitofwind.feature.today.SUNDAY
 import io.github.esseckers.pursuitofwind.feature.today.THURSDAY_8AM
 import io.github.esseckers.pursuitofwind.feature.today.alex
 import io.github.esseckers.pursuitofwind.feature.today.at
-import io.github.esseckers.pursuitofwind.feature.today.domain.model.RefreshResult
-import io.github.esseckers.pursuitofwind.feature.today.domain.model.TodaySnapshot
+import io.github.esseckers.pursuitofwind.feature.today.domain.entity.RefreshResultEntity
+import io.github.esseckers.pursuitofwind.feature.today.domain.entity.TodaySnapshotEntity
 import io.github.esseckers.pursuitofwind.feature.today.mySpot
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.RefreshStatus
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayInputs
@@ -38,7 +38,11 @@ import kotlin.time.Instant
 class TodayStateMapperTest {
     private val fetched = THURSDAY_8AM - 20.minutes
     private val nordstrand = mySpot("nordstrand-bay")
-    private val refreshed = RefreshStatus(last = RefreshResult(), startedAt = fetched)
+    private val refreshed = RefreshStatus(last = RefreshResultEntity(), startedAt = fetched)
+
+    private val sundayNoon = at(SUNDAY, 12)
+
+    private val neverFetched = snapshot(profile = Cached(null, null), spots = Cached(emptyList(), null), forecasts = emptyMap())
 
     private fun snapshot(
         profile: Cached<Profile?> = Cached(alex(), fetched),
@@ -47,7 +51,7 @@ class TodayStateMapperTest {
     ) = todaySnapshot(fetched, profile, spots, forecasts)
 
     private fun state(
-        snapshot: TodaySnapshot = snapshot(),
+        snapshot: TodaySnapshotEntity = snapshot(),
         now: Instant = THURSDAY_8AM,
         refresh: RefreshStatus = refreshed,
     ) = TodayStateMapper.map(TodayInputs(snapshot, now, refresh), BERLIN)
@@ -55,11 +59,7 @@ class TodayStateMapperTest {
     private fun failed(
         forecastError: AppError? = null,
         crewError: AppError? = null,
-    ) = RefreshStatus(last = RefreshResult(forecastError, crewError), startedAt = fetched)
-
-    private val sundayNoon = at(SUNDAY, 12)
-
-    private val neverFetched = snapshot(profile = Cached(null, null), spots = Cached(emptyList(), null), forecasts = emptyMap())
+    ) = RefreshStatus(last = RefreshResultEntity(forecastError, crewError), startedAt = fetched)
 
     @Test
     fun `before the data and the clock arrive the screen loads`() {

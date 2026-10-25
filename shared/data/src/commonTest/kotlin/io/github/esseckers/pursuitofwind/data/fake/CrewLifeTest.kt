@@ -236,13 +236,6 @@ class CrewLifeTest {
         }
 
     private companion object {
-        /** The Weekend Crew with Andrei's car one seat from full: Mira is in, Jonas could still want the last seat. */
-        fun lastSeatLeft(clock: ControllableClock): Seed {
-            val seed = Seed.default(clock.now())
-            val ride = seed.rides.single().copy(id = "rid_last", seatsTotal = 2)
-            return seed.copy(rides = listOf(ride))
-        }
-
         /** 18 kn from 240° all the time: GO for a typical member at every spot that takes that direction. */
         val STEADY =
             ForecastProfile(
@@ -258,5 +251,12 @@ class CrewLifeTest {
                 rainyShare = 0.0,
                 temperatureC = 18.0,
             )
+
+        /** The Weekend Crew with Andrei's car one seat from full: Mira is in, Jonas could still want the last seat. */
+        fun lastSeatLeft(clock: ControllableClock): Seed {
+            val seed = Seed.default(clock.now())
+            val ride = seed.rides.single().copy(id = "rid_last", seatsTotal = 2)
+            return seed.copy(rides = listOf(ride))
+        }
     }
 }

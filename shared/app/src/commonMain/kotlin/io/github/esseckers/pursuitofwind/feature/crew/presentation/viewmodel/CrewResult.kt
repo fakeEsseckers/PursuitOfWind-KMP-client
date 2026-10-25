@@ -3,7 +3,7 @@ package io.github.esseckers.pursuitofwind.feature.crew.presentation.viewmodel
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.Crew
-import io.github.esseckers.pursuitofwind.feature.crew.domain.model.CrewDetails
+import io.github.esseckers.pursuitofwind.feature.crew.domain.entity.CrewDetailsEntity
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewDialog
 import org.jetbrains.compose.resources.StringResource
 import kotlin.time.Instant
@@ -15,7 +15,7 @@ internal sealed interface CrewResult {
     ) : CrewResult
 
     data class DetailsChanged(
-        val details: CrewDetails,
+        val details: CrewDetailsEntity,
     ) : CrewResult
 
     data object RefreshStarted : CrewResult

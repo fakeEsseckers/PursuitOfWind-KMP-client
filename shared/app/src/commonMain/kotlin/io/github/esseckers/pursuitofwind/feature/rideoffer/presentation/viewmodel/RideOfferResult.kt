@@ -8,12 +8,16 @@ import kotlin.time.Instant
 
 /** What happened in the ride offer form, as the reducer sees it. */
 internal sealed interface RideOfferResult {
+    /** The time is [now], and the ride leaves at [departAt]. */
     data class Ticked(
         val now: Instant,
+        val departAt: Instant,
     ) : RideOfferResult
 
+    /** The rider's crews are [cached], and the ride goes to [chosen] (null without a crew). */
     data class CrewsChanged(
         val cached: Cached<List<Crew>>,
+        val chosen: String?,
     ) : RideOfferResult
 
     data class SpotChanged(

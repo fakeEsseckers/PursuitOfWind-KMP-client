@@ -7,13 +7,12 @@ import io.github.esseckers.pursuitofwind.core.ui.TimeRange
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.CrewOption
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.OfferSummary
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.RideOfferState
-import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.view.RideOfferPreviewData
-import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.view.RideOfferPreviewData.nightOwls
-import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.view.RideOfferPreviewData.weekendCrew
+import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.preview.RideOfferPreviewData
+import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.preview.RideOfferPreviewData.nightOwls
+import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.preview.RideOfferPreviewData.weekendCrew
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.viewmodel.RideOfferReducer
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.viewmodel.RideOfferResult
 import kotlinx.datetime.DayOfWeek
-import kotlinx.datetime.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -22,7 +21,7 @@ import kotlin.test.assertTrue
 import kotlin.time.Instant
 
 class RideOfferStateMapperTest {
-    private val reducer = RideOfferReducer(RideOfferPreviewData.mapper)
+    private val reducer = RideOfferReducer(RideOfferPreviewData.draft, RideOfferPreviewData.zone)
 
     private fun reduce(
         vararg results: RideOfferResult,
@@ -39,31 +38,29 @@ class RideOfferStateMapperTest {
     }
 
     @Test
-    fun `the car leaves as drafted while that is ahead and then at the next quarter hour but never after the window starts`() {
-        val mapper = RideOfferPreviewData.mapper
+    fun `the form shows the departure it is given in the rider's time`() {
+        val later = reduce(RideOfferResult.Ticked(Instant.parse("2026-10-24T08:40:00Z"), Instant.parse("2026-10-24T08:45:00Z")))
 
-        fun leaves(now: String): Instant = mapper.departure(RideOfferPreviewData.empty.inputs.copy(now = Instant.parse(now)))
-
-        assertEquals(RideOfferPreviewData.draft.departAt, mapper.departure(RideOfferPreviewData.empty.inputs))
-        assertEquals(Instant.parse("2026-10-24T08:30:00Z"), leaves("2026-10-24T08:29:00Z"))
-        assertEquals(Instant.parse("2026-10-24T08:45:00Z"), leaves("2026-10-24T08:31:00Z"))
-        assertEquals(Instant.parse("2026-10-24T11:00:00Z"), leaves("2026-10-24T11:05:00Z"))
-        assertEquals(
-            "10:45",
-            reduce(RideOfferResult.Ticked(Instant.parse("2026-10-24T08:40:00Z"))).summary?.departAt,
+        assertEquals("10:45", later.summary?.departAt)
+        assertNull(
+            RideOfferStateMapper
+                .map(
+                    RideOfferPreviewData.empty.inputs.copy(departAt = null),
+                    RideOfferPreviewData.draft,
+                    RideOfferPreviewData.zone,
+                ).summary,
         )
     }
 
     @Test
-    fun `the day is named as seen from today where the rider is`() {
-        val friday =
-            RideOfferStateMapper(RideOfferPreviewData.draft, today = LocalDate(2026, 10, 23), riderZone = RideOfferPreviewData.zone)
+    fun `the day is named as seen from now where the rider is`() {
+        val friday = reduce(RideOfferResult.Ticked(Instant.parse("2026-10-23T10:00:00Z"), RideOfferPreviewData.draft.departAt))
 
-        assertEquals(DayLabel.Tomorrow, friday.map(RideOfferPreviewData.empty.inputs).summary?.day)
+        assertEquals(DayLabel.Tomorrow, friday.summary?.day)
     }
 
     @Test
-    fun `the ride goes to the first crew unless the rider picks another`() {
+    fun `the crew the ride goes to is the selected one`() {
         val picked = reduce(RideOfferResult.Chosen(nightOwls.id))
 
         assertEquals(
@@ -71,7 +68,6 @@ class RideOfferStateMapperTest {
             RideOfferPreviewData.empty.crews,
         )
         assertEquals(listOf(false, true), picked.crews.map { it.selected })
-        assertEquals(nightOwls, RideOfferPreviewData.mapper.crewFor(picked.inputs))
     }
 
     @Test
@@ -108,8 +104,11 @@ class RideOfferStateMapperTest {
 
     @Test
     fun `without a crew there is nothing to offer`() {
+        val noneChosen = RideOfferPreviewData.filled.inputs.copy(chosen = null)
+
         assertTrue(RideOfferPreviewData.noCrew.noCrew)
         assertFalse(RideOfferPreviewData.noCrew.canSubmit)
+        assertFalse(RideOfferStateMapper.map(noneChosen, RideOfferPreviewData.draft, RideOfferPreviewData.zone).canSubmit)
         assertFalse(RideOfferState().noCrew)
     }
 }

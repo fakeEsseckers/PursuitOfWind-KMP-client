@@ -2,12 +2,12 @@ package io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.viewmo
 
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
-import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.model.SpotPickerSnapshot
+import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.entity.SpotPickerSnapshotEntity
 
 /** What happened, as the reducer sees it. */
 internal sealed interface SpotPickerResult {
     data class DataChanged(
-        val snapshot: SpotPickerSnapshot,
+        val snapshot: SpotPickerSnapshotEntity,
     ) : SpotPickerResult
 
     data class Toggled(

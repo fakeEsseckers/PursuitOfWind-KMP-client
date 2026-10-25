@@ -43,6 +43,8 @@ public data class Seed(
     }
 
     public companion object {
+        private const val SECONDS_PER_DAY = 86_400L
+
         /**
          * Five fictional spots on the German coast and inland, and Andrei's "Weekend Crew" (invite code `WIND-4KQ7`)
          * with one ride two days after [now]. Its members act on their own ([MemberActivity] defaults). A new user
@@ -87,8 +89,6 @@ public data class Seed(
                 memberActivity = MemberActivity(),
             )
         }
-
-        private const val SECONDS_PER_DAY = 86_400L
     }
 }
 

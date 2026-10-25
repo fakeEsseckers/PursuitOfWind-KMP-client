@@ -1,14 +1,19 @@
 package io.github.esseckers.pursuitofwind.feature.crew.presentation.viewmodel
 
 import androidx.lifecycle.viewModelScope
+import io.github.esseckers.pursuitofwind.contract.ProblemCode
 import io.github.esseckers.pursuitofwind.core.mvi.MviViewModel
 import io.github.esseckers.pursuitofwind.core.mvi.launchFinishing
+import io.github.esseckers.pursuitofwind.core.resources.Res
+import io.github.esseckers.pursuitofwind.core.resources.crew_invite_invalid
+import io.github.esseckers.pursuitofwind.core.resources.crew_ride_was_cancelled
+import io.github.esseckers.pursuitofwind.core.resources.crew_seat_taken
+import io.github.esseckers.pursuitofwind.core.ui.message
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Crew
 import io.github.esseckers.pursuitofwind.data.model.Outcome
-import io.github.esseckers.pursuitofwind.feature.crew.domain.model.shownCrew
+import io.github.esseckers.pursuitofwind.feature.crew.domain.mapper.CrewChoiceMapper
 import io.github.esseckers.pursuitofwind.feature.crew.domain.repository.CrewsRepository
-import io.github.esseckers.pursuitofwind.feature.crew.presentation.mapper.CrewStateMapper
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewDialog
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewEffect
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewIntent
@@ -32,6 +37,7 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
+import org.jetbrains.compose.resources.StringResource
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -74,7 +80,7 @@ internal class CrewViewModel(
     override fun bind(): Flow<CrewResult> =
         merge(
             repository.crews
-                .onEach { shown.value = shownCrew(it.value, currentState.inputs.chosen)?.id }
+                .onEach { shown.value = CrewChoiceMapper.shownCrew(it.value, currentState.inputs.chosen)?.id }
                 .map { CrewResult.CrewsChanged(it) },
             shown.filterNotNull().flatMapLatest { repository.details(it) }.map { CrewResult.DetailsChanged(it) },
             ticks().map { CrewResult.Ticked(it) },
@@ -115,7 +121,7 @@ internal class CrewViewModel(
                 }
 
                 is Outcome.Failure -> {
-                    dispatchResult(CrewResult.DialogFailed(CrewStateMapper.failure(outcome.error)))
+                    dispatchResult(CrewResult.DialogFailed(outcome.error.crewFailure()))
                 }
             }
         }
@@ -162,7 +168,7 @@ internal class CrewViewModel(
 
     /** Tells the rider why a change of a ride failed, if it did. */
     private fun report(error: AppError?) {
-        if (error != null) postEffect(CrewEffect.Failed(CrewStateMapper.failure(error)))
+        if (error != null) postEffect(CrewEffect.Failed(error.crewFailure()))
     }
 
     /** A change the rider made: it finishes even when the rider leaves the tab and this ViewModel is cleared. */
@@ -181,3 +187,12 @@ internal class CrewViewModel(
             }
         }
 }
+
+/** What to tell the rider when an action on the Crew tab failed with this error. */
+internal fun AppError.crewFailure(): StringResource =
+    when {
+        this == AppError.Conflict(ProblemCode.SEATS_FULL) -> Res.string.crew_seat_taken
+        this == AppError.Conflict(ProblemCode.RIDE_CANCELLED) -> Res.string.crew_ride_was_cancelled
+        this is AppError.Rejected && code == ProblemCode.INVITE_INVALID -> Res.string.crew_invite_invalid
+        else -> message()
+    }

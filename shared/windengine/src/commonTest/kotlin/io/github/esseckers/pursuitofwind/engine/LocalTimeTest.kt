@@ -11,13 +11,13 @@ import kotlin.time.Instant
 
 /** Vectors H: daylight saving time in Europe/Berlin, plus zones with half-hour offsets. */
 class LocalTimeTest {
+    private val springForward = LocalDate(2026, 3, 29)
+    private val fallBack = LocalDate(2026, 10, 25)
+
     private fun hourlySlots(
         first: String,
         last: String,
     ): List<Instant> = generateSequence(Instant.parse(first)) { it + 1.hours }.takeWhile { it <= Instant.parse(last) }.toList()
-
-    private val springForward = LocalDate(2026, 3, 29)
-    private val fallBack = LocalDate(2026, 10, 25)
 
     private fun slotsOn(
         date: LocalDate,

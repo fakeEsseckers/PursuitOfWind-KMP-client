@@ -10,6 +10,9 @@ naming:
     active: true
 
 style:
+  ClassOrdering:
+    # Properties and init blocks, secondary constructors, functions, then the companion object last.
+    active: true
   MaxLineLength:
     # Same limit as ktlint (.editorconfig).
     maxLineLength: 140

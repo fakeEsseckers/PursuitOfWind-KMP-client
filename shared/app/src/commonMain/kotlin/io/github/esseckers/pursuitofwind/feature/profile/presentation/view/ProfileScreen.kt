@@ -49,7 +49,7 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * The rider's profile as a form: onboarding's "About you" ([ProfileMode.SET_UP], with back and "Continue") or the
- * Profile tab ([ProfileMode.TAB], saved in place). Stateless; [ProfileRoute] connects it to its ViewModel.
+ * Profile tab ([ProfileMode.TAB], saved in place). Stateless; `ProfileRoute` connects it to its ViewModel.
  * [snackbarHostState] shows the tab's "Profile saved".
  */
 @Composable

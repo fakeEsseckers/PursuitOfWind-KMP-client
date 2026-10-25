@@ -10,7 +10,7 @@ import org.jetbrains.compose.resources.StringResource
 import kotlin.time.Instant
 
 /**
- * The form that offers a ride: the window it is for ([summary], null until the spot is read), the crew it goes to,
+ * The form that offers a ride: the window it is for ([summary], null until the spot and the time are known), the crew it goes to,
  * the free seats and the meeting point. [canSubmit] once there is a crew and a meeting point; [sending] while the offer
  * goes out; [error] when it failed. [noCrew] when the rider belongs to none. [inputs] is what it was computed from.
  */
@@ -42,9 +42,13 @@ internal data class CrewOption(
     val selected: Boolean,
 )
 
-/** What [RideOfferState] is computed from; [now] moves the departure on once the draft's has passed. */
+/**
+ * What [RideOfferState] is computed from. [now] names the day; [departAt] and [chosen], the crew the ride goes to, are
+ * the ViewModel's choice.
+ */
 internal data class RideOfferInputs(
     val now: Instant? = null,
+    val departAt: Instant? = null,
     val crews: Cached<List<Crew>>? = null,
     val spot: Spot? = null,
     val chosen: String? = null,
