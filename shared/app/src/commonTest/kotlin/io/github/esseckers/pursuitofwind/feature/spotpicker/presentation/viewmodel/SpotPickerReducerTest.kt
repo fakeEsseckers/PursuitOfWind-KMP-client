@@ -2,9 +2,9 @@ package io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.viewmo
 
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.error_server
+import io.github.esseckers.pursuitofwind.core.ui.Step
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.feature.spotpicker.following
-import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.DriveLimits
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerState
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerState.Content
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.preview.SpotPickerPreviewData.dune
@@ -16,6 +16,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 
@@ -30,6 +31,14 @@ class SpotPickerReducerTest {
 
     private fun SpotPickerState.spot(id: String) = (content as Content.Ready).spots.single { it.id.value == id }
 
+    /** The picker with Nordstrand Bay followed at [drive]. */
+    private fun drivenFrom(drive: Duration): SpotPickerState =
+        reduce(SpotPickerResult.DataChanged(snapshot(following(nordstrand, drive))), SpotPickerResult.RefreshFinished(null))
+
+    /** Nordstrand Bay's drive after one [step] from this state. */
+    private fun SpotPickerState.stepped(step: Step): Duration =
+        reduce(SpotPickerResult.DriveChanged(nordstrand.id, step), from = this).spot("nordstrand-bay").drive
+
     @Test
     fun `a tap chooses a spot and a second one unchooses it`() {
         val chosen = reduce(SpotPickerResult.Toggled(dune.id), from = loaded)
@@ -43,24 +52,28 @@ class SpotPickerReducerTest {
     }
 
     @Test
-    fun `the drive of a followed spot changes from where it was and stays within the API limits`() {
-        val longer = reduce(SpotPickerResult.DriveChanged(nordstrand.id, 135), from = loaded)
-        val tooLong = reduce(SpotPickerResult.DriveChanged(nordstrand.id, DriveLimits.API_MAX_MINUTES + 15), from = loaded)
-        val negative = reduce(SpotPickerResult.DriveChanged(nordstrand.id, -15), from = loaded)
+    fun `the drive of a followed spot steps a quarter hour from where it was`() {
+        val longer = reduce(SpotPickerResult.DriveChanged(nordstrand.id, Step.UP), from = loaded)
+        val shorter = reduce(SpotPickerResult.DriveChanged(nordstrand.id, Step.DOWN), from = loaded)
 
         assertEquals(135.minutes, longer.spot("nordstrand-bay").drive)
         assertTrue(longer.spot("nordstrand-bay").selected)
-        assertEquals(DriveLimits.API_MAX_MINUTES.minutes, tooLong.spot("nordstrand-bay").drive)
-        assertEquals(0.minutes, negative.spot("nordstrand-bay").drive)
+        assertEquals(105.minutes, shorter.spot("nordstrand-bay").drive)
+    }
+
+    @Test
+    fun `the drive stops at no drive and at a day trip even off the quarter hour`() {
+        assertEquals(0.minutes, drivenFrom(10.minutes).stepped(Step.DOWN))
+        assertEquals(12.hours, drivenFrom(710.minutes).stepped(Step.UP))
     }
 
     @Test
     fun `a drive longer than the plus button reaches steps down from where it is`() {
-        val far = reduce(SpotPickerResult.DataChanged(snapshot(following(nordstrand, 15.hours))), SpotPickerResult.RefreshFinished(null))
-        val shorter = reduce(SpotPickerResult.DriveChanged(nordstrand.id, 900 - DriveLimits.STEP_MINUTES), from = far)
+        val far = drivenFrom(15.hours)
 
         assertFalse(far.spot("nordstrand-bay").canLengthen)
-        assertEquals(885.minutes, shorter.spot("nordstrand-bay").drive)
+        assertEquals(885.minutes, far.stepped(Step.DOWN))
+        assertEquals(15.hours, far.stepped(Step.UP))
     }
 
     @Test

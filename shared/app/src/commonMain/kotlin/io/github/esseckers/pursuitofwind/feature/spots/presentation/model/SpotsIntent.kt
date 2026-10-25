@@ -1,5 +1,6 @@
 package io.github.esseckers.pursuitofwind.feature.spots.presentation.model
 
+import io.github.esseckers.pursuitofwind.core.ui.Step
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 
 /** What the rider can ask of the Spots tab. */
@@ -12,10 +13,10 @@ internal sealed interface SpotsIntent {
         val spotId: SpotId,
     ) : SpotsIntent
 
-    /** Sets the drive to [spotId] to [minutes]; saved at once. */
+    /** Moves the drive to [spotId] one [step] longer or shorter; saved at once. */
     data class ChangeDrive(
         val spotId: SpotId,
-        val minutes: Int,
+        val step: Step,
     ) : SpotsIntent
 
     /** Stops following [spotId]; it can be brought back with [Undo]. */

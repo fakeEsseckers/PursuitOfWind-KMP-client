@@ -27,8 +27,8 @@ import io.github.esseckers.pursuitofwind.core.resources.spots_drive
 import io.github.esseckers.pursuitofwind.core.resources.spots_drive_longer
 import io.github.esseckers.pursuitofwind.core.resources.spots_drive_shorter
 import io.github.esseckers.pursuitofwind.core.resources.spots_unverified
+import io.github.esseckers.pursuitofwind.core.ui.Step
 import io.github.esseckers.pursuitofwind.core.ui.durationText
-import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.DriveLimits
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.PickSpotUi
 import org.jetbrains.compose.resources.stringResource
 
@@ -40,7 +40,7 @@ import org.jetbrains.compose.resources.stringResource
 internal fun SpotRow(
     spot: PickSpotUi,
     onToggle: () -> Unit,
-    onDrive: (Int) -> Unit,
+    onDrive: (Step) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val outline = if (spot.selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
@@ -71,14 +71,13 @@ internal fun SpotRow(
             }
         }
         if (spot.selected) {
-            val minutes = spot.drive.inWholeMinutes.toInt()
             Stepper(
                 label = stringResource(Res.string.spots_drive),
                 value = durationText(spot.drive),
                 decreaseLabel = stringResource(Res.string.spots_drive_shorter, spot.name),
                 increaseLabel = stringResource(Res.string.spots_drive_longer, spot.name),
-                onDecrease = { onDrive(minutes - DriveLimits.STEP_MINUTES) },
-                onIncrease = { onDrive(minutes + DriveLimits.STEP_MINUTES) },
+                onDecrease = { onDrive(Step.DOWN) },
+                onIncrease = { onDrive(Step.UP) },
                 canDecrease = spot.canShorten,
                 canIncrease = spot.canLengthen,
                 modifier =

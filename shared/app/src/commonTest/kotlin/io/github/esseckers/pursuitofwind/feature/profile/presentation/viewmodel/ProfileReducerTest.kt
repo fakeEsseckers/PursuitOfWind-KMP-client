@@ -2,6 +2,8 @@ package io.github.esseckers.pursuitofwind.feature.profile.presentation.viewmodel
 
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.error_network
+import io.github.esseckers.pursuitofwind.core.ui.Step
+import io.github.esseckers.pursuitofwind.core.ui.StepperUi
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.AppLanguage
 import io.github.esseckers.pursuitofwind.data.model.WindUnit
@@ -140,6 +142,17 @@ class ProfileReducerTest {
         assertEquals(AppLanguage.SYSTEM, loaded.language)
         assertEquals(AppLanguage.RUSSIAN, russian.language)
         assertFalse(russian.hasChanges)
+    }
+
+    @Test
+    fun `the steppers show the form and offer only the ways it can still move`() {
+        val loaded = reduce(ProfileResult.Loaded(savedAlex()))
+        val shortest = reduce(*Array(4) { ProfileResult.Edited(ProfileEdit.MinSession(Step.DOWN)) }, from = loaded)
+
+        assertEquals(StepperUi(120, canDecrease = true, canIncrease = true), loaded.minSession)
+        assertEquals(StepperUi(180, canDecrease = true, canIncrease = true), loaded.maxDrive)
+        assertEquals(StepperUi(30, canDecrease = false, canIncrease = true), shortest.minSession)
+        assertEquals(30, shortest.form.minSessionMinutes)
     }
 
     @Test

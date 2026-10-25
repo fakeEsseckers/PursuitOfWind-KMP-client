@@ -62,6 +62,8 @@ import io.github.esseckers.pursuitofwind.core.resources.profile_wind_range_hint
 import io.github.esseckers.pursuitofwind.core.resources.state_collapsed
 import io.github.esseckers.pursuitofwind.core.resources.state_expanded
 import io.github.esseckers.pursuitofwind.core.resources.unit_kg
+import io.github.esseckers.pursuitofwind.core.ui.Step
+import io.github.esseckers.pursuitofwind.core.ui.StepperUi
 import io.github.esseckers.pursuitofwind.core.ui.durationText
 import io.github.esseckers.pursuitofwind.core.ui.formatKiteSize
 import io.github.esseckers.pursuitofwind.core.ui.windUnitLabel
@@ -199,6 +201,8 @@ internal fun LanguageChoice(
 @Composable
 internal fun MoreSettings(
     form: ProfileForm,
+    minSession: StepperUi,
+    maxDrive: StepperUi,
     version: Int,
     errors: Map<ProfileField, ProfileError>,
     onEdit: (ProfileEdit) -> Unit,
@@ -213,24 +217,24 @@ internal fun MoreSettings(
         if (expanded) {
             Stepper(
                 label = stringResource(Res.string.profile_min_session),
-                value = durationText(form.minSessionMinutes.minutes),
+                value = durationText(minSession.value.minutes),
                 decreaseLabel = stringResource(Res.string.profile_min_session_shorter),
                 increaseLabel = stringResource(Res.string.profile_min_session_longer),
-                onDecrease = { onEdit(ProfileEdit.MinSession(form.minSessionMinutes - ProfileLimits.STEP_MINUTES)) },
-                onIncrease = { onEdit(ProfileEdit.MinSession(form.minSessionMinutes + ProfileLimits.STEP_MINUTES)) },
-                canDecrease = form.minSessionMinutes > ProfileLimits.MIN_SESSION_MIN_MINUTES,
-                canIncrease = form.minSessionMinutes < ProfileLimits.MIN_SESSION_MAX_MINUTES,
+                onDecrease = { onEdit(ProfileEdit.MinSession(Step.DOWN)) },
+                onIncrease = { onEdit(ProfileEdit.MinSession(Step.UP)) },
+                canDecrease = minSession.canDecrease,
+                canIncrease = minSession.canIncrease,
                 modifier = Modifier.testTag("profile.minSession"),
             )
             Stepper(
                 label = stringResource(Res.string.profile_max_drive),
-                value = durationText(form.maxDriveMinutes.minutes),
+                value = durationText(maxDrive.value.minutes),
                 decreaseLabel = stringResource(Res.string.profile_max_drive_shorter),
                 increaseLabel = stringResource(Res.string.profile_max_drive_longer),
-                onDecrease = { onEdit(ProfileEdit.MaxDrive(form.maxDriveMinutes - ProfileLimits.STEP_MINUTES)) },
-                onIncrease = { onEdit(ProfileEdit.MaxDrive(form.maxDriveMinutes + ProfileLimits.STEP_MINUTES)) },
-                canDecrease = form.maxDriveMinutes > 0,
-                canIncrease = form.maxDriveMinutes < ProfileLimits.MAX_DRIVE_MAX_MINUTES,
+                onDecrease = { onEdit(ProfileEdit.MaxDrive(Step.DOWN)) },
+                onIncrease = { onEdit(ProfileEdit.MaxDrive(Step.UP)) },
+                canDecrease = maxDrive.canDecrease,
+                canIncrease = maxDrive.canIncrease,
                 modifier = Modifier.testTag("profile.maxDrive"),
             )
             WindLimitFields(form = form, version = version, errors = errors, onEdit = onEdit)

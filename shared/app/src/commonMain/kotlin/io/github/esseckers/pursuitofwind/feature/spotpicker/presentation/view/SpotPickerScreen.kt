@@ -141,7 +141,7 @@ private fun SpotList(
             SpotRow(
                 spot = spot,
                 onToggle = { onIntent(SpotPickerIntent.Toggle(spot.id)) },
-                onDrive = { minutes -> onIntent(SpotPickerIntent.ChangeDrive(spot.id, minutes)) },
+                onDrive = { step -> onIntent(SpotPickerIntent.ChangeDrive(spot.id, step)) },
             )
         }
     }

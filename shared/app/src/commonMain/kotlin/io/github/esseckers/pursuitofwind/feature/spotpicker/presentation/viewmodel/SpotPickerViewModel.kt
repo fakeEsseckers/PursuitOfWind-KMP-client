@@ -24,7 +24,7 @@ internal class SpotPickerViewModel(
     override fun onIntent(intent: SpotPickerIntent) {
         when (intent) {
             is SpotPickerIntent.Toggle -> dispatchResult(SpotPickerResult.Toggled(intent.spotId))
-            is SpotPickerIntent.ChangeDrive -> dispatchResult(SpotPickerResult.DriveChanged(intent.spotId, intent.minutes))
+            is SpotPickerIntent.ChangeDrive -> dispatchResult(SpotPickerResult.DriveChanged(intent.spotId, intent.step))
             SpotPickerIntent.Refresh -> refresh()
             SpotPickerIntent.Done -> done()
         }

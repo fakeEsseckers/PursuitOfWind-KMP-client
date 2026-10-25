@@ -4,6 +4,7 @@ import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
 import io.github.esseckers.pursuitofwind.core.refresh.RefreshStatus
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.error_network
+import io.github.esseckers.pursuitofwind.core.ui.SPOT_DRIVE_STEPS
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.entity.SpotChangeEntity
@@ -116,7 +117,7 @@ class SpotPickerStateMapperTest {
     fun `the drive steps stop at zero and at the longest drive`() {
         val bounds =
             inputs().copy(
-                choices = mapOf(dune.id to SpotChoice(true, 0), saltLagoon.id to SpotChoice(true, DriveLimits.MAX_MINUTES)),
+                choices = mapOf(dune.id to SpotChoice(true, 0), saltLagoon.id to SpotChoice(true, SPOT_DRIVE_STEPS.max)),
             )
         val spots = (SpotPickerStateMapper.map(bounds).content as Content.Ready).spots
 

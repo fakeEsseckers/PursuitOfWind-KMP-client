@@ -4,11 +4,11 @@ import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
 import io.github.esseckers.pursuitofwind.core.refresh.RefreshStatus
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.error_network
+import io.github.esseckers.pursuitofwind.core.ui.SPOT_DRIVE_STEPS
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.MySpot
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.RemovedSpot
-import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotDrive
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotEdit
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsInputs
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsState.Content
@@ -116,7 +116,7 @@ class SpotsStateMapperTest {
                     edits =
                         mapOf(
                             nordstrand.spot.id to SpotEdit(0, true),
-                            saltLagoon.spot.id to SpotEdit(SpotDrive.MAX_STEPPED_MINUTES, true),
+                            saltLagoon.spot.id to SpotEdit(SPOT_DRIVE_STEPS.max, true),
                             lakeWeiss.spot.id to SpotEdit(900, true),
                         ),
                 ).spots()

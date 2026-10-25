@@ -28,6 +28,7 @@ import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.test.v2.runSkikoComposeUiTest
 import androidx.compose.ui.unit.Density
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.PursuitOfWindTheme
+import io.github.esseckers.pursuitofwind.core.ui.Step
 import io.github.esseckers.pursuitofwind.data.model.AppLanguage
 import io.github.esseckers.pursuitofwind.data.model.WindUnit
 import io.github.esseckers.pursuitofwind.engine.model.SkillLevel
@@ -180,7 +181,7 @@ class ProfileScreenTest {
         }
 
     @Test
-    fun `more settings open and their steppers send whole steps`() =
+    fun `more settings open and their steppers send which way they move`() =
         runComposeUiTest {
             show(ProfilePreviewData.saved)
 
@@ -188,8 +189,18 @@ class ProfileScreenTest {
             onNodeWithContentDescription("Longer session").performScrollTo().performClick()
             onNodeWithContentDescription("Shorter drive").performScrollTo().performClick()
 
-            assertEquals(listOf(ProfileEdit.MinSession(150), ProfileEdit.MaxDrive(150)), edits())
+            assertEquals(listOf(ProfileEdit.MinSession(Step.UP), ProfileEdit.MaxDrive(Step.DOWN)), edits())
             onNodeWithTag("profile.minSession").assert(hasAnyDescendant(hasText("2 h")))
+        }
+
+    @Test
+    fun `a stepper at the limit of the server cannot go further`() =
+        runComposeUiTest {
+            show(ProfilePreviewData.saved.copy(maxDrive = ProfileLimits.MAX_DRIVE_STEPS.stepper(0)))
+
+            onNodeWithTag("profile.more").performScrollTo().performClick()
+            onNodeWithContentDescription("Shorter drive").performScrollTo().assertIsNotEnabled()
+            onNodeWithContentDescription("Longer drive").assertIsEnabled()
         }
 
     @Test

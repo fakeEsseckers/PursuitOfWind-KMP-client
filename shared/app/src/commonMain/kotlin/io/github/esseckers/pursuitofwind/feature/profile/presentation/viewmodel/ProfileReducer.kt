@@ -6,12 +6,13 @@ import io.github.esseckers.pursuitofwind.feature.profile.presentation.mapper.Pro
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileCheck
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileEdit
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileForm
+import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileLimits
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileState
 
 /**
- * Folds each result into the form and recomputes what follows from it: the kite chips, the errors once the rider has
- * tried to save, the profile to save, and whether anything changed. The first [ProfileResult.Loaded] fills the form; later ones (after a
- * save) only update what the form is compared with, so a draft is never overwritten.
+ * Folds each result into the form and recomputes what follows from it: the kite chips, the steppers, the errors once
+ * the rider has tried to save, the profile to save, and whether anything changed. The first [ProfileResult.Loaded]
+ * fills the form; later ones (after a save) only update what the form is compared with, so a draft is never overwritten.
  */
 internal object ProfileReducer : Reducer<ProfileState, ProfileResult> {
     override fun reduce(
@@ -70,6 +71,8 @@ internal object ProfileReducer : Reducer<ProfileState, ProfileResult> {
         val saved = inputs.saved
         return copy(
             kites = ProfileFormMapper.kiteChoices(form).takeUnless { it == kites } ?: kites,
+            minSession = ProfileLimits.MIN_SESSION_STEPS.stepper(form.minSessionMinutes),
+            maxDrive = ProfileLimits.MAX_DRIVE_STEPS.stepper(form.maxDriveMinutes),
             errors = if (inputs.submitted) (check as? ProfileCheck.Invalid)?.errors.orEmpty() else emptyMap(),
             validProfile = valid,
             // The same profile typed differently (`62,5` for 62.5 kg) is no change.

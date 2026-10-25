@@ -1,6 +1,7 @@
 package io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.mapper
 
 import io.github.esseckers.pursuitofwind.core.refresh.RefreshNoticeMapper
+import io.github.esseckers.pursuitofwind.core.ui.SPOT_DRIVE_STEPS
 import io.github.esseckers.pursuitofwind.core.ui.message
 import io.github.esseckers.pursuitofwind.data.model.Spot
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
@@ -81,14 +82,16 @@ internal object SpotPickerStateMapper {
     private fun spotUi(
         spot: Spot,
         choice: SpotChoice,
-    ): PickSpotUi =
-        PickSpotUi(
+    ): PickSpotUi {
+        val drive = SPOT_DRIVE_STEPS.stepper(choice.driveMinutes)
+        return PickSpotUi(
             id = spot.id,
             name = spot.name,
             verified = spot.verified,
             selected = choice.selected,
             drive = choice.driveMinutes.minutes,
-            canShorten = choice.driveMinutes > 0,
-            canLengthen = choice.driveMinutes < DriveLimits.MAX_MINUTES,
+            canShorten = drive.canDecrease,
+            canLengthen = drive.canIncrease,
         )
+    }
 }

@@ -17,8 +17,6 @@ import kotlin.time.Duration.Companion.minutes
 /** Pure rules of the profile form: filling it from a saved profile, applying an edit, and checking it. */
 internal object ProfileFormMapper {
     private val WEIGHT_RANGE = ProfileLimits.WEIGHT_MIN_KG..ProfileLimits.WEIGHT_MAX_KG
-    private val MIN_SESSION_RANGE = ProfileLimits.MIN_SESSION_MIN_MINUTES..ProfileLimits.MIN_SESSION_MAX_MINUTES
-    private val MAX_DRIVE_RANGE = 0..ProfileLimits.MAX_DRIVE_MAX_MINUTES
 
     /** The form showing [profile] as saved. */
     fun formOf(profile: Profile): ProfileForm {
@@ -39,21 +37,49 @@ internal object ProfileFormMapper {
         )
     }
 
-    /** [form] after [edit]. Text arrives already filtered by its field (name length, [acceptsNumber]); steppers are clamped. */
+    /** [form] after [edit]. Text arrives already filtered by its field (name length, [acceptsNumber]); steppers stop at their bounds. */
     fun edit(
         form: ProfileForm,
         edit: ProfileEdit,
     ): ProfileForm =
         when (edit) {
-            is ProfileEdit.Name -> form.copy(name = edit.text)
-            is ProfileEdit.Weight -> form.copy(weightKg = edit.text)
-            is ProfileEdit.Level -> form.copy(level = edit.level)
-            is ProfileEdit.Units -> withUnit(form, edit.unit)
-            is ProfileEdit.Kite -> withKite(form, edit.sizeM2, edit.owned)
-            is ProfileEdit.MinSession -> form.copy(minSessionMinutes = edit.minutes.coerceIn(MIN_SESSION_RANGE))
-            is ProfileEdit.MaxDrive -> form.copy(maxDriveMinutes = edit.minutes.coerceIn(MAX_DRIVE_RANGE))
-            is ProfileEdit.MinWind -> form.copy(minWind = edit.text, minWindSpeed = null)
-            is ProfileEdit.MaxWind -> form.copy(maxWind = edit.text, maxWindSpeed = null)
+            is ProfileEdit.Name -> {
+                form.copy(name = edit.text)
+            }
+
+            is ProfileEdit.Weight -> {
+                form.copy(weightKg = edit.text)
+            }
+
+            is ProfileEdit.Level -> {
+                form.copy(level = edit.level)
+            }
+
+            is ProfileEdit.Units -> {
+                withUnit(form, edit.unit)
+            }
+
+            is ProfileEdit.Kite -> {
+                withKite(form, edit.sizeM2, edit.owned)
+            }
+
+            is ProfileEdit.MinSession -> {
+                form.copy(
+                    minSessionMinutes = ProfileLimits.MIN_SESSION_STEPS.next(form.minSessionMinutes, edit.step),
+                )
+            }
+
+            is ProfileEdit.MaxDrive -> {
+                form.copy(maxDriveMinutes = ProfileLimits.MAX_DRIVE_STEPS.next(form.maxDriveMinutes, edit.step))
+            }
+
+            is ProfileEdit.MinWind -> {
+                form.copy(minWind = edit.text, minWindSpeed = null)
+            }
+
+            is ProfileEdit.MaxWind -> {
+                form.copy(maxWind = edit.text, maxWindSpeed = null)
+            }
         }
 
     /** The kite sizes to offer: the common ones and the rider's own, in order. Unowned sizes are off once the quiver is full. */

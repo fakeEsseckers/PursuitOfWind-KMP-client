@@ -1,11 +1,11 @@
 package io.github.esseckers.pursuitofwind.feature.spots.presentation.mapper
 
 import io.github.esseckers.pursuitofwind.core.refresh.RefreshNoticeMapper
+import io.github.esseckers.pursuitofwind.core.ui.SPOT_DRIVE_STEPS
 import io.github.esseckers.pursuitofwind.core.ui.message
 import io.github.esseckers.pursuitofwind.data.model.MySpot
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.MySpotUi
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.RemovedSpot
-import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotDrive
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotEdit
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsInputs
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsState
@@ -49,14 +49,15 @@ internal object SpotsStateMapper {
         restoring: Boolean,
     ): MySpotUi {
         val shown = edit ?: SpotEdit.of(spot)
+        val drive = SPOT_DRIVE_STEPS.stepper(shown.driveMinutes)
         return MySpotUi(
             id = spot.spot.id,
             name = spot.spot.name,
             verified = spot.spot.verified,
             favorite = shown.favorite,
             drive = shown.driveMinutes.minutes,
-            canShorten = shown.driveMinutes > 0,
-            canLengthen = shown.driveMinutes < SpotDrive.MAX_STEPPED_MINUTES,
+            canShorten = drive.canDecrease,
+            canLengthen = drive.canIncrease,
             saving = edit != null,
             restoring = restoring,
         )

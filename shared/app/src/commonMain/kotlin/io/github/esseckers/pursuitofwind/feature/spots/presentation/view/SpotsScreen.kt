@@ -159,7 +159,7 @@ private fun SpotList(
             SpotCard(
                 spot = spot,
                 onToggleFavorite = { onIntent(SpotsIntent.ToggleFavorite(spot.id)) },
-                onDrive = { minutes -> onIntent(SpotsIntent.ChangeDrive(spot.id, minutes)) },
+                onDrive = { step -> onIntent(SpotsIntent.ChangeDrive(spot.id, step)) },
                 onOpen = { onIntent(SpotsIntent.OpenSpot(spot.id)) },
                 onRemove = { onIntent(SpotsIntent.Remove(spot.id)) },
             )
