@@ -31,6 +31,7 @@ import androidx.navigationevent.NavigationEvent
 import androidx.navigationevent.NavigationEventDispatcher
 import androidx.navigationevent.NavigationEventDispatcherOwner
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
+import io.github.esseckers.pursuitofwind.app.language.AppLocale
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.PursuitOfWindTheme
 import io.github.esseckers.pursuitofwind.core.platform.ShareLauncher
 import io.github.esseckers.pursuitofwind.data.fake.ControllableClock
@@ -41,6 +42,7 @@ import io.github.esseckers.pursuitofwind.feature.spotdetail.NORDSTRAND
 import io.github.esseckers.pursuitofwind.feature.spotdetail.SATURDAY
 import io.github.esseckers.pursuitofwind.feature.spotdetail.alex
 import io.github.esseckers.pursuitofwind.feature.spotdetail.at
+import io.github.esseckers.pursuitofwind.testing.RecordingAppLocale
 import io.github.esseckers.pursuitofwind.testing.RecordingShareLauncher
 import io.github.esseckers.pursuitofwind.testing.releaseMainDispatcher
 import io.github.esseckers.pursuitofwind.testing.testGraph
@@ -198,6 +200,8 @@ class AppNavigationTest {
             onNodeWithTag("tab.profile").assertIsSelected()
             onNodeWithTag("tab.today").assert(hasText("Сегодня"))
             onNodeWithTag("profile.weight").assert(hasText("78"))
+            // The phone's language first, then the one picked.
+            assertEquals(listOf(null, "ru"), (graph.koin.get<AppLocale>() as RecordingAppLocale).tags)
         }
 
     @Test

@@ -2,17 +2,9 @@ package io.github.esseckers.pursuitofwind.app.language
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.ProvidedValue
 import androidx.compose.runtime.key
 import io.github.esseckers.pursuitofwind.data.model.AppLanguage
-
-/**
- * Switches the platform's locale for the app to [languageTag] (BCP 47), or back to the phone's with null, the way the
- * Kotlin Multiplatform docs describe ("Resource environment"): Android gets a configuration in the new locale, iOS the
- * `AppleLanguages` default, the JVM its default locale.
- */
-@Composable
-internal expect fun appLocale(languageTag: String?): ProvidedValue<*>
+import org.koin.compose.koinInject
 
 /**
  * [content] in [language]. Compose Multiplatform resources read the platform's locale, which nothing observes, so a new
@@ -22,9 +14,10 @@ internal expect fun appLocale(languageTag: String?): ProvidedValue<*>
 @Composable
 internal fun AppLanguageScope(
     language: AppLanguage,
+    locale: AppLocale = koinInject(),
     content: @Composable () -> Unit,
 ) {
-    CompositionLocalProvider(appLocale(language.tag)) {
+    CompositionLocalProvider(locale.provide(language.tag)) {
         key(language) { content() }
     }
 }
