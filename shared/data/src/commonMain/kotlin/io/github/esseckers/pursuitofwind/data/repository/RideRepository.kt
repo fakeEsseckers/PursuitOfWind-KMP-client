@@ -1,22 +1,19 @@
 package io.github.esseckers.pursuitofwind.data.repository
 
-import androidx.room3.withWriteTransaction
 import io.github.esseckers.pursuitofwind.contract.CreateRideRequestDto
 import io.github.esseckers.pursuitofwind.contract.ProblemCode
 import io.github.esseckers.pursuitofwind.contract.RideDto
 import io.github.esseckers.pursuitofwind.data.internal.local.LocalSettings
 import io.github.esseckers.pursuitofwind.data.internal.local.PursuitOfWindDatabase
-import io.github.esseckers.pursuitofwind.data.internal.local.RideEntity
 import io.github.esseckers.pursuitofwind.data.internal.local.SyncKeys
 import io.github.esseckers.pursuitofwind.data.internal.local.cached
-import io.github.esseckers.pursuitofwind.data.internal.mapping.canBeTakenBy
-import io.github.esseckers.pursuitofwind.data.internal.mapping.hasPassenger
 import io.github.esseckers.pursuitofwind.data.internal.mapping.toEntity
 import io.github.esseckers.pursuitofwind.data.internal.mapping.toRide
 import io.github.esseckers.pursuitofwind.data.internal.network.AuthSession
 import io.github.esseckers.pursuitofwind.data.internal.network.PursuitOfWindApi
 import io.github.esseckers.pursuitofwind.data.internal.network.outcome
 import io.github.esseckers.pursuitofwind.data.internal.newIdempotencyKey
+import io.github.esseckers.pursuitofwind.data.internal.sync.CrewFeedSync
 import io.github.esseckers.pursuitofwind.data.internal.sync.CrewStore
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Cached
@@ -44,6 +41,7 @@ class RideRepository internal constructor(
     private val api: PursuitOfWindApi,
     private val database: PursuitOfWindDatabase,
     private val store: CrewStore,
+    private val feed: CrewFeedSync,
     private val session: AuthSession,
     private val settings: LocalSettings,
 ) {
@@ -57,7 +55,7 @@ class RideRepository internal constructor(
     fun rides(crewId: String): Flow<Cached<List<Ride>>> =
         sync.cached(SyncKeys.rides(crewId), rides.rides(crewId).map { list -> list.map { it.toRide() } })
 
-    suspend fun refresh(crewId: String): Outcome<Unit> = outcome { store.refreshRides(crewId) }
+    suspend fun refresh(crewId: String): Outcome<Unit> = outcome { feed.refreshRides(crewId) }
 
     suspend fun offer(
         crewId: String,
@@ -105,13 +103,13 @@ class RideRepository internal constructor(
                 // Unconditionally: a cancellation can arrive after the overlay was written but before markPending
                 // returned. Only this path writes overlays, and seatChanges lets one run at a time. A cache that cannot
                 // be written now has nothing to clear, or keeps the overlay until the next change of the ride.
-                withContext(NonCancellable) { outcome { rides.clearPending(rideId) } }
+                withContext(NonCancellable) { outcome { store.clearPending(rideId) } }
             }
         }
 
     /**
-     * Shows the change at once if it can work on the ride as cached. Nothing to show when the ride is unknown, the
-     * rider is not signed in yet, or the change would not do anything.
+     * Shows the change at once ([CrewStore.markPending]) under the rider's name. Nothing to show before the rider is
+     * signed in.
      */
     private suspend fun markPending(
         rideId: String,
@@ -124,14 +122,7 @@ class RideRepository internal constructor(
                 ?.profile
                 ?.displayName
                 .orEmpty()
-        database.withWriteTransaction {
-            val ride = rides.ride(rideId)
-            val possible = ride != null && ride.pendingSeat == null && if (take) ride.canBeTakenBy(userId) else ride.hasPassenger(userId)
-            if (ride != null && possible) {
-                val change = if (take) RideEntity.TAKE else RideEntity.RELEASE
-                rides.upsert(listOf(ride.copy(pendingSeat = change, pendingUserId = userId, pendingUserName = name)))
-            }
-        }
+        store.markPending(rideId, userId, name, take)
     }
 
     /**
@@ -149,7 +140,7 @@ class RideRepository internal constructor(
     }
 
     private suspend fun keep(ride: RideDto): Ride {
-        store.upsertNewer(ride)
+        store.saveNewer(ride)
         return ride.toEntity().toRide()
     }
 }

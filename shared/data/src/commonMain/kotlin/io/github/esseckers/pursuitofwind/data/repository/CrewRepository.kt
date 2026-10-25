@@ -13,7 +13,6 @@ import io.github.esseckers.pursuitofwind.data.internal.network.PursuitOfWindApi
 import io.github.esseckers.pursuitofwind.data.internal.network.outcome
 import io.github.esseckers.pursuitofwind.data.internal.newIdempotencyKey
 import io.github.esseckers.pursuitofwind.data.internal.sync.CrewFeedSync
-import io.github.esseckers.pursuitofwind.data.internal.sync.CrewStore
 import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.Crew
 import io.github.esseckers.pursuitofwind.data.model.CrewMember
@@ -28,7 +27,6 @@ import kotlin.time.Clock
 public class CrewRepository internal constructor(
     private val api: PursuitOfWindApi,
     private val database: PursuitOfWindDatabase,
-    private val store: CrewStore,
     private val feed: CrewFeedSync,
     private val clock: Clock,
 ) {
@@ -59,7 +57,7 @@ public class CrewRepository internal constructor(
             }
         }
 
-    public suspend fun refreshMembers(crewId: String): Outcome<Unit> = outcome { store.refreshMembers(crewId) }
+    public suspend fun refreshMembers(crewId: String): Outcome<Unit> = outcome { feed.refreshMembers(crewId) }
 
     public suspend fun create(name: String): Outcome<Crew> =
         outcome { crewListChanges.withLock { save(api.createCrew(name, newIdempotencyKey()).toEntity()) } }

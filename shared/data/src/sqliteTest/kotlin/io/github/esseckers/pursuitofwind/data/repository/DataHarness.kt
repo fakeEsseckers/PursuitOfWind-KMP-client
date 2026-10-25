@@ -39,7 +39,7 @@ internal class DataHarness(
     val settings = LocalSettings(disk, scope)
     val userCache = UserCache(database, settings)
     val network = NetworkHarness(engine, onSignedIn = userCache::claimFor)
-    private val store = CrewStore(network.api, database, clock)
+    private val store = CrewStore(database)
     private val feed = CrewFeedSync(network.api, database, store, clock, feedPageSize)
 
     val account = AccountRepository(network.session)
@@ -47,8 +47,8 @@ internal class DataHarness(
     val preferences = PreferencesRepository(settings)
     val spots = SpotRepository(network.api, database, clock)
     val forecasts = ForecastRepository(network.api, database, clock)
-    val crews = CrewRepository(network.api, database, store, feed, clock)
-    val rides = RideRepository(network.api, database, store, network.session, settings)
+    val crews = CrewRepository(network.api, database, feed, clock)
+    val rides = RideRepository(network.api, database, store, feed, network.session, settings)
 
     override fun close() {
         database.close()

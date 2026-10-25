@@ -5,22 +5,17 @@ import io.github.esseckers.pursuitofwind.contract.ApiLimits
 import io.github.esseckers.pursuitofwind.contract.CrewEventDto
 import io.github.esseckers.pursuitofwind.contract.CrewFeedDto
 import io.github.esseckers.pursuitofwind.contract.MemberJoinedEventDto
-import io.github.esseckers.pursuitofwind.contract.PersonDto
 import io.github.esseckers.pursuitofwind.contract.ProblemCode
 import io.github.esseckers.pursuitofwind.contract.RideCancelledEventDto
 import io.github.esseckers.pursuitofwind.contract.RideCreatedEventDto
 import io.github.esseckers.pursuitofwind.contract.RideDto
-import io.github.esseckers.pursuitofwind.contract.RideStatusDto
 import io.github.esseckers.pursuitofwind.contract.SeatReleasedEventDto
 import io.github.esseckers.pursuitofwind.contract.SeatTakenEventDto
 import io.github.esseckers.pursuitofwind.contract.UnknownCrewEventDto
 import io.github.esseckers.pursuitofwind.data.internal.local.PursuitOfWindDatabase
-import io.github.esseckers.pursuitofwind.data.internal.local.RideEntity
 import io.github.esseckers.pursuitofwind.data.internal.local.SyncKeys
 import io.github.esseckers.pursuitofwind.data.internal.local.SyncStateEntity
 import io.github.esseckers.pursuitofwind.data.internal.local.markUpdated
-import io.github.esseckers.pursuitofwind.data.internal.mapping.encodePeople
-import io.github.esseckers.pursuitofwind.data.internal.mapping.people
 import io.github.esseckers.pursuitofwind.data.internal.mapping.toEntity
 import io.github.esseckers.pursuitofwind.data.internal.network.ApiException
 import io.github.esseckers.pursuitofwind.data.internal.network.PursuitOfWindApi
@@ -29,12 +24,14 @@ import kotlinx.coroutines.sync.withLock
 import kotlin.time.Clock
 
 /**
- * Keeps a crew current from its event feed, through [store].
+ * Keeps a crew's members and rides current from the server, through [store]: reloads them, and applies the crew's
+ * event feed.
  *
  * Without a position yet, or when the server answers `410 FEED_RESET`, it starts over: it remembers the newest event
  * first and then reloads members and rides, so no event between the two calls is lost (events are applied by version,
  * so seeing one twice is harmless). Syncs run one at a time, so a sync from the UI and one from a background task
- * cannot interleave.
+ * cannot interleave. [refreshMembers] and [refreshRides] on their own (a pull to refresh) can run beside a sync: the
+ * store only moves rides forward, so the two cannot undo each other's changes.
  */
 internal class CrewFeedSync(
     private val api: PursuitOfWindApi,
@@ -43,7 +40,6 @@ internal class CrewFeedSync(
     private val clock: Clock,
     private val pageSize: Int = PAGE_SIZE,
 ) {
-    private val crews = database.crews()
     private val rides = database.rides()
     private val sync = database.syncState()
     private val syncing = Mutex()
@@ -56,10 +52,22 @@ internal class CrewFeedSync(
         }
     }
 
+    /** Adds the server's members of [crewId]. */
+    suspend fun refreshMembers(crewId: String) {
+        store.saveMembers(crewId, api.members(crewId).items, clock.now())
+    }
+
+    /** Brings the rides of [crewId] to the server's list (see [CrewStore.saveRides]). */
+    suspend fun refreshRides(crewId: String) {
+        val now = clock.now()
+        val cachedBefore = store.rideIds(crewId)
+        store.saveRides(crewId, cachedBefore, api.rides(crewId, now).items, now)
+    }
+
     private suspend fun resync(crewId: String) {
         val newest = api.feed(crewId, since = null, limit = 1).lastEventId
-        store.refreshMembers(crewId)
-        store.refreshRides(crewId)
+        refreshMembers(crewId)
+        refreshRides(crewId)
         saveCursor(crewId, newest)
     }
 
@@ -76,7 +84,7 @@ internal class CrewFeedSync(
             val missing = fetchMissingRides(page)
             database.withWriteTransaction {
                 missing.forEach { store.putNewer(it.toEntity()) }
-                page.items.forEach { apply(it) }
+                page.items.forEach { store.putEvent(it) }
                 since = page.lastEventId ?: since
                 saveCursor(crewId, since)
             }
@@ -131,61 +139,6 @@ internal class CrewFeedSync(
         cursor: String?,
     ) {
         sync.upsert(SyncStateEntity(SyncKeys.feed(crewId), clock.now().toEpochMilliseconds(), cursor.orEmpty()))
-    }
-
-    private suspend fun apply(event: CrewEventDto) {
-        when (event) {
-            is RideCreatedEventDto -> {
-                store.putNewer(event.ride.toEntity())
-            }
-
-            is SeatTakenEventDto -> {
-                updateRide(event.rideId, event.rideVersion) {
-                    it.copy(
-                        seatsFree = event.seatsFree,
-                        passengers = encodePeople((it.people() + event.actor).distinctBy(PersonDto::userId)),
-                    )
-                }
-            }
-
-            is SeatReleasedEventDto -> {
-                updateRide(event.rideId, event.rideVersion) {
-                    it.copy(
-                        seatsFree = event.seatsFree,
-                        passengers =
-                            encodePeople(
-                                it.people().filterNot { p ->
-                                    p.userId ==
-                                        event.actor.userId
-                                },
-                            ),
-                    )
-                }
-            }
-
-            is RideCancelledEventDto -> {
-                updateRide(event.rideId, event.rideVersion) { it.copy(status = RideStatusDto.CANCELLED.name) }
-            }
-
-            is MemberJoinedEventDto -> {
-                crews.upsertMembers(listOf(event.member.toEntity(event.crewId)))
-                crews.setMemberCount(event.crewId, crews.countMembers(event.crewId))
-            }
-
-            is UnknownCrewEventDto -> {
-                // A newer event type: nothing to apply, the cursor still moves past it.
-            }
-        }
-    }
-
-    /** Applies [change] to the server fields when [version] is newer; the pending overlay stays as it is. */
-    private suspend fun updateRide(
-        rideId: String,
-        version: Int,
-        change: (RideEntity) -> RideEntity,
-    ) {
-        val ride = rides.ride(rideId) ?: return
-        if (ride.version < version) rides.upsert(listOf(change(ride).copy(version = version)))
     }
 
     /** The ride an event changes and the cache must already hold; every event type is named, so a new one is decided. */
