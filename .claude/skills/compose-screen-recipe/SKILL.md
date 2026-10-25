@@ -43,6 +43,7 @@ A screen without one-off events has no `Effect` file and declares `Nothing`. A s
 Shared code next to `feature/`:
 
 - `core/mvi` — `MviViewModel`, `Reducer`; `core` (`Extensions.kt`) — `CollectEffects`, `launchFinishing`, `Clock.ticks`.
+- `core/refresh` — `RefreshStatus` (a screen's refresh: `started`, `finished`, `shownError`), `RefreshNotice` and `RefreshNoticeMapper` (offline, failed, stale); the banner is `RefreshNoticeBanner` in the design system.
 - `core/designsystem` — `theme`, `component`, `icon` (see below).
 - `core/ui` — formatting and labels used by several screens (`AppError.message()`, `clockTime`, `windRangeText`, `durationText`, `driveText`, `formatTenths`, `DayLabel`, `TimeRange`, `updatedText`, `Freshness`).
 - `core/resources` — the generated `Res` (strings live in `composeResources/values` and `values-ru`).
@@ -105,7 +106,7 @@ Cached data always wins over an error: the error replaces the content only when 
 
 - `PursuitOfWindTheme` sets Material's color scheme, type scale and shapes, plus `PursuitOfWindTheme.colors` for meaning-bearing colors: `go`, `marginal`, `noGo` (each a `VerdictPalette` of accent and container colors, contrast ≥ 4.5:1 in both themes) and `confidenceHigh/Medium/Low/Unknown`.
 - `theme`: colors, `PursuitOfWindTheme`, tokens `Spacing.xs … xl` and `Sizes` (icons, border, placeholders). No raw `dp` or color literals outside the design system.
-- `component`: `VerdictBadge`, `VerdictCard` (optionally one button: `onClick`, `onClickLabel`), `ConfidenceChip`, `StatusBanner`, `MessageState`, `ActionButton`, `AppSnackbarHost` (every screen's snackbars: gone after 3 s, an action included, unless accessibility settings ask for longer), `PrimaryButton` (full width, with a busy state), `Skeleton`, `Disclaimer`, `IconLine`, `ScreenTopBar` and `BarIconButton` for screens opened from another one, `TabTitle` for a tab's screen, `screenInsets()`, `contentEndInsets()` and `NavigationBarScrim` for edge to edge, `LinkRow` for a line that opens something; for forms `SectionTitle`, `DraftTextField`, `ChoiceChip` and `Stepper`; `icon`: the app's own line drawings in `AppIcons` (no icon library).
+- `component`: `VerdictBadge`, `VerdictCard` (optionally one button: `onClick`, `onClickLabel`), `ConfidenceChip`, `StatusBanner`, `MessageState`, `ActionButton`, `AppSnackbarHost` (every screen's snackbars: gone after 3 s, an action included, unless accessibility settings ask for longer), `PrimaryButton` (full width, with a busy state), `Skeleton`, `Disclaimer`, `IconLine`, `ScreenTopBar` and `BarIconButton` for screens opened from another one, `TabTitle` for a tab's screen, `RefreshNoticeBanner` for why the data may not be current, `screenInsets()`, `contentEndInsets()` and `NavigationBarScrim` for edge to edge, `LinkRow` for a line that opens something; for forms `SectionTitle`, `DraftTextField`, `ChoiceChip` and `Stepper`; `icon`: the app's own line drawings in `AppIcons` (no icon library).
 - `WindChartColors` (`windChartColors()`) and the `Sizes.chart*` tokens are the wind chart's.
 
 ## Forms (profile, spot picker)

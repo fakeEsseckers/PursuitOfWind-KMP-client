@@ -1,5 +1,6 @@
 package io.github.esseckers.pursuitofwind.feature.crew.presentation.mapper
 
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshNoticeMapper
 import io.github.esseckers.pursuitofwind.core.ui.DayLabel
 import io.github.esseckers.pursuitofwind.core.ui.TimeRange
 import io.github.esseckers.pursuitofwind.core.ui.clockTime
@@ -16,7 +17,6 @@ import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewInp
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewRideUi
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState.Content
-import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState.Notice
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewUi
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.MemberUi
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.PersonUi
@@ -42,12 +42,12 @@ internal object CrewStateMapper {
                 dialog = inputs.dialog,
                 inputs = inputs,
             )
-        val error = refresh.error.takeUnless { refresh.refreshing }
+        val error = refresh.shownError
         val content = content(inputs, shown, error, riderZone)
         return base.copy(
             content = content,
             // Cached content wins over an error: it stays, with a notice above it.
-            notice = if (content is Content.Ready) error?.let(::notice) else null,
+            notice = if (content is Content.Ready) RefreshNoticeMapper.notice(error) else null,
         )
     }
 
@@ -158,6 +158,4 @@ internal object CrewStateMapper {
             action = action,
         )
     }
-
-    private fun notice(error: AppError): Notice = if (error == AppError.Network) Notice.OFFLINE else Notice.REFRESH_FAILED
 }

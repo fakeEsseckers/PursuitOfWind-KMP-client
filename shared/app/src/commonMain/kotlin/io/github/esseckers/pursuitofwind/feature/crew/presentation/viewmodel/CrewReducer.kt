@@ -4,7 +4,6 @@ import io.github.esseckers.pursuitofwind.core.mvi.Reducer
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.mapper.CrewStateMapper
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewDialog
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewInputs
-import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewRefresh
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.crewToShow
 import kotlinx.datetime.TimeZone
@@ -33,12 +32,12 @@ internal class CrewReducer(
                 }
 
                 CrewResult.RefreshStarted -> {
-                    inputs.copy(refresh = inputs.refresh.copy(refreshing = true))
+                    inputs.copy(refresh = inputs.refresh.started())
                 }
 
                 is CrewResult.RefreshFinished -> {
                     inputs.copy(
-                        refresh = CrewRefresh(refreshing = false, finished = true, error = result.error),
+                        refresh = inputs.refresh.finished(result.error),
                     )
                 }
 

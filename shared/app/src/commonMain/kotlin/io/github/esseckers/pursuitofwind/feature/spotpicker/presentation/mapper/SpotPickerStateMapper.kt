@@ -1,7 +1,7 @@
 package io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.mapper
 
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshNoticeMapper
 import io.github.esseckers.pursuitofwind.core.ui.message
-import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Spot
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.entity.SpotChangeEntity
@@ -11,7 +11,6 @@ import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.S
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerInputs
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerState
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerState.Content
-import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerState.Notice
 import kotlin.time.Duration.Companion.minutes
 
 /** Pure rules of the spot picker: what it shows for its inputs, including what "Done" saves. */
@@ -27,7 +26,7 @@ internal object SpotPickerStateMapper {
             )
         val snapshot = inputs.snapshot ?: return base
         val spots = snapshot.catalog.value.map { spotUi(it, choiceOf(inputs, it.id)) }
-        val error = refresh.error.takeUnless { refresh.refreshing }
+        val error = refresh.shownError
         val content =
             when {
                 spots.isNotEmpty() -> Content.Ready(spots)
@@ -38,7 +37,7 @@ internal object SpotPickerStateMapper {
         return base.copy(
             content = content,
             // Cached spots win over an error: the list stays, with a notice above it.
-            notice = if (content is Content.Ready) error?.let(::notice) else null,
+            notice = if (content is Content.Ready) RefreshNoticeMapper.notice(error) else null,
             selectedCount = spots.count { it.selected },
             changes = changes(inputs),
         )
@@ -92,6 +91,4 @@ internal object SpotPickerStateMapper {
             canShorten = choice.driveMinutes > 0,
             canLengthen = choice.driveMinutes < DriveLimits.MAX_MINUTES,
         )
-
-    private fun notice(error: AppError): Notice = if (error == AppError.Network) Notice.OFFLINE else Notice.REFRESH_FAILED
 }

@@ -1,20 +1,17 @@
 package io.github.esseckers.pursuitofwind.feature.today.presentation.mapper
 
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshNoticeMapper
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshStatus
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.error_no_forecast
-import io.github.esseckers.pursuitofwind.core.ui.Freshness
 import io.github.esseckers.pursuitofwind.core.ui.message
-import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.Profile
-import io.github.esseckers.pursuitofwind.feature.today.domain.entity.RefreshResultEntity
 import io.github.esseckers.pursuitofwind.feature.today.domain.entity.TodaySnapshotEntity
-import io.github.esseckers.pursuitofwind.feature.today.presentation.model.RefreshStatus
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayInputs
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState.Content
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState.Missing
-import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState.Notice
 import kotlinx.datetime.TimeZone
 import kotlin.time.Duration
 import kotlin.time.Instant
@@ -31,11 +28,10 @@ internal object TodayStateMapper {
     ): TodayState {
         val snapshot = inputs.snapshot
         val now = inputs.now
-        val refresh = inputs.refresh
         return if (snapshot == null || now == null) {
-            TodayState(content = Content.Loading, isRefreshing = refresh.refreshing, inputs = inputs)
+            TodayState(content = Content.Loading, isRefreshing = inputs.refresh.refreshing, inputs = inputs)
         } else {
-            map(snapshot, now, riderZone, refresh).copy(inputs = inputs)
+            map(snapshot, now, riderZone, inputs).copy(inputs = inputs)
         }
     }
 
@@ -43,8 +39,9 @@ internal object TodayStateMapper {
         snapshot: TodaySnapshotEntity,
         now: Instant,
         riderZone: TimeZone,
-        refresh: RefreshStatus,
+        inputs: TodayInputs,
     ): TodayState {
+        val refresh = inputs.refresh
         val refreshing = refresh.refreshing
         val waiting = waitingContent(snapshot, refresh)
         return when (val content = snapshot.content()) {
@@ -62,7 +59,14 @@ internal object TodayStateMapper {
                 if (days.isEmpty()) {
                     TodayState(content = waiting, isRefreshing = refreshing)
                 } else {
-                    TodayState(Content.Ready(days), refreshing, updatedAgo = age, notice = notice(refresh.last, age))
+                    val notice = RefreshNoticeMapper.notice(refresh.error, age)
+                    TodayState(
+                        content = Content.Ready(days),
+                        isRefreshing = refreshing,
+                        updatedAgo = age,
+                        notice = notice,
+                        crewFailed = notice == null && inputs.crewError != null,
+                    )
                 }
             }
         }
@@ -73,9 +77,9 @@ internal object TodayStateMapper {
         snapshot: TodaySnapshotEntity,
         refresh: RefreshStatus,
     ): Content {
-        val forecastError = refresh.last?.forecastError
+        val forecastError = refresh.error
         return when {
-            refresh.refreshing || refresh.last == null -> Content.Loading
+            refresh.refreshing || !refresh.finished -> Content.Loading
 
             forecastError != null -> Content.Error(forecastError.message())
 
@@ -85,18 +89,6 @@ internal object TodayStateMapper {
             else -> Content.Error(Res.string.error_no_forecast)
         }
     }
-
-    private fun notice(
-        last: RefreshResultEntity?,
-        age: Duration?,
-    ): Notice? =
-        when {
-            last?.forecastError == AppError.Network -> Notice.OFFLINE
-            last?.forecastError != null -> Notice.REFRESH_FAILED
-            age != null && age > Freshness.STALE_AFTER -> Notice.STALE
-            last?.crewError != null -> Notice.CREW_FAILED
-            else -> null
-        }
 }
 
 /**

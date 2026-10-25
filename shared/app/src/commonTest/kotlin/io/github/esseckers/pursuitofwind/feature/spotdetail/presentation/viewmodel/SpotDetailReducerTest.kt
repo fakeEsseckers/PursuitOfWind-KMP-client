@@ -1,17 +1,17 @@
 package io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.viewmodel
 
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshStatus
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.feature.spotdetail.BERLIN
 import io.github.esseckers.pursuitofwind.feature.spotdetail.NORDSTRAND
 import io.github.esseckers.pursuitofwind.feature.spotdetail.SATURDAY
 import io.github.esseckers.pursuitofwind.feature.spotdetail.SUNDAY
 import io.github.esseckers.pursuitofwind.feature.spotdetail.at
-import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.RefreshStatus
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.Selection
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailInputs
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState.Content
-import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState.Notice
 import io.github.esseckers.pursuitofwind.feature.spotdetail.snapshot
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -47,7 +47,7 @@ class SpotDetailReducerTest {
 
         assertTrue(started.isRefreshing)
         assertEquals(RefreshStatus(finished = true, error = AppError.Network, startedAt = now), failed.inputs.refresh)
-        assertEquals(Notice.OFFLINE, retrying.notice)
+        assertEquals(RefreshNotice.OFFLINE, retrying.notice)
         assertFalse(worked.isRefreshing)
         assertEquals(null, worked.notice)
     }

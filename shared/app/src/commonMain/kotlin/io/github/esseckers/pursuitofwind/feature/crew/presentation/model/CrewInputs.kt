@@ -1,6 +1,6 @@
 package io.github.esseckers.pursuitofwind.feature.crew.presentation.model
 
-import io.github.esseckers.pursuitofwind.data.model.AppError
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshStatus
 import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.Crew
 import io.github.esseckers.pursuitofwind.feature.crew.domain.entity.CrewDetailsEntity
@@ -22,17 +22,10 @@ internal data class CrewInputs(
     val arriving: String? = null,
     val shown: String? = null,
     val details: CrewDetailsEntity? = null,
-    val refresh: CrewRefresh = CrewRefresh(),
+    val refresh: RefreshStatus = RefreshStatus(),
     val cancelling: Set<String> = emptySet(),
     val dialog: CrewDialog? = null,
     val now: Instant? = null,
-)
-
-/** Whether a refresh runs, whether one has [finished] since the tab opened, and how the last one failed. */
-internal data class CrewRefresh(
-    val refreshing: Boolean = false,
-    val finished: Boolean = false,
-    val error: AppError? = null,
 )
 
 /** A dialog over the tab; [sending] while its request runs, when it stays open. */

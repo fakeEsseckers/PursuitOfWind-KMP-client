@@ -32,12 +32,14 @@ import androidx.compose.ui.semantics.semantics
 import io.github.esseckers.pursuitofwind.core.designsystem.component.ActionButton
 import io.github.esseckers.pursuitofwind.core.designsystem.component.Disclaimer
 import io.github.esseckers.pursuitofwind.core.designsystem.component.MessageState
+import io.github.esseckers.pursuitofwind.core.designsystem.component.RefreshNoticeBanner
 import io.github.esseckers.pursuitofwind.core.designsystem.component.Skeleton
 import io.github.esseckers.pursuitofwind.core.designsystem.component.StatusBanner
 import io.github.esseckers.pursuitofwind.core.designsystem.component.screenInsets
 import io.github.esseckers.pursuitofwind.core.designsystem.icon.AppIcons
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Sizes
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Spacing
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.action_pick_spots
 import io.github.esseckers.pursuitofwind.core.resources.action_refresh
@@ -46,7 +48,6 @@ import io.github.esseckers.pursuitofwind.core.resources.action_set_up_profile
 import io.github.esseckers.pursuitofwind.core.resources.banner_crew_failed
 import io.github.esseckers.pursuitofwind.core.resources.banner_offline
 import io.github.esseckers.pursuitofwind.core.resources.banner_refresh_failed
-import io.github.esseckers.pursuitofwind.core.resources.banner_stale
 import io.github.esseckers.pursuitofwind.core.resources.empty_profile_body
 import io.github.esseckers.pursuitofwind.core.resources.empty_profile_title
 import io.github.esseckers.pursuitofwind.core.resources.empty_spots_body
@@ -61,7 +62,6 @@ import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayI
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState.Content
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState.Missing
-import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState.Notice
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import kotlin.time.Duration
@@ -93,7 +93,7 @@ internal fun TodayScreen(
                 Content.Loading -> LoadingDays()
                 is Content.Empty -> EmptyContent(content.missing, onIntent)
                 is Content.Error -> ErrorContent(content.message, refresh)
-                is Content.Ready -> ReadyDays(content.days, state.notice, onIntent, refreshAction)
+                is Content.Ready -> ReadyDays(content.days, state.notice, state.crewFailed, onIntent, refreshAction)
             }
         }
     }
@@ -146,7 +146,8 @@ private fun TodayHeader(
 @Composable
 private fun ReadyDays(
     days: List<DayUi>,
-    notice: Notice?,
+    notice: RefreshNotice?,
+    crewFailed: Boolean,
     onIntent: (TodayIntent) -> Unit,
     refreshAction: List<CustomAccessibilityAction>,
 ) {
@@ -156,7 +157,19 @@ private fun ReadyDays(
         contentPadding = PaddingValues(Spacing.m),
         verticalArrangement = Arrangement.spacedBy(Spacing.m),
     ) {
-        notice?.let { item(key = "notice") { NoticeBanner(it, onRefresh) } }
+        if (notice != null) {
+            item(key = "notice") {
+                RefreshNoticeBanner(
+                    notice = notice,
+                    offline = Res.string.banner_offline,
+                    failed = Res.string.banner_refresh_failed,
+                    tagPrefix = "today",
+                    onRetry = onRefresh,
+                )
+            }
+        } else if (crewFailed) {
+            item(key = "notice") { CrewFailedBanner(onRefresh) }
+        }
         // String keys: Android saves lazy-list keys in a Bundle, which cannot hold a LocalDate.
         items(days, key = { it.date.toString() }) { day ->
             DayCard(
@@ -170,28 +183,15 @@ private fun ReadyDays(
     }
 }
 
+/** The forecast is current, but the crew's rides could not be updated. */
 @Composable
-private fun NoticeBanner(
-    notice: Notice,
-    onRefresh: () -> Unit,
-) {
-    val text: StringResource =
-        when (notice) {
-            Notice.OFFLINE -> Res.string.banner_offline
-            Notice.REFRESH_FAILED -> Res.string.banner_refresh_failed
-            Notice.CREW_FAILED -> Res.string.banner_crew_failed
-            Notice.STALE -> Res.string.banner_stale
-        }
+private fun CrewFailedBanner(onRetry: () -> Unit) {
     StatusBanner(
-        icon = if (notice == Notice.STALE) AppIcons.Clock else AppIcons.CloudOff,
-        text = stringResource(text),
+        icon = AppIcons.CloudOff,
+        text = stringResource(Res.string.banner_crew_failed),
         modifier = Modifier.testTag("today.notice"),
         action = {
-            ActionButton(
-                text = stringResource(if (notice == Notice.STALE) Res.string.action_refresh else Res.string.action_retry),
-                onClick = onRefresh,
-                modifier = Modifier.testTag("today.retry"),
-            )
+            ActionButton(text = stringResource(Res.string.action_retry), onClick = onRetry, modifier = Modifier.testTag("today.retry"))
         },
     )
 }

@@ -1,5 +1,6 @@
 package io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model
 
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
 import org.jetbrains.compose.resources.StringResource
 import kotlin.time.Duration
 
@@ -17,7 +18,7 @@ internal data class SpotDetailState(
     val header: SpotHeaderUi? = null,
     val isRefreshing: Boolean = false,
     val updatedAgo: Duration? = null,
-    val notice: Notice? = null,
+    val notice: RefreshNotice? = null,
 ) {
     sealed interface Content {
         data object Loading : Content
@@ -52,16 +53,5 @@ internal data class SpotDetailState(
 
         /** The rider does not follow this spot (any more). */
         SPOT,
-    }
-
-    enum class Notice {
-        /** The last refresh failed because the device is offline. */
-        OFFLINE,
-
-        /** The last refresh failed for another reason. */
-        REFRESH_FAILED,
-
-        /** The forecast is old. */
-        STALE,
     }
 }

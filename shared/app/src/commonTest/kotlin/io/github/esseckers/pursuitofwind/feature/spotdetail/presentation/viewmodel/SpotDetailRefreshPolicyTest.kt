@@ -1,10 +1,10 @@
 package io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.viewmodel
 
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshStatus
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.feature.spotdetail.SATURDAY
 import io.github.esseckers.pursuitofwind.feature.spotdetail.at
 import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.entity.SpotDetailSnapshotEntity
-import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.RefreshStatus
 import io.github.esseckers.pursuitofwind.feature.spotdetail.snapshot
 import kotlin.test.Test
 import kotlin.test.assertFalse

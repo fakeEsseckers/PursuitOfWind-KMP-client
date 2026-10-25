@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalAccessibilityManager
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
@@ -41,9 +42,14 @@ import io.github.esseckers.pursuitofwind.core.designsystem.icon.AppIcons
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.PursuitOfWindTheme
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Sizes
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Spacing
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
 import io.github.esseckers.pursuitofwind.core.resources.Res
+import io.github.esseckers.pursuitofwind.core.resources.action_refresh
+import io.github.esseckers.pursuitofwind.core.resources.action_retry
+import io.github.esseckers.pursuitofwind.core.resources.banner_stale
 import io.github.esseckers.pursuitofwind.core.resources.disclaimer
 import kotlinx.coroutines.delay
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import kotlin.time.Duration.Companion.seconds
 
@@ -94,6 +100,41 @@ internal fun StatusBanner(
             action?.invoke()
         }
     }
+}
+
+/**
+ * Why what a screen shows may not be current, with a button that refreshes: [offline] or [failed] for a refresh that did
+ * not work, and "getting old" with a refresh button for [RefreshNotice.STALE]. Tagged `<tagPrefix>.notice`, its button
+ * `<tagPrefix>.retry`.
+ */
+@Composable
+internal fun RefreshNoticeBanner(
+    notice: RefreshNotice,
+    offline: StringResource,
+    failed: StringResource,
+    tagPrefix: String,
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val stale = notice == RefreshNotice.STALE
+    val text =
+        when (notice) {
+            RefreshNotice.OFFLINE -> offline
+            RefreshNotice.REFRESH_FAILED -> failed
+            RefreshNotice.STALE -> Res.string.banner_stale
+        }
+    StatusBanner(
+        icon = if (stale) AppIcons.Clock else AppIcons.CloudOff,
+        text = stringResource(text),
+        modifier = modifier.testTag("$tagPrefix.notice"),
+        action = {
+            ActionButton(
+                text = stringResource(if (stale) Res.string.action_refresh else Res.string.action_retry),
+                onClick = onRetry,
+                modifier = Modifier.testTag("$tagPrefix.retry"),
+            )
+        },
+    )
 }
 
 /**

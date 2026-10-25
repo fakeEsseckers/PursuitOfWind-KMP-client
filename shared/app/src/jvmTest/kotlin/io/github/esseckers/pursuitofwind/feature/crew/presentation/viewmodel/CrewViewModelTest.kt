@@ -6,6 +6,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.crew_invite_invalid
 import io.github.esseckers.pursuitofwind.core.resources.crew_seat_taken
@@ -26,7 +27,6 @@ import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewInt
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewRideUi
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState.Content
-import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState.Notice
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.PersonUi
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.RideAction
 import io.github.esseckers.pursuitofwind.feature.spotdetail.BERLIN
@@ -392,7 +392,7 @@ class CrewViewModelTest {
                 viewModel.onIntent(CrewIntent.Refresh)
 
                 val offline = awaitState { it.notice != null }
-                assertEquals(Notice.OFFLINE, offline.notice)
+                assertEquals(RefreshNotice.OFFLINE, offline.notice)
                 assertTrue(offline.rides().isNotEmpty())
                 cancelAndIgnoreRemainingEvents()
             }

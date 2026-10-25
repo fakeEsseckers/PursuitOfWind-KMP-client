@@ -1,5 +1,6 @@
 package io.github.esseckers.pursuitofwind.feature.crew.presentation.model
 
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
 import io.github.esseckers.pursuitofwind.core.ui.DayLabel
 import io.github.esseckers.pursuitofwind.core.ui.TimeRange
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
@@ -13,7 +14,7 @@ import org.jetbrains.compose.resources.StringResource
 internal data class CrewState(
     val content: Content = Content.Loading,
     val crews: List<CrewChoice> = emptyList(),
-    val notice: Notice? = null,
+    val notice: RefreshNotice? = null,
     val isRefreshing: Boolean = false,
     val dialog: CrewDialog? = null,
     val inputs: CrewInputs = CrewInputs(),
@@ -32,11 +33,6 @@ internal data class CrewState(
         data class Ready(
             val crew: CrewUi,
         ) : Content
-    }
-
-    enum class Notice {
-        OFFLINE,
-        REFRESH_FAILED,
     }
 }
 

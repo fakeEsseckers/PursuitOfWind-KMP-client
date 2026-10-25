@@ -6,6 +6,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.error_network
 import io.github.esseckers.pursuitofwind.core.ui.DayLabel
@@ -32,7 +33,6 @@ import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayI
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState.Content
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState.Missing
-import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState.Notice
 import io.github.esseckers.pursuitofwind.feature.today.ride
 import io.github.esseckers.pursuitofwind.testing.releaseMainDispatcher
 import io.github.esseckers.pursuitofwind.testing.testGraph
@@ -194,7 +194,7 @@ class TodayViewModelTest {
                 viewModel.onIntent(TodayIntent.Refresh)
 
                 val offline = awaitState { it.notice != null }
-                assertEquals(Notice.OFFLINE, offline.notice)
+                assertEquals(RefreshNotice.OFFLINE, offline.notice)
                 assertIs<Content.Ready>(offline.content)
                 cancelAndIgnoreRemainingEvents()
             }
@@ -212,7 +212,7 @@ class TodayViewModelTest {
                 val evening = awaitState { (it.content as? Content.Ready)?.days?.first() is DayUi.NoGo }
                 val today = assertIs<DayUi.NoGo>(assertIs<Content.Ready>(evening.content).days.first())
                 assertEquals(Reason.WINDOW_TOO_SHORT, today.reason)
-                assertEquals(Notice.STALE, evening.notice)
+                assertEquals(RefreshNotice.STALE, evening.notice)
                 cancelAndIgnoreRemainingEvents()
             }
         }

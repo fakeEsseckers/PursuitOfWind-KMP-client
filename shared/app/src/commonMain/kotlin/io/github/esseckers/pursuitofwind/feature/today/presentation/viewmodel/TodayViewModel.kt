@@ -47,7 +47,7 @@ internal class TodayViewModel(
         merge(
             repository.snapshot
                 // A spot chosen in the spot picker while this screen stayed below it has no forecast yet.
-                .onEach { if (TodayRefreshPolicy.hasNewFavorite(it, currentState.inputs.refresh)) refresh(it) }
+                .onEach { if (TodayRefreshPolicy.hasNewFavorite(it, currentState.inputs)) refresh(it) }
                 .map { TodayResult.DataChanged(it) },
             clock.ticks(TICK).map { TodayResult.ClockTicked(it) },
         ).onStart { refreshIfDue() }

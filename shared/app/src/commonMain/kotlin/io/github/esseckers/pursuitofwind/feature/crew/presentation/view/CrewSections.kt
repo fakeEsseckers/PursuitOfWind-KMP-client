@@ -70,7 +70,6 @@ import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewCho
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewIntent
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState.Content
-import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState.Notice
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewUi
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.MemberUi
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.RideAction

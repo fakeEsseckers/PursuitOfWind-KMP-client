@@ -1,6 +1,6 @@
 package io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model
 
-import io.github.esseckers.pursuitofwind.data.model.AppError
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshStatus
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.entity.SpotDetailSnapshotEntity
 import kotlinx.datetime.LocalDate
@@ -33,14 +33,3 @@ internal sealed interface Selection {
         val start: Instant,
     ) : Selection
 }
-
-/**
- * Where the refresh is: [refreshing] now, whether one has [finished] and with which [error]. [startedAt] is when the
- * latest one started, so the state can tell whether the cache already shows it.
- */
-internal data class RefreshStatus(
-    val refreshing: Boolean = false,
-    val startedAt: Instant? = null,
-    val finished: Boolean = false,
-    val error: AppError? = null,
-)

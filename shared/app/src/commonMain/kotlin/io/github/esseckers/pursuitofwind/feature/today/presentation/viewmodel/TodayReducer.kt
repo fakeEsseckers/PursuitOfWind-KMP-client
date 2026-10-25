@@ -28,11 +28,11 @@ internal class TodayReducer(
                 }
 
                 is TodayResult.RefreshStarted -> {
-                    inputs.copy(refresh = inputs.refresh.copy(refreshing = true, startedAt = result.at, favorites = result.favorites))
+                    inputs.copy(refresh = inputs.refresh.started(at = result.at), refreshedFavorites = result.favorites)
                 }
 
                 is TodayResult.RefreshFinished -> {
-                    inputs.copy(refresh = inputs.refresh.copy(refreshing = false, last = result.result))
+                    inputs.copy(refresh = inputs.refresh.finished(result.result.forecastError), crewError = result.result.crewError)
                 }
             }
         val computed = TodayStateMapper.map(next, riderZone)

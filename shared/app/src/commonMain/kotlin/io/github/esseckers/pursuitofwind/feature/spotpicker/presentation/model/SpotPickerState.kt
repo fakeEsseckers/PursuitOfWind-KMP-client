@@ -1,5 +1,6 @@
 package io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model
 
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.entity.SpotChangeEntity
 import org.jetbrains.compose.resources.StringResource
@@ -16,7 +17,7 @@ import kotlin.time.Duration
 internal data class SpotPickerState(
     val content: Content = Content.Loading,
     val isRefreshing: Boolean = false,
-    val notice: Notice? = null,
+    val notice: RefreshNotice? = null,
     val selectedCount: Int = 0,
     val changes: List<SpotChangeEntity> = emptyList(),
     val saving: Boolean = false,
@@ -41,14 +42,6 @@ internal data class SpotPickerState(
         data class Ready(
             val spots: List<PickSpotUi>,
         ) : Content
-    }
-
-    enum class Notice {
-        /** The last refresh failed because the device is offline. */
-        OFFLINE,
-
-        /** The last refresh failed for another reason. */
-        REFRESH_FAILED,
     }
 }
 

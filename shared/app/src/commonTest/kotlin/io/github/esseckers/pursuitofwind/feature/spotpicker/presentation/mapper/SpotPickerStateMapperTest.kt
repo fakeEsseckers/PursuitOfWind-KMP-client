@@ -1,5 +1,7 @@
 package io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.mapper
 
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshStatus
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.error_network
 import io.github.esseckers.pursuitofwind.data.model.AppError
@@ -9,11 +11,9 @@ import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.entity.SpotPi
 import io.github.esseckers.pursuitofwind.feature.spotpicker.following
 import io.github.esseckers.pursuitofwind.feature.spotpicker.inputs
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.DriveLimits
-import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.RefreshStatus
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotChoice
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerInputs
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerState.Content
-import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerState.Notice
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.preview.SpotPickerPreviewData.dune
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.preview.SpotPickerPreviewData.lakeWeiss
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.preview.SpotPickerPreviewData.nordstrand
@@ -68,8 +68,8 @@ class SpotPickerStateMapperTest {
         val retrying = SpotPickerStateMapper.map(inputs().copy(refresh = RefreshStatus(refreshing = true, error = AppError.Network)))
 
         assertIs<Content.Ready>(offline.content)
-        assertEquals(Notice.OFFLINE, offline.notice)
-        assertEquals(Notice.REFRESH_FAILED, failed.notice)
+        assertEquals(RefreshNotice.OFFLINE, offline.notice)
+        assertEquals(RefreshNotice.REFRESH_FAILED, failed.notice)
         assertEquals(null, retrying.notice)
     }
 

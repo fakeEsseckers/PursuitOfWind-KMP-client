@@ -1,17 +1,17 @@
 package io.github.esseckers.pursuitofwind.feature.spots.presentation.mapper
 
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshStatus
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.error_network
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.MySpot
-import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.RefreshStatus
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.RemovedSpot
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotDrive
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotEdit
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsInputs
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsState.Content
-import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsState.Notice
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.preview.SpotsPreviewData.lakeWeiss
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.preview.SpotsPreviewData.nordstrand
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.preview.SpotsPreviewData.saltLagoon
@@ -63,8 +63,8 @@ class SpotsStateMapperTest {
         val failed = SpotsStateMapper.map(inputs(nordstrand).copy(refresh = RefreshStatus(finished = true, error = AppError.Server(503))))
 
         assertIs<Content.Ready>(offline.content)
-        assertEquals(Notice.OFFLINE, offline.notice)
-        assertEquals(Notice.REFRESH_FAILED, failed.notice)
+        assertEquals(RefreshNotice.OFFLINE, offline.notice)
+        assertEquals(RefreshNotice.REFRESH_FAILED, failed.notice)
     }
 
     @Test
