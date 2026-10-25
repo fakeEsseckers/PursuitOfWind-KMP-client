@@ -1,5 +1,6 @@
 package io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model
 
+import io.github.esseckers.pursuitofwind.contract.ApiLimits
 import io.github.esseckers.pursuitofwind.core.ui.DayLabel
 import io.github.esseckers.pursuitofwind.core.ui.TimeRange
 import io.github.esseckers.pursuitofwind.data.model.AppError
@@ -61,9 +62,9 @@ internal data class RideOfferInputs(
         const val DEFAULT_SEATS = 3
 
         /** The API's range of passenger seats. */
-        val SEATS = 1..8
+        val SEATS = ApiLimits.Ride.SEATS_MIN..ApiLimits.Ride.SEATS_MAX
 
-        /** The API's longest meeting point. */
-        const val MAX_MEETING_POINT = 120
+        /** The API's longest meeting point, in characters as it counts them (`ApiLimits.lengthOf`). */
+        const val MAX_MEETING_POINT = ApiLimits.Ride.MEETING_POINT_MAX_LENGTH
     }
 }

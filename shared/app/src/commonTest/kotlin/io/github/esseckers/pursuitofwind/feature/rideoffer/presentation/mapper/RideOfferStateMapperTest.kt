@@ -96,6 +96,16 @@ class RideOfferStateMapperTest {
     }
 
     @Test
+    fun `a meeting point is cut where the API counts with an emoji as one character never halved`() {
+        val kite = "\uD83E\uDE81"
+        val emoji = reduce(RideOfferResult.MeetingPointChanged(kite.repeat(130)))
+        val shifted = reduce(RideOfferResult.MeetingPointChanged("x" + kite.repeat(130)))
+
+        assertEquals(kite.repeat(120), emoji.meetingPoint)
+        assertEquals("x" + kite.repeat(119), shifted.meetingPoint)
+    }
+
+    @Test
     fun `a failure stays in the form with its reason until the next try`() {
         assertEquals(Res.string.error_network, RideOfferPreviewData.failed.error)
         assertTrue(RideOfferPreviewData.failed.canSubmit)

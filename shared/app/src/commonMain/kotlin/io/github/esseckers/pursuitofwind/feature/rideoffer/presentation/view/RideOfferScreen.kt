@@ -29,6 +29,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import io.github.esseckers.pursuitofwind.contract.ApiLimits
 import io.github.esseckers.pursuitofwind.core.designsystem.component.ChoiceChip
 import io.github.esseckers.pursuitofwind.core.designsystem.component.DraftTextField
 import io.github.esseckers.pursuitofwind.core.designsystem.component.IconLine
@@ -60,6 +61,7 @@ import io.github.esseckers.pursuitofwind.core.resources.offer_title
 import io.github.esseckers.pursuitofwind.core.resources.offer_window
 import io.github.esseckers.pursuitofwind.core.ui.dayLabel
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.OfferSummary
+import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.RideOfferInputs
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.RideOfferIntent
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.RideOfferState
 import org.jetbrains.compose.resources.stringResource
@@ -143,6 +145,8 @@ private fun OfferForm(
                 version = 0,
                 onValueChange = { onIntent(RideOfferIntent.ChangeMeetingPoint(it)) },
                 label = stringResource(Res.string.offer_meeting),
+                // What the field shows is what is sent: no longer than the API takes.
+                accepts = { ApiLimits.lengthOf(it) <= RideOfferInputs.MAX_MEETING_POINT },
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
                 modifier = Modifier.testTag("offer.meeting"),
             )

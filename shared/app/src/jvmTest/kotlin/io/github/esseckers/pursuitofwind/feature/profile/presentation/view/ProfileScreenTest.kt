@@ -131,6 +131,17 @@ class ProfileScreenTest {
         }
 
     @Test
+    fun `a name counts an emoji as one character as the server does`() =
+        runComposeUiTest {
+            show(ProfilePreviewData.empty, mode = ProfileMode.SET_UP)
+            val kite = "\uD83E\uDE81"
+
+            onNodeWithTag("profile.name").performTextInput(kite.repeat(ProfileLimits.NAME_MAX_LENGTH))
+
+            assertEquals(listOf(ProfileEdit.Name(kite.repeat(ProfileLimits.NAME_MAX_LENGTH))), edits())
+        }
+
+    @Test
     fun `errors show under their fields and hidden settings open to show theirs`() =
         runComposeUiTest {
             show(ProfilePreviewData.invalid, mode = ProfileMode.SET_UP)

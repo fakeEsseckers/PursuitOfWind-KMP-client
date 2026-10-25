@@ -1,5 +1,6 @@
 package io.github.esseckers.pursuitofwind.feature.profile.presentation.model
 
+import io.github.esseckers.pursuitofwind.contract.ApiLimits
 import io.github.esseckers.pursuitofwind.core.ui.Step
 import io.github.esseckers.pursuitofwind.core.ui.StepRange
 import io.github.esseckers.pursuitofwind.data.model.Profile
@@ -110,14 +111,16 @@ internal data class KiteChoice(
     val enabled: Boolean,
 )
 
-/** The limits of `api/openapi.yaml` (`RiderProfile`), and the steps the form moves in. */
+/** The API's limits of a rider profile (`ApiLimits.RiderProfile`), and the steps the form moves in. */
 internal object ProfileLimits {
-    const val NAME_MAX_LENGTH = 40
-    const val WEIGHT_MIN_KG = 30.0
-    const val WEIGHT_MAX_KG = 200.0
-    const val MAX_KITES = 10
-    val MIN_SESSION_STEPS = StepRange(min = 30, max = 720, step = 30)
-    val MAX_DRIVE_STEPS = StepRange(min = 0, max = 720, step = 30)
+    /** In characters as the API counts them (`ApiLimits.lengthOf`). */
+    const val NAME_MAX_LENGTH = ApiLimits.RiderProfile.DISPLAY_NAME_MAX_LENGTH
+    const val WEIGHT_MIN_KG = ApiLimits.RiderProfile.WEIGHT_MIN_KG
+    const val WEIGHT_MAX_KG = ApiLimits.RiderProfile.WEIGHT_MAX_KG
+    const val MAX_KITES = ApiLimits.RiderProfile.QUIVER_MAX_KITES
+    val MIN_SESSION_STEPS =
+        StepRange(ApiLimits.RiderProfile.MIN_SESSION_MIN_MINUTES, ApiLimits.RiderProfile.MIN_SESSION_MAX_MINUTES, step = 30)
+    val MAX_DRIVE_STEPS = StepRange(min = 0, max = ApiLimits.RiderProfile.MAX_DRIVE_MAX_MINUTES, step = 30)
     val DEFAULT_MIN_SESSION_MINUTES = RiderProfile.DEFAULT_MIN_SESSION.inWholeMinutes.toInt()
     val DEFAULT_MAX_DRIVE_MINUTES = RiderProfile.DEFAULT_MAX_DRIVE.inWholeMinutes.toInt()
 

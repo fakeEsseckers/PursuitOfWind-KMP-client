@@ -1,5 +1,6 @@
 package io.github.esseckers.pursuitofwind.data.fake.internal
 
+import io.github.esseckers.pursuitofwind.contract.ApiLimits
 import io.github.esseckers.pursuitofwind.contract.CreateRideRequestDto
 import io.github.esseckers.pursuitofwind.contract.RiderProfileDto
 
@@ -9,16 +10,10 @@ import io.github.esseckers.pursuitofwind.contract.RiderProfileDto
  */
 internal object Validation {
     private val UUID = Regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
-    private const val MAX_NAME = 40
-    private const val MIN_WEIGHT_KG = 30.0
-    private const val MAX_WEIGHT_KG = 200.0
-    private const val MAX_KITES = 10
-    private const val MAX_KITE_M2 = 25.0
-    private val SESSION_MINUTES = 30..720
-    private val PROFILE_DRIVE_MINUTES = 0..720
-    private val SPOT_DRIVE_MINUTES = 0..1440
-    private val SEATS = 1..8
-    private const val MAX_MEETING_POINT = 120
+    private val SESSION_MINUTES = ApiLimits.RiderProfile.MIN_SESSION_MIN_MINUTES..ApiLimits.RiderProfile.MIN_SESSION_MAX_MINUTES
+    private val PROFILE_DRIVE_MINUTES = 0..ApiLimits.RiderProfile.MAX_DRIVE_MAX_MINUTES
+    private val SPOT_DRIVE_MINUTES = 0..ApiLimits.MySpot.DRIVE_MAX_MINUTES
+    private val SEATS = ApiLimits.Ride.SEATS_MIN..ApiLimits.Ride.SEATS_MAX
 
     fun isUuid(value: String): Boolean = UUID.matches(value)
 
@@ -27,10 +22,7 @@ internal object Validation {
         name: String,
     ) = check422(isUuid(value)) { "$name must be a UUID, was '$value'" }
 
-    fun requireName(
-        value: String,
-        name: String,
-    ) = requireText(value, name, MAX_NAME)
+    fun requireCrewName(value: String) = requireText(value, "name", ApiLimits.Crew.NAME_MAX_LENGTH)
 
     /** For `minLength: 1` strings without a pattern: empty is invalid, spaces are not. */
     fun requireNotEmpty(
@@ -38,11 +30,44 @@ internal object Validation {
         name: String,
     ) = check422(value.isNotEmpty()) { "$name must not be empty" }
 
+    fun requireDriveMinutes(value: Int) =
+        check422(value in SPOT_DRIVE_MINUTES) { "driveMinutes must be from 0 to ${SPOT_DRIVE_MINUTES.last}, was $value" }
+
+    fun profile(profile: RiderProfileDto) {
+        val limits = ApiLimits.RiderProfile
+        requireText(profile.displayName, "displayName", limits.DISPLAY_NAME_MAX_LENGTH)
+        check422(profile.weightKg in limits.WEIGHT_MIN_KG..limits.WEIGHT_MAX_KG) {
+            "weightKg must be between ${limits.WEIGHT_MIN_KG.plain()} and ${limits.WEIGHT_MAX_KG.plain()}, was ${profile.weightKg}"
+        }
+        check422(profile.quiverM2.size <= limits.QUIVER_MAX_KITES) { "quiverM2 has at most ${limits.QUIVER_MAX_KITES} kites" }
+        check422(profile.quiverM2.toSet().size == profile.quiverM2.size) { "quiverM2 lists a size twice" }
+        check422(
+            profile.quiverM2.all {
+                it > 0.0 && it <= limits.KITE_MAX_M2
+            },
+        ) { "Kite sizes must be above 0 and at most ${limits.KITE_MAX_M2.plain()} m²" }
+        check422(listOfNotNull(profile.minWindMps, profile.maxWindMps).all { it >= 0.0 }) { "Wind limits must not be negative" }
+        val min = profile.minWindMps
+        val max = profile.maxWindMps
+        check422(min == null || max == null || min < max) { "minWindMps must be below maxWindMps" }
+        check422(profile.minSessionMinutes in SESSION_MINUTES) {
+            "minSessionMinutes must be from ${SESSION_MINUTES.first} to ${SESSION_MINUTES.last}"
+        }
+        check422(profile.maxDriveMinutes in PROFILE_DRIVE_MINUTES) { "maxDriveMinutes must be from 0 to ${PROFILE_DRIVE_MINUTES.last}" }
+    }
+
+    fun ride(request: CreateRideRequestDto) {
+        check422(request.windowStart < request.windowEnd) { "windowStart must be before windowEnd" }
+        check422(request.departAt <= request.windowStart) { "departAt must not be after windowStart" }
+        requireText(request.meetingPoint, "meetingPoint", ApiLimits.Ride.MEETING_POINT_MAX_LENGTH)
+        check422(request.seatsTotal in SEATS) { "seatsTotal must be from ${SEATS.first} to ${SEATS.last}, was ${request.seatsTotal}" }
+    }
+
     private fun requireText(
         value: String,
         name: String,
         maxLength: Int,
-    ) = check422(value.hasNonSpace() && value.lengthInCodePoints() <= maxLength) {
+    ) = check422(value.hasNonSpace() && ApiLimits.lengthOf(value) <= maxLength) {
         "$name must have 1 to $maxLength characters and not only spaces"
     }
 
@@ -52,29 +77,6 @@ internal object Validation {
      */
     private fun String.hasNonSpace(): Boolean = any { !it.isWhitespace() }
 
-    /** JSON Schema counts code points; a Kotlin string's length counts UTF-16 units. */
-    private fun String.lengthInCodePoints(): Int = length - count { it.isLowSurrogate() }
-
-    fun requireDriveMinutes(value: Int) = check422(value in SPOT_DRIVE_MINUTES) { "driveMinutes must be from 0 to 1440, was $value" }
-
-    fun profile(profile: RiderProfileDto) {
-        requireName(profile.displayName, "displayName")
-        check422(profile.weightKg in MIN_WEIGHT_KG..MAX_WEIGHT_KG) { "weightKg must be between 30 and 200, was ${profile.weightKg}" }
-        check422(profile.quiverM2.size <= MAX_KITES) { "quiverM2 has at most $MAX_KITES kites" }
-        check422(profile.quiverM2.toSet().size == profile.quiverM2.size) { "quiverM2 lists a size twice" }
-        check422(profile.quiverM2.all { it > 0.0 && it <= MAX_KITE_M2 }) { "Kite sizes must be above 0 and at most 25 m²" }
-        check422(listOfNotNull(profile.minWindMps, profile.maxWindMps).all { it >= 0.0 }) { "Wind limits must not be negative" }
-        val min = profile.minWindMps
-        val max = profile.maxWindMps
-        check422(min == null || max == null || min < max) { "minWindMps must be below maxWindMps" }
-        check422(profile.minSessionMinutes in SESSION_MINUTES) { "minSessionMinutes must be from 30 to 720" }
-        check422(profile.maxDriveMinutes in PROFILE_DRIVE_MINUTES) { "maxDriveMinutes must be from 0 to 720" }
-    }
-
-    fun ride(request: CreateRideRequestDto) {
-        check422(request.windowStart < request.windowEnd) { "windowStart must be before windowEnd" }
-        check422(request.departAt <= request.windowStart) { "departAt must not be after windowStart" }
-        requireText(request.meetingPoint, "meetingPoint", MAX_MEETING_POINT)
-        check422(request.seatsTotal in SEATS) { "seatsTotal must be from 1 to 8, was ${request.seatsTotal}" }
-    }
+    /** `30` for 30.0, as the spec writes its limits. */
+    private fun Double.plain(): String = if (this % 1.0 == 0.0) toLong().toString() else toString()
 }

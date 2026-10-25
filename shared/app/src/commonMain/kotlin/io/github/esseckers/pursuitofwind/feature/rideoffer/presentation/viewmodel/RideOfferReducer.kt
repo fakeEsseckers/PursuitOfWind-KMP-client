@@ -1,5 +1,6 @@
 package io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.viewmodel
 
+import io.github.esseckers.pursuitofwind.contract.ApiLimits
 import io.github.esseckers.pursuitofwind.core.mvi.Reducer
 import io.github.esseckers.pursuitofwind.feature.rideoffer.domain.entity.RideDraftEntity
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.mapper.RideOfferStateMapper
@@ -19,14 +20,39 @@ internal class RideOfferReducer(
         val inputs = state.inputs
         val next =
             when (result) {
-                is RideOfferResult.Ticked -> inputs.copy(now = result.now, departAt = result.departAt)
-                is RideOfferResult.CrewsChanged -> inputs.copy(crews = result.cached, chosen = result.chosen)
-                is RideOfferResult.SpotChanged -> inputs.copy(spot = result.spot)
-                is RideOfferResult.Chosen -> inputs.copy(chosen = result.crewId)
-                is RideOfferResult.SeatsChanged -> inputs.copy(seats = result.seats.coerceIn(RideOfferInputs.SEATS))
-                is RideOfferResult.MeetingPointChanged -> inputs.copy(meetingPoint = result.text.take(RideOfferInputs.MAX_MEETING_POINT))
-                RideOfferResult.Sending -> inputs.copy(sending = true, error = null)
-                is RideOfferResult.Failed -> inputs.copy(sending = false, error = result.error)
+                is RideOfferResult.Ticked -> {
+                    inputs.copy(now = result.now, departAt = result.departAt)
+                }
+
+                is RideOfferResult.CrewsChanged -> {
+                    inputs.copy(crews = result.cached, chosen = result.chosen)
+                }
+
+                is RideOfferResult.SpotChanged -> {
+                    inputs.copy(spot = result.spot)
+                }
+
+                is RideOfferResult.Chosen -> {
+                    inputs.copy(chosen = result.crewId)
+                }
+
+                is RideOfferResult.SeatsChanged -> {
+                    inputs.copy(seats = result.seats.coerceIn(RideOfferInputs.SEATS))
+                }
+
+                is RideOfferResult.MeetingPointChanged -> {
+                    inputs.copy(
+                        meetingPoint = ApiLimits.cut(result.text, RideOfferInputs.MAX_MEETING_POINT),
+                    )
+                }
+
+                RideOfferResult.Sending -> {
+                    inputs.copy(sending = true, error = null)
+                }
+
+                is RideOfferResult.Failed -> {
+                    inputs.copy(sending = false, error = result.error)
+                }
             }
         return RideOfferStateMapper.map(next, draft, riderZone)
     }

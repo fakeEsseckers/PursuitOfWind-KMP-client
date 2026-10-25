@@ -1,6 +1,7 @@
 package io.github.esseckers.pursuitofwind.data.internal.sync
 
 import androidx.room3.withWriteTransaction
+import io.github.esseckers.pursuitofwind.contract.ApiLimits
 import io.github.esseckers.pursuitofwind.contract.CrewEventDto
 import io.github.esseckers.pursuitofwind.contract.CrewFeedDto
 import io.github.esseckers.pursuitofwind.contract.MemberJoinedEventDto
@@ -196,7 +197,8 @@ internal class CrewFeedSync(
         }
 
     private companion object {
-        const val PAGE_SIZE = 100
+        /** The longest page the API gives. */
+        const val PAGE_SIZE = ApiLimits.Paging.LIMIT_MAX
         val CLIENT_ERRORS = 400..499
     }
 }

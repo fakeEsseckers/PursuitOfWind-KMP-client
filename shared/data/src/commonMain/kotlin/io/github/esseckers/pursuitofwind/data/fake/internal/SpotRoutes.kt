@@ -1,5 +1,6 @@
 package io.github.esseckers.pursuitofwind.data.fake.internal
 
+import io.github.esseckers.pursuitofwind.contract.ApiLimits
 import io.github.esseckers.pursuitofwind.contract.MySpotDto
 import io.github.esseckers.pursuitofwind.contract.MySpotListDto
 import io.github.esseckers.pursuitofwind.contract.MySpotUpdateDto
@@ -72,8 +73,8 @@ internal class SpotRoutes(
         const val DEFAULT_LIMIT = 50
         const val DEFAULT_HOURS = 72
         const val SECONDS_PER_HOUR = 3_600L
-        val LIMITS = 1..100
-        val HOURS = 1..168
+        val LIMITS = 1..ApiLimits.Paging.LIMIT_MAX
+        val HOURS = 1..ApiLimits.Forecast.HOURS_MAX
 
         /** Like real models, the fake forecasts ten days ahead. */
         val HORIZON = 240.hours

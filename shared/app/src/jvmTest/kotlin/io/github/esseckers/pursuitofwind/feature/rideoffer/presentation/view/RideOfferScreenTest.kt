@@ -19,6 +19,7 @@ import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.test.v2.runSkikoComposeUiTest
 import androidx.compose.ui.unit.Density
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.PursuitOfWindTheme
+import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.RideOfferInputs
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.RideOfferIntent
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.RideOfferState
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.preview.RideOfferPreviewData
@@ -86,6 +87,21 @@ class RideOfferScreenTest {
                 intents,
             )
             assertEquals(1, backs)
+        }
+
+    @Test
+    fun `a meeting point longer than the server takes is never typed`() =
+        runComposeUiTest {
+            show(RideOfferPreviewData.empty)
+            val kite = "\uD83E\uDE81"
+
+            onNodeWithTag("offer.meeting").performTextInput(kite.repeat(RideOfferInputs.MAX_MEETING_POINT + 1))
+            onNodeWithTag("offer.meeting").performTextInput(kite.repeat(RideOfferInputs.MAX_MEETING_POINT))
+
+            assertEquals(
+                listOf<RideOfferIntent>(RideOfferIntent.ChangeMeetingPoint(kite.repeat(RideOfferInputs.MAX_MEETING_POINT))),
+                intents,
+            )
         }
 
     @Test

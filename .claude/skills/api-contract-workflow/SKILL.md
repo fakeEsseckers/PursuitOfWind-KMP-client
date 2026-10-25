@@ -56,6 +56,7 @@ All Ktor exceptions and problem bodies map to `AppError` in one function (`toApp
 - every schema maps to a DTO with exactly the same fields, required fields and field types (enums: same values, sealed `CrewEventDto`: same variants);
 - every 4xx and `default` response is `application/problem+json` with the `Problem` schema; error examples use a known `ProblemCode` and the status of their response; every `ProblemCode` is listed in the `Problem` schema;
 - seat counts in examples add up (`seatsFree = seatsTotal − passengers`).
+- `ApiLimits` (field limits for the client's forms and the fake's validation) equals the spec's `maxLength`, `minimum`, `maximum` and `maxItems` (`ApiLimitsContractTest`); a changed limit changes both. Text lengths count code points (`ApiLimits.lengthOf`, `ApiLimits.cut`), as JSON Schema does.
 
 A new schema needs an entry in the test's `dtoBySchema` map and at least one example. A new operation needs an `ApiRoute` entry; update the fake server in the same change.
 

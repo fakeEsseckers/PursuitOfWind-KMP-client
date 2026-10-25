@@ -1,6 +1,7 @@
 package io.github.esseckers.pursuitofwind.data.repository
 
 import androidx.room3.withWriteTransaction
+import io.github.esseckers.pursuitofwind.contract.ApiLimits
 import io.github.esseckers.pursuitofwind.contract.MySpotUpdateDto
 import io.github.esseckers.pursuitofwind.contract.SpotDto
 import io.github.esseckers.pursuitofwind.data.internal.local.MySpotEntity
@@ -113,6 +114,7 @@ public class SpotRepository internal constructor(
         }
 
     private companion object {
-        const val CATALOG_PAGE_SIZE = 100
+        /** The longest page the API gives. */
+        const val CATALOG_PAGE_SIZE = ApiLimits.Paging.LIMIT_MAX
     }
 }

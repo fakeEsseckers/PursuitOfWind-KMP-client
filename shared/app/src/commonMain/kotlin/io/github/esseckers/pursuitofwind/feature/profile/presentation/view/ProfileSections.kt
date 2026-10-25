@@ -30,6 +30,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import io.github.esseckers.pursuitofwind.contract.ApiLimits
 import io.github.esseckers.pursuitofwind.core.designsystem.component.ChoiceChip
 import io.github.esseckers.pursuitofwind.core.designsystem.component.DraftTextField
 import io.github.esseckers.pursuitofwind.core.designsystem.component.SectionTitle
@@ -97,7 +98,7 @@ internal fun AboutYouFields(
             onValueChange = { onEdit(ProfileEdit.Name(it)) },
             label = stringResource(Res.string.profile_name),
             // Longer names than the server allows are never typed.
-            accepts = { it.length <= ProfileLimits.NAME_MAX_LENGTH },
+            accepts = { ApiLimits.lengthOf(it) <= ProfileLimits.NAME_MAX_LENGTH },
             error = errors[ProfileField.NAME]?.let { stringResource(errorText(it)) },
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Next),
             modifier = Modifier.testTag("profile.name"),
