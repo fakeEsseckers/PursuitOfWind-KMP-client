@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -17,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
@@ -26,9 +28,12 @@ import io.github.esseckers.pursuitofwind.core.designsystem.component.ActionButto
 import io.github.esseckers.pursuitofwind.core.designsystem.component.BarIconButton
 import io.github.esseckers.pursuitofwind.core.designsystem.component.Disclaimer
 import io.github.esseckers.pursuitofwind.core.designsystem.component.MessageState
+import io.github.esseckers.pursuitofwind.core.designsystem.component.NavigationBarScrim
 import io.github.esseckers.pursuitofwind.core.designsystem.component.ScreenTopBar
 import io.github.esseckers.pursuitofwind.core.designsystem.component.Skeleton
 import io.github.esseckers.pursuitofwind.core.designsystem.component.StatusBanner
+import io.github.esseckers.pursuitofwind.core.designsystem.component.contentEndInsets
+import io.github.esseckers.pursuitofwind.core.designsystem.component.screenInsets
 import io.github.esseckers.pursuitofwind.core.designsystem.icon.AppIcons
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Sizes
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Spacing
@@ -72,7 +77,11 @@ internal fun SpotDetailScreen(
     modifier: Modifier = Modifier,
 ) {
     val refresh = { onIntent(SpotDetailIntent.Refresh) }
-    Scaffold(modifier = modifier, topBar = { SpotTopBar(state.header, state.updatedAgo, onBack, refresh) }) { padding ->
+    Scaffold(
+        modifier = modifier,
+        topBar = { SpotTopBar(state.header, state.updatedAgo, onBack, refresh) },
+        contentWindowInsets = screenInsets(),
+    ) { padding ->
         PullToRefreshBox(
             // While nothing is shown yet, the placeholders are the progress indicator.
             isRefreshing = state.isRefreshing && state.content != Content.Loading,
@@ -85,6 +94,7 @@ internal fun SpotDetailScreen(
                 is Content.Error -> ErrorContent(content.message, refresh)
                 is Content.Ready -> ReadyContent(content, state.header, state.notice, onIntent)
             }
+            NavigationBarScrim(modifier = Modifier.align(Alignment.BottomCenter))
         }
     }
 }
@@ -125,6 +135,8 @@ private fun ReadyContent(
             Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
+                // Scrolls behind the navigation bar and ends clear of it.
+                .windowInsetsPadding(contentEndInsets())
                 .padding(vertical = Spacing.m)
                 .testTag("spot.ready"),
         verticalArrangement = Arrangement.spacedBy(Spacing.m),
@@ -240,7 +252,15 @@ private fun LoadingChart() {
 @Composable
 private fun MissingContent(missing: Missing) {
     // Scrollable, so the pull-to-refresh gesture works on this state too.
-    Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).testTag("spot.missing")) {
+    Column(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(
+                    rememberScrollState(),
+                ).windowInsetsPadding(contentEndInsets())
+                .testTag("spot.missing"),
+    ) {
         when (missing) {
             Missing.PROFILE -> {
                 MessageState(
@@ -266,7 +286,15 @@ private fun ErrorContent(
     message: StringResource,
     onRetry: () -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).testTag("spot.error")) {
+    Column(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(
+                    rememberScrollState(),
+                ).windowInsetsPadding(contentEndInsets())
+                .testTag("spot.error"),
+    ) {
         MessageState(
             icon = AppIcons.CloudOff,
             title = stringResource(Res.string.error_title),

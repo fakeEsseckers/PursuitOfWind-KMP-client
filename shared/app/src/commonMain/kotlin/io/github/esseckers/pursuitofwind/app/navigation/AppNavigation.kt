@@ -1,5 +1,6 @@
 package io.github.esseckers.pursuitofwind.app.navigation
 
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -85,10 +86,12 @@ internal fun AppNavigation(
         Scaffold(
             modifier = modifier,
             bottomBar = { if (top in tabDestinations) TabBar(selected = top, onSelect = navigator::selectTab) },
+            // Each screen keeps clear of the system bars itself, so its content can scroll behind them.
+            contentWindowInsets = WindowInsets(0),
         ) { padding ->
             NavDisplay(
                 backStack = backStack,
-                // The bar's height is taken here, so screens lay out above it and do not add the system bars twice.
+                // The tab bar's height is taken here, so a tab lays out above it and does not add the navigation bar again.
                 modifier = Modifier.padding(padding).consumeWindowInsets(padding),
                 // System back (gesture, button, iOS swipe) always means the screen on top.
                 onBack = navigator::back,

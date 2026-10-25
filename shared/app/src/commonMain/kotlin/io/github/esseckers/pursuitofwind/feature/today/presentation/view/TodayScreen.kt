@@ -34,6 +34,7 @@ import io.github.esseckers.pursuitofwind.core.designsystem.component.Disclaimer
 import io.github.esseckers.pursuitofwind.core.designsystem.component.MessageState
 import io.github.esseckers.pursuitofwind.core.designsystem.component.Skeleton
 import io.github.esseckers.pursuitofwind.core.designsystem.component.StatusBanner
+import io.github.esseckers.pursuitofwind.core.designsystem.component.screenInsets
 import io.github.esseckers.pursuitofwind.core.designsystem.icon.AppIcons
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Sizes
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Spacing
@@ -77,7 +78,11 @@ internal fun TodayScreen(
 ) {
     val refresh = { onIntent(TodayIntent.Refresh) }
     val refreshAction = refreshAction(refresh)
-    Scaffold(modifier = modifier, topBar = { TodayHeader(state.updatedAgo, refreshAction) }) { padding ->
+    Scaffold(
+        modifier = modifier,
+        topBar = { TodayHeader(state.updatedAgo, refreshAction) },
+        contentWindowInsets = screenInsets(),
+    ) { padding ->
         PullToRefreshBox(
             // While nothing is shown yet, the placeholders are the progress indicator.
             isRefreshing = state.isRefreshing && state.content != Content.Loading,

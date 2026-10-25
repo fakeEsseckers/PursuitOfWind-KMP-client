@@ -38,6 +38,7 @@ import io.github.esseckers.pursuitofwind.core.designsystem.component.MessageStat
 import io.github.esseckers.pursuitofwind.core.designsystem.component.Skeleton
 import io.github.esseckers.pursuitofwind.core.designsystem.component.StatusBanner
 import io.github.esseckers.pursuitofwind.core.designsystem.component.TabTitle
+import io.github.esseckers.pursuitofwind.core.designsystem.component.screenInsets
 import io.github.esseckers.pursuitofwind.core.designsystem.icon.AppIcons
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Sizes
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Spacing
@@ -93,6 +94,7 @@ internal fun SpotsScreen(
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
+        contentWindowInsets = screenInsets(),
         floatingActionButton = {
             // With no spots, the message offers the same action; one button is enough.
             if (state.content !is Content.Empty) AddSpotsButton(onClick = { onIntent(SpotsIntent.AddSpots) })

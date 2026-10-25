@@ -3,14 +3,10 @@ package io.github.esseckers.pursuitofwind.feature.profile.presentation.view
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -28,9 +24,12 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import io.github.esseckers.pursuitofwind.core.designsystem.component.NavigationBarScrim
 import io.github.esseckers.pursuitofwind.core.designsystem.component.PrimaryButton
 import io.github.esseckers.pursuitofwind.core.designsystem.component.ScreenTopBar
 import io.github.esseckers.pursuitofwind.core.designsystem.component.TabTitle
+import io.github.esseckers.pursuitofwind.core.designsystem.component.contentEndInsets
+import io.github.esseckers.pursuitofwind.core.designsystem.component.screenInsets
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Sizes
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Spacing
 import io.github.esseckers.pursuitofwind.core.resources.Res
@@ -78,13 +77,18 @@ internal fun ProfileScreen(
                 }
             }
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        // Above the keyboard, where "Profile saved" would otherwise land while a field still has focus.
+        snackbarHost = { SnackbarHost(snackbarHostState, modifier = Modifier.imePadding()) },
+        contentWindowInsets = screenInsets(),
     ) { padding ->
         // Reading the saved profile takes a moment; an empty screen is calmer than a spinner that flashes.
-        if (state.loading) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding).testTag("profile.loading"))
-        } else {
-            ProfileForm(state = state, mode = mode, onIntent = onIntent, modifier = Modifier.padding(padding))
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (state.loading) {
+                Box(modifier = Modifier.fillMaxSize().padding(padding).testTag("profile.loading"))
+            } else {
+                ProfileForm(state = state, mode = mode, onIntent = onIntent, modifier = Modifier.padding(padding))
+            }
+            NavigationBarScrim(modifier = Modifier.align(Alignment.BottomCenter))
         }
     }
 }
@@ -104,7 +108,7 @@ private fun ProfileForm(
                     .widthIn(max = Sizes.contentMaxWidth)
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
-                    .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
+                    .windowInsetsPadding(contentEndInsets())
                     .padding(Spacing.m)
                     .testTag("profile.form"),
             verticalArrangement = Arrangement.spacedBy(Spacing.l),

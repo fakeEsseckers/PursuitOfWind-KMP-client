@@ -1,6 +1,7 @@
 package io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.view
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.KeyboardOptions
@@ -31,10 +33,13 @@ import io.github.esseckers.pursuitofwind.core.designsystem.component.ChoiceChip
 import io.github.esseckers.pursuitofwind.core.designsystem.component.DraftTextField
 import io.github.esseckers.pursuitofwind.core.designsystem.component.IconLine
 import io.github.esseckers.pursuitofwind.core.designsystem.component.MessageState
+import io.github.esseckers.pursuitofwind.core.designsystem.component.NavigationBarScrim
 import io.github.esseckers.pursuitofwind.core.designsystem.component.PrimaryButton
 import io.github.esseckers.pursuitofwind.core.designsystem.component.ScreenTopBar
 import io.github.esseckers.pursuitofwind.core.designsystem.component.SectionTitle
 import io.github.esseckers.pursuitofwind.core.designsystem.component.Stepper
+import io.github.esseckers.pursuitofwind.core.designsystem.component.contentEndInsets
+import io.github.esseckers.pursuitofwind.core.designsystem.component.screenInsets
 import io.github.esseckers.pursuitofwind.core.designsystem.icon.AppIcons
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Sizes
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Spacing
@@ -79,16 +84,20 @@ internal fun RideOfferScreen(
                 onBack = onBack,
             )
         },
+        contentWindowInsets = screenInsets(),
     ) { padding ->
-        if (state.noCrew) {
-            MessageState(
-                icon = AppIcons.Car,
-                title = stringResource(Res.string.offer_no_crew_title),
-                body = stringResource(Res.string.offer_no_crew_body),
-                modifier = Modifier.padding(padding).testTag("offer.noCrew"),
-            )
-        } else {
-            OfferForm(state, onIntent, Modifier.padding(padding))
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (state.noCrew) {
+                MessageState(
+                    icon = AppIcons.Car,
+                    title = stringResource(Res.string.offer_no_crew_title),
+                    body = stringResource(Res.string.offer_no_crew_body),
+                    modifier = Modifier.padding(padding).testTag("offer.noCrew"),
+                )
+            } else {
+                OfferForm(state, onIntent, Modifier.padding(padding))
+            }
+            NavigationBarScrim(modifier = Modifier.align(Alignment.BottomCenter))
         }
     }
 }
@@ -106,6 +115,8 @@ private fun OfferForm(
                 // Above the keyboard, so the meeting point and "Offer the ride" can be scrolled into view while typing.
                 .imePadding()
                 .verticalScroll(rememberScrollState())
+                // Scrolls behind the navigation bar and ends clear of it, or of the keyboard while it is open.
+                .windowInsetsPadding(contentEndInsets())
                 .padding(Spacing.m)
                 .testTag("offer.form"),
         horizontalAlignment = Alignment.CenterHorizontally,

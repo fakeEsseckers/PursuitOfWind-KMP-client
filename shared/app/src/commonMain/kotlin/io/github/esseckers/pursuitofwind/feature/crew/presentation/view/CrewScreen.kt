@@ -42,6 +42,7 @@ import io.github.esseckers.pursuitofwind.core.designsystem.component.SectionTitl
 import io.github.esseckers.pursuitofwind.core.designsystem.component.Skeleton
 import io.github.esseckers.pursuitofwind.core.designsystem.component.StatusBanner
 import io.github.esseckers.pursuitofwind.core.designsystem.component.TabTitle
+import io.github.esseckers.pursuitofwind.core.designsystem.component.screenInsets
 import io.github.esseckers.pursuitofwind.core.designsystem.icon.AppIcons
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Sizes
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Spacing
@@ -104,6 +105,7 @@ internal fun CrewScreen(
         modifier = modifier,
         topBar = { TabTitle(title = stringResource(Res.string.tab_crew), modifier = Modifier.semantics { customActions = refreshAction }) },
         snackbarHost = { SnackbarHost(snackbarHostState) },
+        contentWindowInsets = screenInsets(),
     ) { padding ->
         PullToRefreshBox(
             isRefreshing = state.isRefreshing && state.content != Content.Loading,
