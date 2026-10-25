@@ -42,8 +42,9 @@ internal sealed interface Destination : NavKey {
     data object Profile : Destination
 
     /**
-     * "I'm going": the form that offers the crew a ride to [spotId] for the window from [windowStart] to [windowEnd],
-     * leaving at [departAt]. Times are epoch seconds, so the key stays plain.
+     * "I'm going": the form that offers the crew a ride to [spotId] for the window from [windowStart] to [windowEnd].
+     * [departAt] is the time to leave, which may have passed; the form decides the departure. Times are epoch seconds,
+     * so the key stays plain.
      */
     @Serializable
     data class OfferRide(

@@ -4,7 +4,6 @@ import io.github.esseckers.pursuitofwind.core.ui.DayLabel
 import io.github.esseckers.pursuitofwind.core.ui.TimeRange
 import io.github.esseckers.pursuitofwind.core.ui.clockTime
 import io.github.esseckers.pursuitofwind.core.ui.dayLabelOf
-import io.github.esseckers.pursuitofwind.core.ui.nextQuarterHour
 import io.github.esseckers.pursuitofwind.core.ui.rounded
 import io.github.esseckers.pursuitofwind.data.model.MySpot
 import io.github.esseckers.pursuitofwind.data.model.Profile
@@ -86,7 +85,7 @@ internal class DayCardsMapper(
             rides = rides,
             hasCrew = crew.hasCrew,
             alternatives = alternatives.map { AlternativeUi(it.spotId, nameOf(it.spotId), it.ridingTime()) },
-            offer = if (crew.hasCrew && !busy) RideOfferUi(window.spotId, window.usableStart, window.end, departure(leaveBy)) else null,
+            offer = if (crew.hasCrew && !busy) RideOfferUi(window.spotId, window.usableStart, window.end, leaveBy) else null,
         )
     }
 
@@ -98,12 +97,6 @@ internal class DayCardsMapper(
             spots = details.map { SpotReasonUi(it.spotId, nameOf(it.spotId), it.reason) },
             nextGoDay = nextGoDay?.let(::label),
         )
-
-    /**
-     * When an offered ride leaves: at [leaveBy], or once that has passed, at the next quarter hour. The riding time
-     * already starts from leaving now plus the drive and rigging, so the window still begins after it.
-     */
-    private fun departure(leaveBy: Instant): Instant = if (leaveBy > now) leaveBy else nextQuarterHour(now)
 
     /** The lowest and highest consensus mean wind of the hours the rider can actually ride, in the rider's unit. */
     private fun windRange(window: SessionWindow): WindRange? {

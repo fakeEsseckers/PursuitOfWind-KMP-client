@@ -89,11 +89,13 @@ internal class RideOfferViewModel(
     ): String? = (crews.firstOrNull { it.id == chosen } ?: crews.firstOrNull())?.id
 
     /**
-     * When the ride leaves at [now]: as drafted, or once that has passed while the form was open, at the next quarter
-     * hour, and never after the window starts.
+     * When the ride leaves at [now]: at the drafted time to leave while it is ahead, else at the next quarter hour, and
+     * never after the window starts.
      */
-    private fun departure(now: Instant): Instant =
-        if (draft.departAt > now) draft.departAt else minOf(nextQuarterHour(now), draft.windowStart)
+    private fun departure(now: Instant): Instant {
+        val planned = if (draft.departAt > now) draft.departAt else nextQuarterHour(now)
+        return minOf(planned, draft.windowStart)
+    }
 
     /** The clock's time now and after every [tick], so the departure shown moves on once the drafted one has passed. */
     private fun ticks(): Flow<Instant> =

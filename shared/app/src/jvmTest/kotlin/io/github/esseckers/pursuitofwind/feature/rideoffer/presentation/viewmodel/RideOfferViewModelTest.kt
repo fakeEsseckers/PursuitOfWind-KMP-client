@@ -67,7 +67,7 @@ class RideOfferViewModelTest {
         releaseMainDispatcher()
     }
 
-    private fun viewModel(): RideOfferViewModel =
+    private fun viewModel(draft: RideDraftEntity = this.draft): RideOfferViewModel =
         ViewModelProvider.create(
             viewModels,
             viewModelFactory {
@@ -146,6 +146,18 @@ class RideOfferViewModelTest {
                     .value
                     .single { it.driver.displayName == "Alex" }
             assertEquals(at(SUNDAY, 10, 45), ride.departAt)
+        }
+
+    @Test
+    fun `a drafted departure after the window starts is moved to the start`() =
+        runTest(dispatcher) {
+            riderInWeekendCrew()
+            val viewModel = viewModel(draft.copy(departAt = at(SUNDAY, 13) + 10.minutes))
+
+            viewModel.state.test(timeout = TURBINE_TIMEOUT) {
+                assertEquals("13:00", awaitState { it.summary != null }.summary?.departAt)
+                cancelAndIgnoreRemainingEvents()
+            }
         }
 
     @Test
