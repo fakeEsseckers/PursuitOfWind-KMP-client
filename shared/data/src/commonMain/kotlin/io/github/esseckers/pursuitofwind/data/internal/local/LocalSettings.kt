@@ -83,8 +83,7 @@ internal class LocalSettings(
     suspend fun switchOwner(userId: String) {
         storage {
             store.edit { preferences ->
-                preferences.remove(PROFILE)
-                preferences.remove(PROFILE_UPDATED_AT)
+                USER_KEYS.forEach { preferences.remove(it) }
                 preferences[CACHE_OWNER] = userId
             }
         }
@@ -100,6 +99,9 @@ internal class LocalSettings(
         private val PROFILE_UPDATED_AT = longPreferencesKey("profile_updated_at")
         private val CACHE_OWNER = stringPreferencesKey("cache_owner")
         private val LANGUAGE = stringPreferencesKey("language")
+
+        /** What belongs to the user, dropped for a new owner; the language and the owner are the device's. */
+        private val USER_KEYS = listOf(PROFILE, PROFILE_UPDATED_AT)
 
         /**
          * One open store per file per process: open it once (Koin `single`) and [close] it before opening the file

@@ -8,9 +8,10 @@ import kotlin.time.Instant
 
 /**
  * Keeps the cache tied to one user. The spot catalog and forecasts are the same for everyone and stay; followed spots,
- * crews, rides, feed positions and the profile belong to the user who fetched them. They are dropped when another
- * user signs in, and when the server created the user just now ([newUser], `201`): then whatever the cache holds was
- * fetched from a server that has forgotten it (the fake backend after a restart hands out the same ids again).
+ * crews, rides, feed positions and the profile belong to the user who fetched them (`CacheOwnershipTest` checks that
+ * every table is one or the other, and what goes). They are dropped when another user signs in, and when the server
+ * created the user just now ([newUser], `201`): then whatever the cache holds was fetched from a server that has
+ * forgotten it (the fake backend after a restart hands out the same ids again).
  */
 internal class UserCache(
     private val database: PursuitOfWindDatabase,
