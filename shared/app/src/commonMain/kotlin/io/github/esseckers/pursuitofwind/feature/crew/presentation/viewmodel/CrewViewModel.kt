@@ -16,6 +16,8 @@ import io.github.esseckers.pursuitofwind.core.ui.message
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Crew
 import io.github.esseckers.pursuitofwind.data.model.Outcome
+import io.github.esseckers.pursuitofwind.data.model.outcomeOf
+import io.github.esseckers.pursuitofwind.data.model.valueOrNull
 import io.github.esseckers.pursuitofwind.feature.crew.domain.repository.CrewsRepository
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewDialog
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewEffect
@@ -114,14 +116,10 @@ internal class CrewViewModel(
                     dispatchResult(CrewResult.DialogShown(null))
                     postEffect(if (created) CrewEffect.Created(crew.name, crew.inviteCode) else CrewEffect.Joined(crew.name))
                     repository.refresh(crew.id)
-                    // Not in the cache even now (left on another device, another account): the list decides.
-                    if (repository.crews
-                            .first()
-                            .value
-                            .none { it.id == crew.id }
-                    ) {
-                        dispatchResult(CrewResult.ArrivalMissing(crew.id))
-                    }
+                    // Not in the cache even now (left on another device, another account), or the cache cannot be read:
+                    // the list decides.
+                    val cached = outcomeOf { repository.crews.first() }.valueOrNull()
+                    if (cached?.value?.none { it.id == crew.id } != false) dispatchResult(CrewResult.ArrivalMissing(crew.id))
                 }
 
                 is Outcome.Failure -> {

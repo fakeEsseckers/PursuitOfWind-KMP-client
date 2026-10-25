@@ -90,16 +90,22 @@ class RideRepository internal constructor(
     ): Outcome<Ride> =
         seatChanges.withLock {
             try {
-                markPending(rideId, take)
                 val key = newIdempotencyKey()
-                when (val result = outcome { keep(if (take) api.takeSeat(rideId, key) else api.releaseSeat(rideId, key)) }) {
+                val result =
+                    outcome {
+                        // Inside the outcome: a cache that cannot be written fails the change before anything is sent.
+                        markPending(rideId, take)
+                        keep(if (take) api.takeSeat(rideId, key) else api.releaseSeat(rideId, key))
+                    }
+                when (result) {
                     is Outcome.Success -> result
                     is Outcome.Failure -> afterRefusal(rideId, result)
                 }
             } finally {
                 // Unconditionally: a cancellation can arrive after the overlay was written but before markPending
-                // returned. Only this path writes overlays, and seatChanges lets one run at a time.
-                withContext(NonCancellable) { rides.clearPending(rideId) }
+                // returned. Only this path writes overlays, and seatChanges lets one run at a time. A cache that cannot
+                // be written now has nothing to clear, or keeps the overlay until the next change of the ride.
+                withContext(NonCancellable) { outcome { rides.clearPending(rideId) } }
             }
         }
 
@@ -129,14 +135,14 @@ class RideRepository internal constructor(
     }
 
     /**
-     * After the server refused, reloads the ride so the cache shows what the server has. A network failure says
-     * nothing about the server, so the cache stays. `ALREADY_JOINED` means the seat is the rider's: success.
+     * After the server refused, reloads the ride so the cache shows what the server has. A network or storage failure
+     * says nothing about the server, so the cache stays. `ALREADY_JOINED` means the seat is the rider's: success.
      */
     private suspend fun afterRefusal(
         rideId: String,
         failure: Outcome.Failure,
     ): Outcome<Ride> {
-        if (failure.error == AppError.Network) return failure
+        if (failure.error == AppError.Network || failure.error == AppError.Storage) return failure
         val reloaded = outcome { keep(api.ride(rideId)) }
         val alreadySeated = failure.error == AppError.Conflict(ProblemCode.ALREADY_JOINED) && reloaded is Outcome.Success
         return if (alreadySeated) reloaded else failure

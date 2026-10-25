@@ -274,6 +274,7 @@
     <string name="error_unauthorized">Не удалось войти. Попробуй ещё раз.</string>
     <string name="error_no_forecast">Для твоих спотов пока нет прогноза. Попробуй чуть позже.</string>
     <string name="error_unknown">Что-то пошло не так. Попробуй ещё раз.</string>
+    <string name="error_storage">Не удалось сохранить на телефоне. Освободи место и попробуй ещё раз.</string>
     <!-- Crew tab -->
     <string name="tab_crew">Компания</string>
     <string name="crew_loading">Загружаем компанию</string>

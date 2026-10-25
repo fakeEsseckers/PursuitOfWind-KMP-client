@@ -33,7 +33,10 @@ internal class DataHarness(
 ) : AutoCloseable {
     private val scope = CoroutineScope(dispatcher + SupervisorJob())
     val database = PursuitOfWindDatabase.build(inMemoryDatabaseBuilder(), dispatcher)
-    val settings = LocalSettings.open(temporaryFilePath("${Uuid.random()}.preferences_pb"), scope)
+
+    /** The device's settings file; [FullDisk.full] makes every read and write of it fail. */
+    val disk = FullDisk(LocalSettings.dataStore(temporaryFilePath("${Uuid.random()}.preferences_pb"), scope))
+    val settings = LocalSettings(disk, scope)
     val userCache = UserCache(database, settings)
     val network = NetworkHarness(engine, onSignedIn = userCache::claimFor)
     private val store = CrewStore(network.api, database, clock)

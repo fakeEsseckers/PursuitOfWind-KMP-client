@@ -1,16 +1,16 @@
 package io.github.esseckers.pursuitofwind.feature.spots.data.repository
 
-import co.touchlab.kermit.Logger
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.MySpot
 import io.github.esseckers.pursuitofwind.data.model.Outcome
 import io.github.esseckers.pursuitofwind.data.model.errorOrNull
+import io.github.esseckers.pursuitofwind.data.model.outcomeOf
+import io.github.esseckers.pursuitofwind.data.model.valueOrNull
 import io.github.esseckers.pursuitofwind.data.repository.SpotRepository
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.spots.domain.entity.SpotSettingsEntity
 import io.github.esseckers.pursuitofwind.feature.spots.domain.repository.SpotsRepository
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -76,18 +76,9 @@ internal class SpotsRepositoryImpl(
     /** Runs [block] after the writes asked for before it, and to its end even when the caller is cancelled. */
     private suspend fun <T> write(block: suspend () -> T): T = withContext(NonCancellable) { writes.withLock { block() } }
 
-    /** The followed spots as cached right now, so read after a write they show it; null if the cache cannot be read. */
-    private suspend fun current(): Cached<List<MySpot>>? =
-        try {
-            shared.mySpots.first()
-        } catch (cancelled: CancellationException) {
-            throw cancelled
-        } catch (
-            // Any storage failure: the tab goes on with what the cache emits.
-            @Suppress("TooGenericExceptionCaught")
-            failure: Exception,
-        ) {
-            Logger.withTag("SpotsRepository").e(failure) { "Reading the followed spots failed" }
-            null
-        }
+    /**
+     * The followed spots as cached right now, so read after a write they show it. Null when the cache cannot be read (the
+     * data layer logs why): the tab goes on with what the cache emits.
+     */
+    private suspend fun current(): Cached<List<MySpot>>? = outcomeOf { shared.mySpots.first() }.valueOrNull()
 }

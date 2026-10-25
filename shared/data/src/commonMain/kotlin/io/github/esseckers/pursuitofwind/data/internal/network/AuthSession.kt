@@ -7,6 +7,7 @@ import io.github.esseckers.pursuitofwind.contract.ContractJson
 import io.github.esseckers.pursuitofwind.contract.PlatformDto
 import io.github.esseckers.pursuitofwind.contract.RefreshTokensRequestDto
 import io.github.esseckers.pursuitofwind.data.auth.SecureTokenStore
+import io.github.esseckers.pursuitofwind.data.internal.local.storage
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.request
@@ -62,14 +63,13 @@ internal class AuthSession(
     /** Forgets the tokens; the installation id stays, so the next sign-in returns the same user. */
     suspend fun clear() {
         mutex.withLock {
-            store.delete(TOKENS)
+            storage { store.delete(TOKENS) }
             signedInUser.value = null
         }
     }
 
     private suspend fun stored(): AuthTokensDto? =
-        store
-            .read(TOKENS)
+        storage { store.read(TOKENS) }
             ?.let { runCatching { ContractJson.decodeFromString(AuthTokensDto.serializer(), it) }.getOrNull() }
             ?.also { signedInUser.value = it.userId }
 
@@ -105,10 +105,10 @@ internal class AuthSession(
      * read throws instead of answering null, so a passing failure never replaces it.
      */
     private suspend fun installationId(): String =
-        store.read(INSTALLATION_ID) ?: Uuid.random().toString().also { store.write(INSTALLATION_ID, it) }
+        storage { store.read(INSTALLATION_ID) ?: Uuid.random().toString().also { store.write(INSTALLATION_ID, it) } }
 
     private suspend fun save(tokens: AuthTokensDto): AuthTokensDto {
-        store.write(TOKENS, ContractJson.encodeToString(AuthTokensDto.serializer(), tokens))
+        storage { store.write(TOKENS, ContractJson.encodeToString(AuthTokensDto.serializer(), tokens)) }
         signedInUser.value = tokens.userId
         return tokens
     }

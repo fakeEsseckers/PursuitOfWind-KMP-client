@@ -6,13 +6,13 @@ import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.Crew
 import io.github.esseckers.pursuitofwind.data.model.Outcome
 import io.github.esseckers.pursuitofwind.data.model.errorOrNull
+import io.github.esseckers.pursuitofwind.data.model.outcomeOf
 import io.github.esseckers.pursuitofwind.data.repository.AccountRepository
 import io.github.esseckers.pursuitofwind.data.repository.CrewRepository
 import io.github.esseckers.pursuitofwind.data.repository.RideRepository
 import io.github.esseckers.pursuitofwind.data.repository.SpotRepository
 import io.github.esseckers.pursuitofwind.feature.crew.domain.entity.CrewDetailsEntity
 import io.github.esseckers.pursuitofwind.feature.crew.domain.repository.CrewsRepository
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -74,18 +74,10 @@ internal class CrewsRepositoryImpl(
             if (missing) spots.refreshCatalog().errorOrNull() else null
         }
 
-    /** Runs [block], which reads the cache; a storage failure becomes [AppError.Unknown] instead of a crash. */
+    /** Runs [block], which reads the cache; a failure to read it is reported ([AppError.Storage]) instead of thrown. */
     private suspend fun readCache(block: suspend () -> AppError?): AppError? =
-        try {
-            block()
-        } catch (cancelled: CancellationException) {
-            throw cancelled
-        } catch (
-            // Any storage failure: the tab shows what it has and says the refresh failed.
-            @Suppress("TooGenericExceptionCaught")
-            failure: Exception,
-        ) {
-            Logger.withTag("Crew").e(failure) { "Reading the cache failed" }
-            AppError.Unknown(failure.toString())
+        when (val read = outcomeOf(block)) {
+            is Outcome.Success -> read.value
+            is Outcome.Failure -> read.error.also { Logger.withTag("Crew").e { "Reading the cache failed: $it" } }
         }
 }

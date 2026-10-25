@@ -3,6 +3,7 @@ package io.github.esseckers.pursuitofwind.core.ui
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.error_network
 import io.github.esseckers.pursuitofwind.core.resources.error_server
+import io.github.esseckers.pursuitofwind.core.resources.error_storage
 import io.github.esseckers.pursuitofwind.core.resources.error_unauthorized
 import io.github.esseckers.pursuitofwind.core.resources.error_unknown
 import io.github.esseckers.pursuitofwind.data.model.AppError
@@ -46,6 +47,7 @@ class FormattingTest {
         assertEquals(Res.string.error_network, AppError.Network.message())
         assertEquals(Res.string.error_unauthorized, AppError.Unauthorized.message())
         assertEquals(Res.string.error_server, AppError.Server(503).message())
+        assertEquals(Res.string.error_storage, AppError.Storage.message())
         assertEquals(Res.string.error_unknown, AppError.Conflict("SEATS_FULL").message())
         assertEquals(Res.string.error_unknown, AppError.Rejected(422, "VALIDATION_FAILED").message())
         assertEquals(Res.string.error_unknown, AppError.Unknown("bad body").message())

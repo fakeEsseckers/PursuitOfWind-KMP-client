@@ -1,6 +1,8 @@
 package io.github.esseckers.pursuitofwind.data.network
 
+import androidx.sqlite.SQLiteException
 import io.github.esseckers.pursuitofwind.contract.ApiHeaders
+import io.github.esseckers.pursuitofwind.data.internal.local.StorageException
 import io.github.esseckers.pursuitofwind.data.internal.network.ApiException
 import io.github.esseckers.pursuitofwind.data.internal.network.outcome
 import io.github.esseckers.pursuitofwind.data.internal.network.toAppError
@@ -151,6 +153,8 @@ class SafeRetryTest {
             byStatus,
         )
         assertEquals(AppError.Network, IOException("reset").toAppError())
+        assertEquals(AppError.Storage, StorageException(IOException("No space left on device")).toAppError())
+        assertEquals(AppError.Storage, SQLiteException("disk I/O error").toAppError())
     }
 
     private companion object {

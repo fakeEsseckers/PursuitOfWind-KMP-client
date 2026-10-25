@@ -38,48 +38,55 @@ internal class LocalSettings(
 ) : AutoCloseable {
     /** Null until the profile was fetched once. */
     val profile: Flow<StoredProfile?> =
-        store.data.map { preferences ->
-            preferences[PROFILE_UPDATED_AT]?.let { updatedAt ->
-                StoredProfile(
-                    profile = preferences[PROFILE]?.let { ContractJson.decodeFromString(RiderProfileDto.serializer(), it) },
-                    updatedAt = Instant.fromEpochMilliseconds(updatedAt),
-                )
-            }
-        }
+        store.data
+            .map { preferences ->
+                preferences[PROFILE_UPDATED_AT]?.let { updatedAt ->
+                    StoredProfile(
+                        profile = preferences[PROFILE]?.let { ContractJson.decodeFromString(RiderProfileDto.serializer(), it) },
+                        updatedAt = Instant.fromEpochMilliseconds(updatedAt),
+                    )
+                }
+            }.storageErrors()
 
     /** The app's language; a device choice, so a new owner of the cache keeps it. */
-    val language: Flow<AppLanguage> = store.data.map { AppLanguage.of(it[LANGUAGE]) }
+    val language: Flow<AppLanguage> = store.data.map { AppLanguage.of(it[LANGUAGE]) }.storageErrors()
 
     suspend fun saveProfile(
         profile: RiderProfileDto?,
         updatedAt: Instant,
     ) {
-        store.edit { preferences ->
-            if (profile == null) {
-                preferences.remove(PROFILE)
-            } else {
-                preferences[PROFILE] = ContractJson.encodeToString(RiderProfileDto.serializer(), profile)
+        storage {
+            store.edit { preferences ->
+                if (profile == null) {
+                    preferences.remove(PROFILE)
+                } else {
+                    preferences[PROFILE] = ContractJson.encodeToString(RiderProfileDto.serializer(), profile)
+                }
+                preferences[PROFILE_UPDATED_AT] = updatedAt.toEpochMilliseconds()
             }
-            preferences[PROFILE_UPDATED_AT] = updatedAt.toEpochMilliseconds()
         }
     }
 
     suspend fun saveLanguage(language: AppLanguage) {
-        store.edit { preferences ->
-            val tag = language.tag
-            if (tag == null) preferences.remove(LANGUAGE) else preferences[LANGUAGE] = tag
+        storage {
+            store.edit { preferences ->
+                val tag = language.tag
+                if (tag == null) preferences.remove(LANGUAGE) else preferences[LANGUAGE] = tag
+            }
         }
     }
 
     /** The user whose data the cache holds, null on a fresh install. */
-    suspend fun cacheOwner(): String? = store.data.first()[CACHE_OWNER]
+    suspend fun cacheOwner(): String? = storage { store.data.first()[CACHE_OWNER] }
 
     /** Drops the profile and records [userId] as the new owner of the cache. */
     suspend fun switchOwner(userId: String) {
-        store.edit { preferences ->
-            preferences.remove(PROFILE)
-            preferences.remove(PROFILE_UPDATED_AT)
-            preferences[CACHE_OWNER] = userId
+        storage {
+            store.edit { preferences ->
+                preferences.remove(PROFILE)
+                preferences.remove(PROFILE_UPDATED_AT)
+                preferences[CACHE_OWNER] = userId
+            }
         }
     }
 
@@ -102,15 +109,17 @@ internal class LocalSettings(
         fun open(
             path: String,
             scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
-        ): LocalSettings =
-            LocalSettings(
-                store =
-                    PreferenceDataStoreFactory.createWithPath(
-                        corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
-                        scope = scope,
-                        produceFile = { path.toPath() },
-                    ),
+        ): LocalSettings = LocalSettings(dataStore(path, scope), scope)
+
+        /** The DataStore behind [open]; tests wrap it to make it fail. */
+        fun dataStore(
+            path: String,
+            scope: CoroutineScope,
+        ): DataStore<Preferences> =
+            PreferenceDataStoreFactory.createWithPath(
+                corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
                 scope = scope,
+                produceFile = { path.toPath() },
             )
     }
 }
