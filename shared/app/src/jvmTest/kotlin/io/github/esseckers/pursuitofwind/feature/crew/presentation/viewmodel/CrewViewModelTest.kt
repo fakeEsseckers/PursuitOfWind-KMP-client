@@ -6,6 +6,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
+import io.github.esseckers.pursuitofwind.core.domain.entity.RideActionEntity
 import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.crew_invite_invalid
@@ -28,7 +29,6 @@ import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewRid
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState.Content
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.PersonUi
-import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.RideAction
 import io.github.esseckers.pursuitofwind.feature.spotdetail.BERLIN
 import io.github.esseckers.pursuitofwind.feature.spotdetail.NORDSTRAND
 import io.github.esseckers.pursuitofwind.feature.spotdetail.SATURDAY
@@ -119,7 +119,7 @@ class CrewViewModelTest {
                 val crew = (ready.content as Content.Ready).crew
                 assertEquals("Weekend Crew", crew.name)
                 assertEquals(listOf("Andrei", "Mira", "Jonas"), crew.members.take(3).map { it.name })
-                assertEquals(RideAction.TAKE_SEAT, ready.ride(SEEDED_RIDE).action)
+                assertEquals(RideActionEntity.TAKE_SEAT, ready.ride(SEEDED_RIDE).action)
                 cancelAndIgnoreRemainingEvents()
             }
             viewModel.effects.test(timeout = TURBINE_TIMEOUT) { assertEquals(CrewEffect.Joined("Weekend Crew"), awaitItem()) }
@@ -177,13 +177,41 @@ class CrewViewModelTest {
                 awaitState { it.rides().any { ride -> ride.id == SEEDED_RIDE } }
                 // The seat shows as pending while the request runs; Room may fold that into the answer, so it is not awaited.
                 viewModel.onIntent(CrewIntent.TakeSeat(SEEDED_RIDE))
-                val seated = awaitState { it.ride(SEEDED_RIDE).let { ride -> !ride.pending && ride.action == RideAction.LEAVE } }
+                val seated = awaitState { it.ride(SEEDED_RIDE).let { ride -> !ride.pending && ride.action == RideActionEntity.LEAVE } }
                 assertEquals(listOf(PersonUi("Mira", false), PersonUi("Alex", true)), seated.ride(SEEDED_RIDE).passengers)
                 assertEquals(1, seated.ride(SEEDED_RIDE).seatsFree)
 
                 viewModel.onIntent(CrewIntent.LeaveRide(SEEDED_RIDE))
-                val left = awaitState { it.ride(SEEDED_RIDE).let { ride -> !ride.pending && ride.action == RideAction.TAKE_SEAT } }
+                val left = awaitState { it.ride(SEEDED_RIDE).let { ride -> !ride.pending && ride.action == RideActionEntity.TAKE_SEAT } }
                 assertEquals(2, left.ride(SEEDED_RIDE).seatsFree)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `a seat on a ride that left since the last tick is not taken`() =
+        runTest(dispatcher) {
+            joined()
+            val real = koin.get<CrewsRepository>()
+            val seatsTaken = mutableListOf<String>()
+            val repository =
+                object : CrewsRepository by real {
+                    override suspend fun takeSeat(rideId: String): AppError? {
+                        seatsTaken += rideId
+                        return real.takeSeat(rideId)
+                    }
+                }
+            val viewModel = viewModel(repository = repository)
+
+            viewModel.state.test(timeout = TURBINE_TIMEOUT) {
+                awaitState { state -> state.rides().any { it.id == SEEDED_RIDE && it.action == RideActionEntity.TAKE_SEAT } }
+                // Saturday 06:00 UTC to Monday 09:00 UTC: Andrei left at 08:30. No virtual time passes, so the screen
+                // has not ticked since and still offers the seat.
+                clock.advanceBy(2.days + 3.hours)
+                viewModel.onIntent(CrewIntent.TakeSeat(SEEDED_RIDE))
+                testScheduler.runCurrent()
+
+                assertEquals(emptyList(), seatsTaken)
                 cancelAndIgnoreRemainingEvents()
             }
         }

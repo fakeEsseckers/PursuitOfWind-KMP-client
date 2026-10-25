@@ -1,5 +1,6 @@
 package io.github.esseckers.pursuitofwind.feature.today.presentation.preview
 
+import io.github.esseckers.pursuitofwind.core.domain.entity.RideRoleEntity
 import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.error_network
@@ -72,8 +73,7 @@ internal object TodayPreviewData {
                         "08:30",
                         departed = false,
                         seatsFree = 2,
-                        youDrive = false,
-                        youRide = false,
+                        role = RideRoleEntity.NONE,
                         pending = false,
                     ),
                 ),

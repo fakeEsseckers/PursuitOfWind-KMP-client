@@ -1,5 +1,6 @@
 package io.github.esseckers.pursuitofwind.feature.crew.presentation.mapper
 
+import io.github.esseckers.pursuitofwind.core.domain.entity.RideActionEntity
 import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
 import io.github.esseckers.pursuitofwind.core.refresh.RefreshStatus
 import io.github.esseckers.pursuitofwind.core.resources.Res
@@ -16,7 +17,6 @@ import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewSta
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState.Content
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.MemberUi
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.PersonUi
-import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.RideAction
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.preview.CrewPreviewData
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.preview.CrewPreviewData.alex
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.preview.CrewPreviewData.andreisRide
@@ -134,9 +134,9 @@ class CrewStateMapperTest {
     fun `each ride offers the one thing the rider can do on it`() {
         val state = map(inputs())
 
-        assertEquals(RideAction.TAKE_SEAT, state.ride("rid_andrei").action)
+        assertEquals(RideActionEntity.TAKE_SEAT, state.ride("rid_andrei").action)
         assertEquals(null, state.ride("rid_jonas").action)
-        assertEquals(RideAction.CANCEL, state.ride("rid_alex").action)
+        assertEquals(RideActionEntity.CANCEL, state.ride("rid_alex").action)
         assertEquals(null, state.ride("rid_mira").action)
         assertTrue(state.ride("rid_mira").cancelled)
     }
@@ -148,7 +148,7 @@ class CrewStateMapperTest {
         val pending = map(inputs(rides = listOf(andreisRide.copy(pending = true))))
         val cancelling = map(inputs().copy(cancelling = setOf("rid_alex")))
 
-        assertEquals(RideAction.LEAVE, leaving.ride("rid_andrei").action)
+        assertEquals(RideActionEntity.LEAVE, leaving.ride("rid_andrei").action)
         assertEquals(listOf(PersonUi("Mira", false), PersonUi("Alex", true)), leaving.ride("rid_andrei").passengers)
         assertTrue(pending.ride("rid_andrei").pending)
         assertTrue(cancelling.ride("rid_alex").pending)

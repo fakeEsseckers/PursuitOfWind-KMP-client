@@ -6,6 +6,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
+import io.github.esseckers.pursuitofwind.core.domain.entity.RideRoleEntity
 import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.error_network
@@ -152,8 +153,7 @@ class TodayViewModelTest {
                             departAt = "10:30",
                             departed = false,
                             seatsFree = 2,
-                            youDrive = false,
-                            youRide = false,
+                            role = RideRoleEntity.NONE,
                             pending = false,
                         ),
                     ),

@@ -27,6 +27,7 @@ import io.github.esseckers.pursuitofwind.core.designsystem.component.verdictPale
 import io.github.esseckers.pursuitofwind.core.designsystem.icon.AppIcons
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Sizes
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Spacing
+import io.github.esseckers.pursuitofwind.core.domain.entity.RideRoleEntity
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.confidence_low_hint
 import io.github.esseckers.pursuitofwind.core.resources.confidence_unknown_hint
@@ -167,8 +168,8 @@ private fun RideLine(ride: RideUi) {
     Column(modifier = Modifier.testTag("today.ride.${ride.id}")) {
         val driver =
             when {
-                ride.youDrive && ride.departed -> stringResource(Res.string.ride_you_departed, ride.departAt)
-                ride.youDrive -> stringResource(Res.string.ride_you_drive, ride.departAt)
+                ride.role == RideRoleEntity.DRIVER && ride.departed -> stringResource(Res.string.ride_you_departed, ride.departAt)
+                ride.role == RideRoleEntity.DRIVER -> stringResource(Res.string.ride_you_drive, ride.departAt)
                 ride.departed -> stringResource(Res.string.ride_departed, ride.driverName, ride.departAt)
                 else -> stringResource(Res.string.ride_driver, ride.driverName, ride.departAt)
             }
@@ -178,7 +179,7 @@ private fun RideLine(ride: RideUi) {
             when {
                 ride.departed -> null
                 ride.pending -> stringResource(Res.string.ride_pending)
-                ride.youRide -> stringResource(Res.string.ride_you_ride)
+                ride.role == RideRoleEntity.PASSENGER -> stringResource(Res.string.ride_you_ride)
                 ride.seatsFree == 0 -> stringResource(Res.string.ride_full)
                 else -> pluralStringResource(Res.plurals.ride_seats_free, ride.seatsFree, ride.seatsFree)
             }

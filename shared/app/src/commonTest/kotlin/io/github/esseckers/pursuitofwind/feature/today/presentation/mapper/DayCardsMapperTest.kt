@@ -1,5 +1,6 @@
 package io.github.esseckers.pursuitofwind.feature.today.presentation.mapper
 
+import io.github.esseckers.pursuitofwind.core.domain.entity.RideRoleEntity
 import io.github.esseckers.pursuitofwind.core.ui.DayLabel
 import io.github.esseckers.pursuitofwind.core.ui.TimeRange
 import io.github.esseckers.pursuitofwind.data.model.Person
@@ -130,9 +131,9 @@ class DayCardsMapperTest {
 
         assertEquals(
             listOf(
-                RideUi("mine", "Alex", "09:00", departed = false, seatsFree = 3, youDrive = true, youRide = false, pending = false),
-                RideUi("andrei", "Andrei", "10:00", departed = false, seatsFree = 2, youDrive = false, youRide = false, pending = false),
-                RideUi("full", "Andrei", "11:00", departed = false, seatsFree = 0, youDrive = false, youRide = true, pending = false),
+                RideUi("mine", "Alex", "09:00", departed = false, seatsFree = 3, role = RideRoleEntity.DRIVER, pending = false),
+                RideUi("andrei", "Andrei", "10:00", departed = false, seatsFree = 2, role = RideRoleEntity.NONE, pending = false),
+                RideUi("full", "Andrei", "11:00", departed = false, seatsFree = 0, role = RideRoleEntity.PASSENGER, pending = false),
             ),
             saturday.rides,
         )

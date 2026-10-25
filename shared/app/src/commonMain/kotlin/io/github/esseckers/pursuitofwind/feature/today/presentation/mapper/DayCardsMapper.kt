@@ -1,5 +1,7 @@
 package io.github.esseckers.pursuitofwind.feature.today.presentation.mapper
 
+import io.github.esseckers.pursuitofwind.core.domain.entity.RideRoleEntity
+import io.github.esseckers.pursuitofwind.core.domain.mapper.RideRulesMapper
 import io.github.esseckers.pursuitofwind.core.ui.DayLabel
 import io.github.esseckers.pursuitofwind.core.ui.TimeRange
 import io.github.esseckers.pursuitofwind.core.ui.clockTime
@@ -70,7 +72,6 @@ internal class DayCardsMapper(
 
     private fun DayDecision.Go.toUi(): DayUi.Go {
         val rides = ridesTo(window.spotId, date)
-        val busy = rides.any { it.youDrive || it.youRide }
         return DayUi.Go(
             date = date,
             label = label(date),
@@ -85,7 +86,14 @@ internal class DayCardsMapper(
             rides = rides,
             hasCrew = crew.hasCrew,
             alternatives = alternatives.map { AlternativeUi(it.spotId, nameOf(it.spotId), it.ridingTime()) },
-            offer = if (crew.hasCrew && !busy) RideOfferUi(window.spotId, window.usableStart, window.end, leaveBy) else null,
+            offer =
+                if (crew.hasCrew &&
+                    rides.none { it.role != RideRoleEntity.NONE }
+                ) {
+                    RideOfferUi(window.spotId, window.usableStart, window.end, leaveBy)
+                } else {
+                    null
+                },
         )
     }
 
@@ -128,10 +136,9 @@ internal class DayCardsMapper(
                     id = ride.id,
                     driverName = ride.driver.displayName,
                     departAt = ride.departAt.clockTime(riderZone),
-                    departed = ride.departAt <= now,
+                    departed = RideRulesMapper.hasDeparted(ride, now),
                     seatsFree = ride.seatsFree,
-                    youDrive = ride.driver.userId == crew.userId,
-                    youRide = ride.passengers.any { it.userId == crew.userId },
+                    role = RideRulesMapper.role(ride, crew.userId),
                     pending = ride.pending,
                 )
             }

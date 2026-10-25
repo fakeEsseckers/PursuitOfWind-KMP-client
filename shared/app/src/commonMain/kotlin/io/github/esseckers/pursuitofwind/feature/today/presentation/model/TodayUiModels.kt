@@ -1,5 +1,6 @@
 package io.github.esseckers.pursuitofwind.feature.today.presentation.model
 
+import io.github.esseckers.pursuitofwind.core.domain.entity.RideRoleEntity
 import io.github.esseckers.pursuitofwind.core.ui.DayLabel
 import io.github.esseckers.pursuitofwind.core.ui.TimeRange
 import io.github.esseckers.pursuitofwind.data.model.WindUnit
@@ -58,8 +59,7 @@ internal data class RideUi(
     val departAt: String,
     val departed: Boolean,
     val seatsFree: Int,
-    val youDrive: Boolean,
-    val youRide: Boolean,
+    val role: RideRoleEntity,
     val pending: Boolean,
 )
 

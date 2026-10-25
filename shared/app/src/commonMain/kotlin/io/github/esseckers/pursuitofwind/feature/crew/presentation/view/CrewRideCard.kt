@@ -29,6 +29,7 @@ import io.github.esseckers.pursuitofwind.core.designsystem.component.LinkRow
 import io.github.esseckers.pursuitofwind.core.designsystem.icon.AppIcons
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Sizes
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Spacing
+import io.github.esseckers.pursuitofwind.core.domain.entity.RideActionEntity
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.action_cancel_ride
 import io.github.esseckers.pursuitofwind.core.resources.action_leave_ride
@@ -51,7 +52,6 @@ import io.github.esseckers.pursuitofwind.core.resources.ride_seats_free
 import io.github.esseckers.pursuitofwind.core.resources.ride_you_departed
 import io.github.esseckers.pursuitofwind.core.resources.ride_you_drive
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewRideUi
-import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.RideAction
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -63,7 +63,7 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 internal fun CrewRideCard(
     ride: CrewRideUi,
-    onAction: (RideAction) -> Unit,
+    onAction: (RideActionEntity) -> Unit,
     onOpenSpot: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -138,14 +138,14 @@ private fun seatsText(ride: CrewRideUi): String =
 @Composable
 private fun RideActionButton(
     ride: CrewRideUi,
-    action: RideAction,
+    action: RideActionEntity,
     onClick: () -> Unit,
 ) {
     val description =
         when (action) {
-            RideAction.TAKE_SEAT -> stringResource(Res.string.crew_take_seat_to, ride.spotName)
-            RideAction.LEAVE -> stringResource(Res.string.crew_leave_ride_to, ride.spotName)
-            RideAction.CANCEL -> stringResource(Res.string.crew_cancel_ride_to, ride.spotName)
+            RideActionEntity.TAKE_SEAT -> stringResource(Res.string.crew_take_seat_to, ride.spotName)
+            RideActionEntity.LEAVE -> stringResource(Res.string.crew_leave_ride_to, ride.spotName)
+            RideActionEntity.CANCEL -> stringResource(Res.string.crew_cancel_ride_to, ride.spotName)
         }
     val modifier = Modifier.semantics { contentDescription = description }.testTag("crew.action.${ride.id}")
     val enabled = !ride.pending
@@ -161,18 +161,18 @@ private fun RideActionButton(
         }
     }
     when (action) {
-        RideAction.TAKE_SEAT -> FilledTonalButton(onClick = onClick, enabled = enabled, modifier = modifier) { content() }
-        RideAction.LEAVE -> OutlinedButton(onClick = onClick, enabled = enabled, modifier = modifier) { content() }
-        RideAction.CANCEL -> TextButton(onClick = onClick, enabled = enabled, modifier = modifier) { content() }
+        RideActionEntity.TAKE_SEAT -> FilledTonalButton(onClick = onClick, enabled = enabled, modifier = modifier) { content() }
+        RideActionEntity.LEAVE -> OutlinedButton(onClick = onClick, enabled = enabled, modifier = modifier) { content() }
+        RideActionEntity.CANCEL -> TextButton(onClick = onClick, enabled = enabled, modifier = modifier) { content() }
     }
 }
 
 @Composable
-private fun actionText(action: RideAction): String =
+private fun actionText(action: RideActionEntity): String =
     when (action) {
-        RideAction.TAKE_SEAT -> stringResource(Res.string.action_take_seat)
-        RideAction.LEAVE -> stringResource(Res.string.action_leave_ride)
-        RideAction.CANCEL -> stringResource(Res.string.action_cancel_ride)
+        RideActionEntity.TAKE_SEAT -> stringResource(Res.string.action_take_seat)
+        RideActionEntity.LEAVE -> stringResource(Res.string.action_leave_ride)
+        RideActionEntity.CANCEL -> stringResource(Res.string.action_cancel_ride)
     }
 
 private const val CANCELLED_ALPHA = 0.6f

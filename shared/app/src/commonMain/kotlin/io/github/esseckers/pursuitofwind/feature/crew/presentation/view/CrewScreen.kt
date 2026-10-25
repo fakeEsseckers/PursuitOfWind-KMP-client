@@ -46,6 +46,7 @@ import io.github.esseckers.pursuitofwind.core.designsystem.component.screenInset
 import io.github.esseckers.pursuitofwind.core.designsystem.icon.AppIcons
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Sizes
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Spacing
+import io.github.esseckers.pursuitofwind.core.domain.entity.RideActionEntity
 import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.action_create_crew
@@ -74,7 +75,6 @@ import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewSta
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState.Content
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewUi
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.MemberUi
-import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.RideAction
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -185,9 +185,9 @@ private fun LazyListScope.rides(
                 onAction = { action ->
                     val intent =
                         when (action) {
-                            RideAction.TAKE_SEAT -> CrewIntent.TakeSeat(ride.id)
-                            RideAction.LEAVE -> CrewIntent.LeaveRide(ride.id)
-                            RideAction.CANCEL -> CrewIntent.CancelRide(ride.id)
+                            RideActionEntity.TAKE_SEAT -> CrewIntent.TakeSeat(ride.id)
+                            RideActionEntity.LEAVE -> CrewIntent.LeaveRide(ride.id)
+                            RideActionEntity.CANCEL -> CrewIntent.CancelRide(ride.id)
                         }
                     onIntent(intent)
                 },

@@ -72,7 +72,6 @@ import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewSta
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState.Content
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewUi
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.MemberUi
-import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.RideAction
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 

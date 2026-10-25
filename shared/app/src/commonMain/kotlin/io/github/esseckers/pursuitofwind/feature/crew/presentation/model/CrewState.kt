@@ -1,5 +1,6 @@
 package io.github.esseckers.pursuitofwind.feature.crew.presentation.model
 
+import io.github.esseckers.pursuitofwind.core.domain.entity.RideActionEntity
 import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
 import io.github.esseckers.pursuitofwind.core.ui.DayLabel
 import io.github.esseckers.pursuitofwind.core.ui.TimeRange
@@ -97,11 +98,5 @@ internal data class CrewRideUi(
     val seatsTotal: Int,
     val cancelled: Boolean,
     val pending: Boolean,
-    val action: RideAction?,
+    val action: RideActionEntity?,
 )
-
-internal enum class RideAction {
-    TAKE_SEAT,
-    LEAVE,
-    CANCEL,
-}
