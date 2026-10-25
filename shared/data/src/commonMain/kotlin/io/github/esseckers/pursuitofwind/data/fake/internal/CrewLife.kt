@@ -3,9 +3,9 @@ package io.github.esseckers.pursuitofwind.data.fake.internal
 import io.github.esseckers.pursuitofwind.contract.CreateRideRequestDto
 import io.github.esseckers.pursuitofwind.contract.RideStatusDto
 import io.github.esseckers.pursuitofwind.data.fake.MemberActivity
-import io.github.esseckers.pursuitofwind.data.internal.mapping.toEntity
 import io.github.esseckers.pursuitofwind.data.internal.mapping.toForecastHour
 import io.github.esseckers.pursuitofwind.data.internal.mapping.toSpot
+import io.github.esseckers.pursuitofwind.data.internal.startOfHour
 import io.github.esseckers.pursuitofwind.data.model.MySpot
 import io.github.esseckers.pursuitofwind.engine.DecisionEngine
 import io.github.esseckers.pursuitofwind.engine.model.RiderProfile
@@ -191,14 +191,15 @@ internal class CrewLife(
 
     /** GO windows of the next two days that leave time to plan, as the engine finds them for a typical member. */
     private fun goodWindows(at: Instant): List<SessionWindow> {
-        val from = Instant.fromEpochSeconds(at.epochSeconds.floorDiv(SECONDS_PER_HOUR) * SECONDS_PER_HOUR)
+        val from = at.startOfHour()
         return state.spots.values.sortedBy { it.spot.id }.flatMap { seedSpot ->
-            val config = MySpot(seedSpot.spot.toEntity().toSpot(), MEMBER_DRIVE, favorite = true).toSpotConfig()
-            val run = ModelRun(number = state.forecastRuns[seedSpot.spot.id] ?: 0, at = at)
+            val config = MySpot(seedSpot.spot.toSpot(), MEMBER_DRIVE, favorite = true).toSpotConfig()
+            // The run riders were last served, so members judge the forecast riders see.
+            val run = state.forecastRuns[seedSpot.spot.id] ?: ModelRun(number = 0, at = at)
             val verdicts =
                 ForecastGenerator
                     .hours(seedSpot, from, LOOK_AHEAD_HOURS, seed, run)
-                    .map { DecisionEngine.evaluateHour(it.toEntity(seedSpot.spot.id).toForecastHour(), MEMBER, config) }
+                    .map { DecisionEngine.evaluateHour(it.toForecastHour(), MEMBER, config) }
             DecisionEngine.findWindows(verdicts, config, MEMBER, at).filter { it.qualifies && it.leaveBy >= at + PLANNING_TIME }
         }
     }
@@ -223,7 +224,6 @@ internal class CrewLife(
         const val MIN_SEATS = 2
         const val MAX_SEATS = 4
         const val LOOK_AHEAD_HOURS = 48
-        const val SECONDS_PER_HOUR = 3_600L
         val MEMBER_DRIVE = 60.minutes
         val PLANNING_TIME = 2.hours
 

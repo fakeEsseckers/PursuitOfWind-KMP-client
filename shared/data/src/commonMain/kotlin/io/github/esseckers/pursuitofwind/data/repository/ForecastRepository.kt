@@ -9,6 +9,7 @@ import io.github.esseckers.pursuitofwind.data.internal.mapping.toEntity
 import io.github.esseckers.pursuitofwind.data.internal.mapping.toForecastHour
 import io.github.esseckers.pursuitofwind.data.internal.network.PursuitOfWindApi
 import io.github.esseckers.pursuitofwind.data.internal.network.outcome
+import io.github.esseckers.pursuitofwind.data.internal.startOfHour
 import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.Outcome
 import io.github.esseckers.pursuitofwind.engine.model.ForecastHour
@@ -16,7 +17,6 @@ import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlin.time.Clock
-import kotlin.time.Instant
 
 /** Hourly forecasts per spot, as engine [ForecastHour]s, so callers pass them to the decision engine unchanged. */
 public class ForecastRepository internal constructor(
@@ -38,7 +38,7 @@ public class ForecastRepository internal constructor(
     ): Outcome<Unit> =
         outcome {
             val now = clock.now()
-            val from = Instant.fromEpochSeconds(now.epochSeconds.floorDiv(SECONDS_PER_HOUR) * SECONDS_PER_HOUR)
+            val from = now.startOfHour()
             val forecast = api.forecast(spotId.value, from, hours)
             database.withWriteTransaction {
                 forecasts.deleteSpot(spotId.value)
@@ -50,6 +50,5 @@ public class ForecastRepository internal constructor(
     public companion object {
         /** Today and the next two days, what the Today screen decides on. */
         public const val DEFAULT_HOURS: Int = 72
-        private const val SECONDS_PER_HOUR = 3_600L
     }
 }
