@@ -90,6 +90,7 @@ internal fun AppNavigation(
                 backStack = backStack,
                 // The bar's height is taken here, so screens lay out above it and do not add the system bars twice.
                 modifier = Modifier.padding(padding).consumeWindowInsets(padding),
+                // System back (gesture, button, iOS swipe) always means the screen on top.
                 onBack = navigator::back,
                 entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator(), viewModels),
                 entryProvider = entries(navigator),
@@ -102,14 +103,16 @@ internal fun AppNavigation(
 private fun entries(navigator: Navigator): (NavKey) -> NavEntry<NavKey> =
     entryProvider {
         entry<Destination.Welcome> { WelcomeScreen(onGetStarted = { navigator.open(Destination.SetUpProfile) }) }
-        entry<Destination.SetUpProfile> {
+        entry<Destination.SetUpProfile> { key ->
             ProfileRoute(
                 mode = ProfileMode.SET_UP,
                 onContinue = { navigator.open(Destination.PickSpots) },
-                onBack = navigator::back,
+                onBack = { navigator.back(from = key) },
             )
         }
-        entry<Destination.PickSpots> { SpotPickerRoute(onFinished = navigator::finishPicking, onBack = navigator::back) }
+        entry<Destination.PickSpots> { key ->
+            SpotPickerRoute(onFinished = navigator::finishPicking, onBack = { navigator.back(from = key) })
+        }
         entry<Destination.Today> {
             TodayRoute(
                 onOpenSpot = { spotId, date -> navigator.open(Destination.SpotDetail(spotId.value, date)) },
@@ -135,7 +138,7 @@ private fun entries(navigator: Navigator): (NavKey) -> NavEntry<NavKey> =
                     windowEnd = Instant.fromEpochSeconds(key.windowEnd),
                     departAt = Instant.fromEpochSeconds(key.departAt),
                 )
-            RideOfferRoute(draft = draft, onDone = navigator::back, onBack = navigator::back)
+            RideOfferRoute(draft = draft, onDone = { navigator.back(from = key) }, onBack = { navigator.back(from = key) })
         }
         entry<Destination.Spots> {
             SpotsRoute(
@@ -148,7 +151,7 @@ private fun entries(navigator: Navigator): (NavKey) -> NavEntry<NavKey> =
         }
         entry<Destination.Profile> { ProfileRoute(mode = ProfileMode.TAB) }
         entry<Destination.SpotDetail> { key ->
-            SpotDetailRoute(spotId = SpotId(key.spotId), date = key.date, onBack = navigator::back)
+            SpotDetailRoute(spotId = SpotId(key.spotId), date = key.date, onBack = { navigator.back(from = key) })
         }
     }
 

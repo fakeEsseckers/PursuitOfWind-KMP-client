@@ -36,6 +36,16 @@ class NavigatorTest {
     }
 
     @Test
+    fun `a second tap on a screen's back button while it leaves keeps the screen below`() {
+        val stack = mutableListOf<NavKey>(Destination.Today, Destination.Spots, saturday)
+        val navigator = Navigator(stack)
+
+        navigator.back(from = saturday)
+        navigator.back(from = saturday)
+        assertEquals(listOf<NavKey>(Destination.Today, Destination.Spots), stack)
+    }
+
+    @Test
     fun `the Profile tab sits on top of Today so back returns to Today`() {
         val stack = mutableListOf<NavKey>(Destination.Today)
         val navigator = Navigator(stack)
