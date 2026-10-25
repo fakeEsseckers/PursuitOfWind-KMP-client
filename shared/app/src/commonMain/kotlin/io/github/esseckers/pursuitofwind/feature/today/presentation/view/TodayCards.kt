@@ -33,13 +33,6 @@ import io.github.esseckers.pursuitofwind.core.resources.confidence_low_hint
 import io.github.esseckers.pursuitofwind.core.resources.confidence_unknown_hint
 import io.github.esseckers.pursuitofwind.core.resources.decimal_separator
 import io.github.esseckers.pursuitofwind.core.resources.open_spot
-import io.github.esseckers.pursuitofwind.core.resources.ride_departed
-import io.github.esseckers.pursuitofwind.core.resources.ride_driver
-import io.github.esseckers.pursuitofwind.core.resources.ride_full
-import io.github.esseckers.pursuitofwind.core.resources.ride_pending
-import io.github.esseckers.pursuitofwind.core.resources.ride_seats_free
-import io.github.esseckers.pursuitofwind.core.resources.ride_you_departed
-import io.github.esseckers.pursuitofwind.core.resources.ride_you_drive
 import io.github.esseckers.pursuitofwind.core.resources.ride_you_ride
 import io.github.esseckers.pursuitofwind.core.resources.today_alternative
 import io.github.esseckers.pursuitofwind.core.resources.today_im_going
@@ -55,6 +48,8 @@ import io.github.esseckers.pursuitofwind.core.ui.DayLabel
 import io.github.esseckers.pursuitofwind.core.ui.dayLabel
 import io.github.esseckers.pursuitofwind.core.ui.formatKiteSize
 import io.github.esseckers.pursuitofwind.core.ui.reasonLabel
+import io.github.esseckers.pursuitofwind.core.ui.rideDriverText
+import io.github.esseckers.pursuitofwind.core.ui.rideSeatsText
 import io.github.esseckers.pursuitofwind.core.ui.windRangeText
 import io.github.esseckers.pursuitofwind.engine.model.Confidence
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
@@ -62,7 +57,6 @@ import io.github.esseckers.pursuitofwind.engine.model.Verdict
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.DayUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.RideOfferUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.RideUi
-import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -166,22 +160,15 @@ private fun Rides(
 @Composable
 private fun RideLine(ride: RideUi) {
     Column(modifier = Modifier.testTag("today.ride.${ride.id}")) {
-        val driver =
-            when {
-                ride.role == RideRoleEntity.DRIVER && ride.departed -> stringResource(Res.string.ride_you_departed, ride.departAt)
-                ride.role == RideRoleEntity.DRIVER -> stringResource(Res.string.ride_you_drive, ride.departAt)
-                ride.departed -> stringResource(Res.string.ride_departed, ride.driverName, ride.departAt)
-                else -> stringResource(Res.string.ride_driver, ride.driverName, ride.departAt)
-            }
+        val youDrive = ride.role == RideRoleEntity.DRIVER
+        val driver = rideDriverText(ride.driverName, youDrive, ride.departed, ride.departAt)
         IconLine(icon = AppIcons.Car, text = driver, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium))
         // Seats no longer matter once the car has left.
         val seats =
             when {
                 ride.departed -> null
-                ride.pending -> stringResource(Res.string.ride_pending)
-                ride.role == RideRoleEntity.PASSENGER -> stringResource(Res.string.ride_you_ride)
-                ride.seatsFree == 0 -> stringResource(Res.string.ride_full)
-                else -> pluralStringResource(Res.plurals.ride_seats_free, ride.seatsFree, ride.seatsFree)
+                ride.role == RideRoleEntity.PASSENGER && !ride.pending -> stringResource(Res.string.ride_you_ride)
+                else -> rideSeatsText(ride.seatsFree, ride.pending)
             }
         seats?.let {
             Text(

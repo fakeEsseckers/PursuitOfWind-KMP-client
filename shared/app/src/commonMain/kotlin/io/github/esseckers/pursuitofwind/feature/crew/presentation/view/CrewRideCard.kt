@@ -44,15 +44,9 @@ import io.github.esseckers.pursuitofwind.core.resources.crew_take_seat_to
 import io.github.esseckers.pursuitofwind.core.resources.crew_you
 import io.github.esseckers.pursuitofwind.core.resources.my_spots_forecast
 import io.github.esseckers.pursuitofwind.core.resources.open_spot
-import io.github.esseckers.pursuitofwind.core.resources.ride_departed
-import io.github.esseckers.pursuitofwind.core.resources.ride_driver
-import io.github.esseckers.pursuitofwind.core.resources.ride_full
-import io.github.esseckers.pursuitofwind.core.resources.ride_pending
-import io.github.esseckers.pursuitofwind.core.resources.ride_seats_free
-import io.github.esseckers.pursuitofwind.core.resources.ride_you_departed
-import io.github.esseckers.pursuitofwind.core.resources.ride_you_drive
+import io.github.esseckers.pursuitofwind.core.ui.rideDriverText
+import io.github.esseckers.pursuitofwind.core.ui.rideSeatsText
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewRideUi
-import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -84,7 +78,7 @@ internal fun CrewRideCard(
             ) {
                 IconLine(
                     icon = AppIcons.Car,
-                    text = driverText(ride),
+                    text = rideDriverText(ride.driverName, ride.youDrive, ride.departed, ride.departAt),
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
                 )
                 IconLine(icon = AppIcons.Clock, text = stringResource(Res.string.crew_ride_window, ride.window.toString()))
@@ -111,15 +105,6 @@ internal fun CrewRideCard(
 }
 
 @Composable
-private fun driverText(ride: CrewRideUi): String =
-    when {
-        ride.youDrive && ride.departed -> stringResource(Res.string.ride_you_departed, ride.departAt)
-        ride.youDrive -> stringResource(Res.string.ride_you_drive, ride.departAt)
-        ride.departed -> stringResource(Res.string.ride_departed, ride.driverName, ride.departAt)
-        else -> stringResource(Res.string.ride_driver, ride.driverName, ride.departAt)
-    }
-
-@Composable
 private fun passengersText(ride: CrewRideUi): String {
     val you = stringResource(Res.string.crew_you)
     return stringResource(Res.string.crew_ride_with, ride.passengers.joinToString(", ") { if (it.you) you else it.name })
@@ -127,12 +112,7 @@ private fun passengersText(ride: CrewRideUi): String {
 
 @Composable
 private fun seatsText(ride: CrewRideUi): String =
-    when {
-        ride.cancelled -> stringResource(Res.string.crew_ride_cancelled)
-        ride.pending -> stringResource(Res.string.ride_pending)
-        ride.seatsFree == 0 -> stringResource(Res.string.ride_full)
-        else -> pluralStringResource(Res.plurals.ride_seats_free, ride.seatsFree, ride.seatsFree)
-    }
+    if (ride.cancelled) stringResource(Res.string.crew_ride_cancelled) else rideSeatsText(ride.seatsFree, ride.pending)
 
 /** The ride's one action; named after the spot for screen readers, since every card has one. Busy while [CrewRideUi.pending]. */
 @Composable
