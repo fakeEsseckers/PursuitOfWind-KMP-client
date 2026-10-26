@@ -62,7 +62,7 @@ internal sealed interface Destination : NavKey {
     ) : Destination
 }
 
-/** The app's tabs, in the bar's order, and the screen each one shows. Every tab's screen carries the tab bar. */
+/** The app's tabs, in the order they show, and the screen each one shows. Every tab's screen carries the tabs. */
 internal enum class AppTab(
     val destination: Destination,
 ) {

@@ -1,16 +1,21 @@
 package io.github.esseckers.pursuitofwind.app.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.LocalSaveableStateRegistry
 import androidx.compose.runtime.saveable.SaveableStateRegistry
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
@@ -23,6 +28,8 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.v2.runComposeUiTest
+import androidx.compose.ui.test.v2.runSkikoComposeUiTest
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
@@ -33,6 +40,7 @@ import androidx.navigationevent.NavigationEventDispatcherOwner
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import io.github.esseckers.pursuitofwind.app.language.AppLocale
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.PursuitOfWindTheme
+import io.github.esseckers.pursuitofwind.core.designsystem.theme.Spacing
 import io.github.esseckers.pursuitofwind.core.platform.ShareLauncher
 import io.github.esseckers.pursuitofwind.data.fake.ControllableClock
 import io.github.esseckers.pursuitofwind.data.repository.CrewRepository
@@ -315,7 +323,7 @@ class AppNavigationTest {
             onNodeWithTag("today.days").performScrollToNode(hasTestTag(offer))
             onNodeWithTag(offer).performClick()
             waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("offer.summary")).fetchSemanticsNodes().isNotEmpty() }
-            onNodeWithTag("tabs").assertDoesNotExist()
+            onNodeWithTag("tab.today").assertDoesNotExist()
             onNodeWithTag("offer.meeting").performTextInput("Old harbour car park")
             onNodeWithTag("offer.submit").performClick()
 
@@ -330,6 +338,54 @@ class AppNavigationTest {
             waitUntil(timeoutMillis = TIMEOUT_MS) {
                 onAllNodes(hasContentDescription("Cancel the ride to Nordstrand Bay")).fetchSemanticsNodes().isNotEmpty()
             }
+        }
+
+    @Test
+    fun `on a phone the tabs are a bar along the bottom`() =
+        runSkikoComposeUiTest(size = Size(PHONE_WIDTH, PHONE_HEIGHT)) {
+            showApp()
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("today.header")).fetchSemanticsNodes().isNotEmpty() }
+
+            val today = onNodeWithTag("tab.today").getUnclippedBoundsInRoot()
+            val profile = onNodeWithTag("tab.profile").getUnclippedBoundsInRoot()
+            assertEquals(today.top, profile.top)
+            assertTrue(profile.left >= today.right, "$today $profile")
+            assertTrue(today.top > (PHONE_HEIGHT / 2).dp, today.toString())
+        }
+
+    @Test
+    fun `a tab keeps its layout wherever it is placed as during a slide`() =
+        runSkikoComposeUiTest(size = Size(PHONE_WIDTH, PHONE_HEIGHT)) {
+            // A slide moves the tab sideways a little every frame. What the tab keeps clear of must not follow its
+            // position, or its content would squeeze and reflow on every frame of the slide.
+            setContent {
+                Box(modifier = Modifier.offset(x = (-SLIDE).dp)) {
+                    KoinIsolatedContext(graph) {
+                        CompositionLocalProvider(LocalViewModelStoreOwner provides owner) { PursuitOfWindTheme { AppNavigation() } }
+                    }
+                }
+            }
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("today.header")).fetchSemanticsNodes().isNotEmpty() }
+
+            // The header's own margins, and nothing for where it is.
+            val header = onNodeWithTag("today.header").getUnclippedBoundsInRoot()
+            assertEquals(Spacing.m - SLIDE.dp, header.left)
+            assertEquals(PHONE_WIDTH.dp - Spacing.m * 2, header.right - header.left)
+        }
+
+    @Test
+    fun `on a tablet the tabs are a rail along the start`() =
+        runSkikoComposeUiTest(size = Size(TABLET_WIDTH, TABLET_HEIGHT)) {
+            showApp()
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("today.header")).fetchSemanticsNodes().isNotEmpty() }
+
+            val today = onNodeWithTag("tab.today").getUnclippedBoundsInRoot()
+            val profile = onNodeWithTag("tab.profile").getUnclippedBoundsInRoot()
+            assertEquals(today.left, profile.left)
+            assertTrue(profile.top >= today.bottom, "$today $profile")
+            assertTrue(today.right < (TABLET_WIDTH / 2).dp, today.toString())
+            // The tab lays out beside the rail.
+            assertTrue(onNodeWithTag("today.header").getUnclippedBoundsInRoot().left >= today.right)
         }
 
     /** The app on the test graph; [systemBack], when given, is where system back comes from. */
@@ -360,12 +416,12 @@ class AppNavigationTest {
 
             val saturday = "today.day.$SATURDAY"
             waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag(saturday)).fetchSemanticsNodes().isNotEmpty() }
-            onNodeWithTag("tabs").assertIsDisplayed()
+            onNodeWithTag("tab.today").assertIsDisplayed()
             onNodeWithTag("today.days").performScrollToNode(hasTestTag(saturday))
             onNodeWithTag(saturday).performClick()
 
             waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("spot.ready")).fetchSemanticsNodes().isNotEmpty() }
-            onNodeWithTag("tabs").assertDoesNotExist()
+            onNodeWithTag("tab.today").assertDoesNotExist()
         }
 
     @Test
@@ -385,7 +441,7 @@ class AppNavigationTest {
         }
 
     @Test
-    fun `a predictive back from a spot's forecast previews the Spots tab with its tab bar`() =
+    fun `a predictive back from a spot's forecast previews the Spots tab with its tabs`() =
         runComposeUiTest {
             val back = SystemBack()
             showApp(back)
@@ -396,10 +452,10 @@ class AppNavigationTest {
                 back.input.backProgressed(NavigationEvent(progress = 0.5f))
             }
             waitForIdle()
-            // Halfway through the gesture both screens show, and the tab below already has its bar.
+            // Halfway through the gesture both screens show, and the tab below already has its tabs.
             assertTrue(onAllNodes(hasTestTag("spot.ready")).fetchSemanticsNodes().isNotEmpty())
             assertTrue(onAllNodes(hasTestTag("myspots.list")).fetchSemanticsNodes().isNotEmpty())
-            assertTrue(onAllNodes(hasTestTag("tabs")).fetchSemanticsNodes().isNotEmpty())
+            assertTrue(onAllNodes(hasTestTag("tab.spots")).fetchSemanticsNodes().isNotEmpty())
 
             runOnIdle { back.input.backCompleted() }
             waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("spot.ready")).fetchSemanticsNodes().isEmpty() }
@@ -459,5 +515,14 @@ class AppNavigationTest {
     private companion object {
         /** Room, DataStore and the HTTP engine run on real threads here; leave room for a cold JVM on CI. */
         const val TIMEOUT_MS = 10_000L
+
+        /** How far a tab is moved in the slide test, in dp. */
+        const val SLIDE = 100f
+
+        /** Window sizes in dp (the test density is 1): a compact width, and an expanded one. */
+        const val PHONE_WIDTH = 400f
+        const val PHONE_HEIGHT = 800f
+        const val TABLET_WIDTH = 1280f
+        const val TABLET_HEIGHT = 800f
     }
 }
