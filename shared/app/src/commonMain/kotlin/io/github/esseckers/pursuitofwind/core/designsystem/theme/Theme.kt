@@ -72,6 +72,9 @@ internal object Sizes {
     /** Height of a placeholder card while a day's answer loads. */
     val cardPlaceholder = 196.dp
 
+    /** The narrowest a day card on Today gets in a row of days; narrower, the days go one under the other. */
+    val dayCardMinWidth = 280.dp
+
     /** Width of one hour on the wind chart: wide enough to tap, 72 hours scroll sideways. */
     val chartHour = 28.dp
 
