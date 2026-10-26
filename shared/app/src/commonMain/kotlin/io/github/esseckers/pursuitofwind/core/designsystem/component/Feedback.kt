@@ -139,7 +139,7 @@ internal fun RefreshNoticeBanner(
 
 /**
  * A centered message instead of content: nothing to show yet, or something went wrong. Announced to screen readers
- * when it replaces other content.
+ * when it replaces other content; a placeholder that is simply there ([announced] false) is not.
  */
 @Composable
 internal fun MessageState(
@@ -147,6 +147,7 @@ internal fun MessageState(
     title: String,
     body: String,
     modifier: Modifier = Modifier,
+    announced: Boolean = true,
     action: (@Composable () -> Unit)? = null,
 ) {
     Column(
@@ -154,7 +155,7 @@ internal fun MessageState(
             modifier
                 .fillMaxWidth()
                 .padding(horizontal = Spacing.l, vertical = Spacing.xl)
-                .semantics { liveRegion = LiveRegionMode.Polite },
+                .semantics { if (announced) liveRegion = LiveRegionMode.Polite },
         verticalArrangement = Arrangement.spacedBy(Spacing.m),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {

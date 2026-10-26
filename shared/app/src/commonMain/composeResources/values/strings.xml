@@ -255,6 +255,8 @@
     <string name="my_spots_error_title">Couldn’t load your spots</string>
     <string name="my_spots_empty_title">No spots yet</string>
     <string name="my_spots_empty_body">Add the spots you ride, with the drive from home, to get an answer every day.</string>
+    <string name="my_spots_pick_title">Pick a spot</string>
+    <string name="my_spots_pick_body">Its hourly forecast shows here.</string>
 
     <!-- Errors -->
     <string name="error_network">No connection. Check your internet and try again.</string>

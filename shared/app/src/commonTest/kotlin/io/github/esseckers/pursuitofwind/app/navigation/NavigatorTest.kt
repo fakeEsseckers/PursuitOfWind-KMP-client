@@ -36,6 +36,22 @@ class NavigatorTest {
     }
 
     @Test
+    fun `a spot opened from the Spots list takes the place of the one opened from it before`() {
+        val nordstrand = Destination.SpotDetail("nordstrand-bay", besideList = true)
+        val lakeWeiss = Destination.SpotDetail("lake-weiss", besideList = true)
+        val stack = mutableListOf<NavKey>(Destination.Today, Destination.Spots)
+        val navigator = Navigator(stack)
+
+        navigator.openBesideList(nordstrand)
+        navigator.openBesideList(nordstrand)
+        assertEquals(listOf<NavKey>(Destination.Today, Destination.Spots, nordstrand), stack)
+        navigator.openBesideList(lakeWeiss)
+        assertEquals(listOf<NavKey>(Destination.Today, Destination.Spots, lakeWeiss), stack)
+        navigator.back()
+        assertEquals(listOf<NavKey>(Destination.Today, Destination.Spots), stack)
+    }
+
+    @Test
     fun `a second tap on a screen's back button while it leaves keeps the screen below`() {
         val stack = mutableListOf<NavKey>(Destination.Today, Destination.Spots, saturday)
         val navigator = Navigator(stack)

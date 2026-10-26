@@ -6,6 +6,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -19,7 +20,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
+import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
+import androidx.compose.material3.adaptive.navigation3.rememberListDetailSceneStrategy
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteItem
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
@@ -88,7 +92,12 @@ internal fun AppNavigation(modifier: Modifier = Modifier) {
     }
 }
 
-/** The navigation from [start] on a fresh launch, in [language]; after process death, the saved back stack wins. */
+/**
+ * The navigation from [start] on a fresh launch, in [language]; after process death, the saved back stack wins. With
+ * room for two panes, a spot opened from the Spots list shows beside it (the list-detail scene); everything else shows
+ * one screen at a time.
+ */
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 internal fun AppNavigation(
     start: Destination,
@@ -100,13 +109,22 @@ internal fun AppNavigation(
     // Outside the language scope, so a new language keeps the back stack and every screen's ViewModel. Saved state of
     // the screens (scroll positions) starts over with the language: its holder cannot be shared across the switch.
     val viewModels = rememberViewModelStoreNavEntryDecorator<NavKey>()
+    // Back pops one entry, as everywhere: from a forecast beside the list, back leaves the list with its placeholder.
+    // The default pops until the panes change, and a placeholder in the detail pane counts as no change.
+    val listDetail =
+        rememberListDetailSceneStrategy<NavKey>(
+            backNavigationBehavior = BackNavigationBehavior.PopLatest,
+            directive = paneDirective(),
+        )
     AppLanguageScope(language) {
         NavDisplay(
             backStack = backStack,
-            modifier = modifier,
+            // Behind the screens: the gap between two panes shows the theme's background, not the window's.
+            modifier = modifier.background(MaterialTheme.colorScheme.background),
             // System back (gesture, button, iOS swipe) always means the screen on top.
             onBack = navigator::back,
             entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator(), viewModels),
+            sceneStrategies = listOf(listDetail),
             entryProvider = entries(navigator),
         )
     }
@@ -156,12 +174,14 @@ private fun EntryProviderScope<NavKey>.tabs(navigator: Navigator) {
             )
         }
     }
-    entry<Destination.Spots>(metadata = tabTransitions) {
-        TabScreen(AppTab.SPOTS, navigator) {
-            SpotsRoute(
-                onOpenSpot = { spotId -> navigator.open(Destination.SpotDetail(spotId.value)) },
-                onAddSpots = { navigator.open(Destination.PickSpots) },
-            )
+    entry<Destination.Spots>(metadata = tabTransitions + spotListPane) {
+        PaneInsets(away = WindowInsetsSides.End) {
+            TabScreen(AppTab.SPOTS, navigator) {
+                SpotsRoute(
+                    onOpenSpot = { spotId -> navigator.openBesideList(Destination.SpotDetail(spotId.value, besideList = true)) },
+                    onAddSpots = { navigator.open(Destination.PickSpots) },
+                )
+            }
         }
     }
     entry<Destination.Crew>(metadata = tabTransitions) {
@@ -186,8 +206,10 @@ private fun EntryProviderScope<NavKey>.screensOnTop(navigator: Navigator) {
             )
         RideOfferRoute(draft = draft, onDone = { navigator.back(from = key) }, onBack = { navigator.back(from = key) })
     }
-    entry<Destination.SpotDetail> { key ->
-        SpotDetailRoute(spotId = SpotId(key.spotId), date = key.date, onBack = { navigator.back(from = key) })
+    entry<Destination.SpotDetail>(metadata = { key -> if (key.besideList) spotDetailPane else emptyMap() }) { key ->
+        PaneInsets(away = WindowInsetsSides.Start) {
+            SpotDetailRoute(spotId = SpotId(key.spotId), date = key.date, onBack = { navigator.back(from = key) })
+        }
     }
 }
 
@@ -259,9 +281,9 @@ private fun TabScreen(
 
 /** The tabs for this window: Material's choice, a bar at a compact width or a short window, a rail otherwise. */
 @Composable
-private fun tabsLayout(): NavigationSuiteType = NavigationSuiteScaffoldDefaults.navigationSuiteType(currentWindowAdaptiveInfoV2())
+internal fun tabsLayout(): NavigationSuiteType = NavigationSuiteScaffoldDefaults.navigationSuiteType(currentWindowAdaptiveInfoV2())
 
-private val NavigationSuiteType.isRail: Boolean
+internal val NavigationSuiteType.isRail: Boolean
     get() =
         this == NavigationSuiteType.WideNavigationRailCollapsed ||
             this == NavigationSuiteType.WideNavigationRailExpanded ||

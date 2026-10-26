@@ -16,6 +16,7 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
@@ -46,6 +47,7 @@ import io.github.esseckers.pursuitofwind.data.fake.ControllableClock
 import io.github.esseckers.pursuitofwind.data.repository.CrewRepository
 import io.github.esseckers.pursuitofwind.data.repository.ProfileRepository
 import io.github.esseckers.pursuitofwind.data.repository.SpotRepository
+import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.spotdetail.NORDSTRAND
 import io.github.esseckers.pursuitofwind.feature.spotdetail.SATURDAY
 import io.github.esseckers.pursuitofwind.feature.spotdetail.alex
@@ -213,8 +215,8 @@ class AppNavigationTest {
         }
 
     @Test
-    fun `spots added from the Spots tab show there and a spot's forecast returns to the tab`() =
-        runComposeUiTest {
+    fun `on a phone spots added from the Spots tab show there and a spot's forecast returns to the tab`() =
+        runSkikoComposeUiTest(size = Size(PHONE_WIDTH, PHONE_HEIGHT)) {
             setContent {
                 KoinIsolatedContext(graph) {
                     CompositionLocalProvider(LocalViewModelStoreOwner provides owner) { PursuitOfWindTheme { AppNavigation() } }
@@ -388,22 +390,37 @@ class AppNavigationTest {
             assertTrue(onNodeWithTag("today.header").getUnclippedBoundsInRoot().left >= today.right)
         }
 
-    /** The app on the test graph; [systemBack], when given, is where system back comes from. */
-    private fun ComposeUiTest.showApp(systemBack: SystemBack? = null) {
-        setContent {
-            KoinIsolatedContext(graph) {
-                CompositionLocalProvider(LocalViewModelStoreOwner provides owner) {
-                    if (systemBack == null) {
-                        PursuitOfWindTheme { AppNavigation() }
-                    } else {
-                        CompositionLocalProvider(
-                            LocalNavigationEventDispatcherOwner provides systemBack,
-                        ) { PursuitOfWindTheme { AppNavigation() } }
-                    }
-                }
+    @Test
+    fun `on a tablet a spot opened from Spots shows beside the list and the next one takes its place`() =
+        runSkikoComposeUiTest(size = Size(TABLET_WIDTH, TABLET_HEIGHT)) {
+            runBlocking {
+                graph.koin
+                    .get<SpotRepository>()
+                    .follow(LAKE_WEISS, 1.hours, favorite = false)
+                    .value()
             }
+            showApp()
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("today.header")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("tab.spots").performClick()
+            // Until a spot is opened, the pane beside the list says where its forecast will show.
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("myspots.noSpot")).fetchSemanticsNodes().isNotEmpty() }
+
+            openFromList("nordstrand-bay")
+            waitUntil(timeoutMillis = TIMEOUT_MS) { forecastOf("Nordstrand Bay") }
+            onNodeWithTag("myspots.list").assertIsDisplayed()
+            onNodeWithTag("myspots.noSpot").assertDoesNotExist()
+            val list = onNodeWithTag("myspots.list").getUnclippedBoundsInRoot()
+            assertTrue(list.right <= onNodeWithTag("spot.ready").getUnclippedBoundsInRoot().left)
+
+            openFromList("lake-weiss")
+            waitUntil(timeoutMillis = TIMEOUT_MS) { forecastOf("Lake Weiss") && !forecastOf("Nordstrand Bay") }
+
+            // The second forecast took the first one's place, so back returns to the list.
+            onNodeWithContentDescription("Back").performClick()
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("myspots.noSpot")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("spot.ready").assertDoesNotExist()
+            onNodeWithTag("tab.spots").assertIsSelected()
         }
-    }
 
     @Test
     fun `a screen opened from a tab hides the tabs`() =
@@ -425,12 +442,13 @@ class AppNavigationTest {
         }
 
     @Test
-    fun `system back closes the screen on top and from a tab returns to Today`() =
-        runComposeUiTest {
+    fun `on a tablet system back closes the forecast beside the list and then returns from the tab to Today`() =
+        runSkikoComposeUiTest(size = Size(TABLET_WIDTH, TABLET_HEIGHT)) {
             val back = SystemBack()
             showApp(back)
 
             openNordstrandFromSpots()
+            onNodeWithTag("myspots.list").assertIsDisplayed()
             runOnIdle { back.input.backCompleted() }
             waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("spot.ready")).fetchSemanticsNodes().isEmpty() }
             onNodeWithTag("myspots.list").assertIsDisplayed()
@@ -441,11 +459,13 @@ class AppNavigationTest {
         }
 
     @Test
-    fun `a predictive back from a spot's forecast previews the Spots tab with its tabs`() =
-        runComposeUiTest {
+    fun `on a phone a predictive back from a spot's forecast previews the Spots tab with its tabs`() =
+        runSkikoComposeUiTest(size = Size(PHONE_WIDTH, PHONE_HEIGHT)) {
             val back = SystemBack()
             showApp(back)
             openNordstrandFromSpots()
+            // One screen at a time on a phone: the forecast covers the list.
+            onNodeWithTag("myspots.list").assertDoesNotExist()
 
             runOnIdle {
                 back.input.backStarted(NavigationEvent(progress = 0f))
@@ -463,37 +483,112 @@ class AppNavigationTest {
         }
 
     @Test
-    fun `the screens on the back stack come back after the app's state is restored`() =
-        runComposeUiTest {
-            // The app's saved state across process death: `StateRestorationTester` does not run on desktop, so the test
-            // saves the registry, disposes the app with its ViewModels and composes it again. The registry takes any
-            // value, so this checks the back stack's round trip through its serializers, not what fits in a Bundle; the
-            // Koin graph and its data stay, as the database and DataStore would.
-            var registry by mutableStateOf(SaveableStateRegistry(restoredValues = null) { true })
-            var shown by mutableStateOf(true)
-            setContent {
-                if (shown) {
-                    CompositionLocalProvider(LocalSaveableStateRegistry provides registry) {
-                        KoinIsolatedContext(graph) {
-                            CompositionLocalProvider(LocalViewModelStoreOwner provides owner) { PursuitOfWindTheme { AppNavigation() } }
-                        }
-                    }
-                }
-            }
+    fun `on a phone the screens on the back stack come back after the app's state is restored`() =
+        runSkikoComposeUiTest(size = Size(PHONE_WIDTH, PHONE_HEIGHT)) {
+            restoreWithNordstrandOpen()
 
-            openNordstrandFromSpots()
-            val saved = runOnIdle { registry.performSave() }
-            shown = false
-            waitForIdle()
-            runOnIdle { viewModels.clear() }
-            registry = SaveableStateRegistry(restoredValues = saved) { true }
-            shown = true
-
-            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("spot.ready")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("myspots.list").assertDoesNotExist()
             onNodeWithContentDescription("Back").performClick()
             waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("myspots.list")).fetchSemanticsNodes().isNotEmpty() }
             onNodeWithTag("tab.spots").assertIsSelected()
         }
+
+    @Test
+    fun `on a tablet a forecast opened from the list comes back beside it after the app's state is restored`() =
+        runSkikoComposeUiTest(size = Size(TABLET_WIDTH, TABLET_HEIGHT)) {
+            restoreWithNordstrandOpen()
+
+            // The key still says it was opened from the list, so it shows beside it again.
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("myspots.list")).fetchSemanticsNodes().isNotEmpty() }
+            val list = onNodeWithTag("myspots.list").getUnclippedBoundsInRoot()
+            assertTrue(list.right <= onNodeWithTag("spot.ready").getUnclippedBoundsInRoot().left)
+        }
+
+    @Test
+    fun `on a tablet a forecast opened from Today is a screen of its own`() =
+        runSkikoComposeUiTest(size = Size(TABLET_WIDTH, TABLET_HEIGHT)) {
+            showApp()
+            val saturday = "today.day.$SATURDAY"
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag(saturday)).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag(saturday).performClick()
+
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("spot.ready")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("tab.today").assertDoesNotExist()
+            val forecast = onNodeWithTag("spot.ready").getUnclippedBoundsInRoot()
+            assertTrue(forecast.left < (TABLET_WIDTH / 4).dp && forecast.right > (TABLET_WIDTH * 3 / 4).dp, forecast.toString())
+        }
+
+    @Test
+    fun `on a phone in landscape the tabs are a bar and a spot's forecast covers the list`() =
+        runSkikoComposeUiTest(size = Size(LANDSCAPE_PHONE_WIDTH, LANDSCAPE_PHONE_HEIGHT)) {
+            showApp()
+            openNordstrandFromSpots()
+
+            // Wide enough for two panes, but short: the tabs are a bar, and one screen shows at a time.
+            onNodeWithTag("myspots.list").assertDoesNotExist()
+            onNodeWithContentDescription("Back").performClick()
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("myspots.list")).fetchSemanticsNodes().isNotEmpty() }
+            val today = onNodeWithTag("tab.today").getUnclippedBoundsInRoot()
+            assertEquals(today.top, onNodeWithTag("tab.profile").getUnclippedBoundsInRoot().top)
+        }
+
+    /** Opens the forecast of [spotId] from the Spots list. */
+    private fun ComposeUiTest.openFromList(spotId: String) {
+        val open = "myspots.open.$spotId"
+        waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag(open)).fetchSemanticsNodes().isNotEmpty() }
+        onNodeWithTag("myspots.list").performScrollToNode(hasTestTag(open))
+        onNodeWithTag(open).performClick()
+    }
+
+    /** True while a forecast of the spot named [name] is on screen. */
+    private fun ComposeUiTest.forecastOf(name: String): Boolean =
+        onAllNodes(hasAnyAncestor(hasTestTag("spot.header")) and hasText(name, substring = true)).fetchSemanticsNodes().isNotEmpty()
+
+    /** The app on the test graph; [systemBack], when given, is where system back comes from. */
+    private fun ComposeUiTest.showApp(systemBack: SystemBack? = null) {
+        setContent {
+            KoinIsolatedContext(graph) {
+                CompositionLocalProvider(LocalViewModelStoreOwner provides owner) {
+                    if (systemBack == null) {
+                        PursuitOfWindTheme { AppNavigation() }
+                    } else {
+                        CompositionLocalProvider(
+                            LocalNavigationEventDispatcherOwner provides systemBack,
+                        ) { PursuitOfWindTheme { AppNavigation() } }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Opens Nordstrand Bay's forecast from the Spots tab, then restores the app's saved state as after process death.
+     * `StateRestorationTester` does not run on desktop, so this saves the registry, disposes the app with its ViewModels
+     * and composes it again. The registry takes any value, so this checks the back stack's round trip through its
+     * serializers, not what fits in a Bundle; the Koin graph and its data stay, as the database and DataStore would.
+     */
+    private fun ComposeUiTest.restoreWithNordstrandOpen() {
+        var registry by mutableStateOf(SaveableStateRegistry(restoredValues = null) { true })
+        var shown by mutableStateOf(true)
+        setContent {
+            if (shown) {
+                CompositionLocalProvider(LocalSaveableStateRegistry provides registry) {
+                    KoinIsolatedContext(graph) {
+                        CompositionLocalProvider(LocalViewModelStoreOwner provides owner) { PursuitOfWindTheme { AppNavigation() } }
+                    }
+                }
+            }
+        }
+
+        openNordstrandFromSpots()
+        val saved = runOnIdle { registry.performSave() }
+        shown = false
+        waitForIdle()
+        runOnIdle { viewModels.clear() }
+        registry = SaveableStateRegistry(restoredValues = saved) { true }
+        shown = true
+        waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("spot.ready")).fetchSemanticsNodes().isNotEmpty() }
+    }
 
     /** From Today to the Spots tab, then Nordstrand Bay's forecast. */
     private fun ComposeUiTest.openNordstrandFromSpots() {
@@ -513,6 +608,8 @@ class AppNavigationTest {
     }
 
     private companion object {
+        val LAKE_WEISS = SpotId("lake-weiss")
+
         /** Room, DataStore and the HTTP engine run on real threads here; leave room for a cold JVM on CI. */
         const val TIMEOUT_MS = 10_000L
 
@@ -524,5 +621,9 @@ class AppNavigationTest {
         const val PHONE_HEIGHT = 800f
         const val TABLET_WIDTH = 1280f
         const val TABLET_HEIGHT = 800f
+
+        /** Wide enough for two panes, but short: a phone in landscape. */
+        const val LANDSCAPE_PHONE_WIDTH = 900f
+        const val LANDSCAPE_PHONE_HEIGHT = 400f
     }
 }

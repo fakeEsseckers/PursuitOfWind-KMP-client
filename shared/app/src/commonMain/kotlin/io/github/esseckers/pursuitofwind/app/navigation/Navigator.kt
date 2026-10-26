@@ -17,6 +17,20 @@ internal class Navigator(
         if (backStack.lastOrNull() != destination) backStack.add(destination)
     }
 
+    /**
+     * Opens [detail] from the Spots list. On a wide window the list stays on screen beside the detail, so a detail that
+     * was opened from it before is replaced, not stacked: back from any of them returns to the list. On a phone the list
+     * is on top when it is tapped, so the detail opens over it.
+     */
+    fun openBesideList(detail: Destination.SpotDetail) {
+        val top = backStack.lastOrNull()
+        when {
+            top == detail -> Unit
+            top is Destination.SpotDetail && top.besideList -> backStack[backStack.lastIndex] = detail
+            else -> backStack.add(detail)
+        }
+    }
+
     /** Leaves the top screen; the first screen stays, and the system closes the app from there. */
     fun back() {
         if (backStack.size > 1) backStack.removeAt(backStack.lastIndex)
