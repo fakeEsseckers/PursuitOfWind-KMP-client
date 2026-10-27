@@ -1,7 +1,6 @@
 package io.github.esseckers.pursuitofwind.data.fake
 
 import io.github.esseckers.pursuitofwind.contract.ApiLimits
-import io.github.esseckers.pursuitofwind.contract.DataQualityDto
 import io.github.esseckers.pursuitofwind.contract.GeoPointDto
 import io.github.esseckers.pursuitofwind.contract.MemberRoleDto
 import io.github.esseckers.pursuitofwind.contract.SectorDto
@@ -163,7 +162,7 @@ private fun spot(
     location: GeoPointDto,
     rideable: List<SectorDto>,
     danger: List<SectorDto> = emptyList(),
-) = SpotDto(id, name, location, "Europe/Berlin", rideable, danger, DataQualityDto.VERIFIED)
+) = SpotDto(id, name, location, "Europe/Berlin", rideable, danger)
 
 /** How much a new model run moves the wind three days out, like a real forecast update: a few knots, a few degrees. */
 private const val LIVE_DRIFT_KN = 4.0
@@ -219,7 +218,7 @@ private val DEFAULT_SPOTS: List<SeedSpot> =
                 "Lake Weiss",
                 GeoPointDto(52.4123, 11.6274),
                 listOf(SectorDto(220.0, 320.0)),
-            ).copy(dataQuality = DataQualityDto.UNVERIFIED),
+            ),
             ForecastProfile(
                 meanKn = 11.0,
                 swingKn = 5.0,
@@ -261,7 +260,7 @@ private val DEFAULT_SPOTS: List<SeedSpot> =
                 GeoPointDto(54.3225, 10.1394),
                 listOf(SectorDto(30.0, 120.0)),
                 listOf(SectorDto(200.0, 290.0)),
-            ).copy(dataQuality = DataQualityDto.UNVERIFIED),
+            ),
             ForecastProfile(
                 meanKn = 12.0,
                 swingKn = 6.0,

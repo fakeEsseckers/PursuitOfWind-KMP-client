@@ -53,7 +53,6 @@ internal object SpotsStateMapper {
         return MySpotUi(
             id = spot.spot.id,
             name = spot.spot.name,
-            verified = spot.spot.verified,
             favorite = shown.favorite,
             drive = shown.driveMinutes.minutes,
             canShorten = drive.canDecrease,
@@ -68,7 +67,6 @@ internal object SpotsStateMapper {
         MySpotUi(
             id = spot.id,
             name = spot.name,
-            verified = spot.verified,
             favorite = spot.favorite,
             drive = spot.drive,
             canShorten = false,

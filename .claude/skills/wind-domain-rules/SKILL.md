@@ -24,7 +24,7 @@ The decision engine (`:shared:windengine`, package `io.github.esseckers.pursuito
 | `Sector(from, to)` / `Sector.of(fromDeg, toDeg)` | clockwise arc, inclusive on both ends, may wrap past 0°; `from == to` is invalid |
 | `SkillLevel` | BEGINNER, INTERMEDIATE, ADVANCED |
 | `RiderProfile` | weightKg, level, quiverM2, optional `minWind` / `maxWind` (`WindSpeed`), `minSession` (2 h), `maxDrive` (3 h) as `Duration` |
-| `SpotConfig` | `SpotId`, name, IANA `timeZone`, rideableSectors (non-empty), dangerSectors, `drive: Duration`. Data quality is spot metadata for the UI; the engine does not use it |
+| `SpotConfig` | `SpotId`, name, IANA `timeZone`, rideableSectors (non-empty), dangerSectors, `drive: Duration` |
 | `ShoreSectors` | rideable and danger `Sector` of a spot on a shore, from the direction of its water (`sectorsFacing`) |
 | `ForecastHour` | start `Instant`, `byModel: Map<ModelId, ModelWind(mean, gust, bearing)>`, precipMm, tempC, `ThunderRisk`, isDaylight |
 | `HourVerdict` | start, verdict, reasons (sorted by severity), `recommendedKiteM2` or null, consensus `HourWind` (mean, gust, bearing, modelSpread) |

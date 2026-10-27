@@ -46,7 +46,6 @@ class OpenApiContractTest {
             "RiderProfile" to RiderProfileDto.serializer(),
             "GeoPoint" to GeoPointDto.serializer(),
             "Sector" to SectorDto.serializer(),
-            "DataQuality" to DataQualityDto.serializer(),
             "Spot" to SpotDto.serializer(),
             "SpotPage" to SpotPageDto.serializer(),
             "MySpotUpdate" to MySpotUpdateDto.serializer(),

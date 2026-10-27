@@ -55,7 +55,6 @@ import io.github.esseckers.pursuitofwind.core.resources.error_title
 import io.github.esseckers.pursuitofwind.core.resources.spot_loading
 import io.github.esseckers.pursuitofwind.core.resources.spot_missing_body
 import io.github.esseckers.pursuitofwind.core.resources.spot_missing_title
-import io.github.esseckers.pursuitofwind.core.resources.spot_unverified
 import io.github.esseckers.pursuitofwind.core.ui.driveText
 import io.github.esseckers.pursuitofwind.core.ui.updatedText
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailIntent
@@ -95,7 +94,7 @@ internal fun SpotDetailScreen(
                 Content.Loading -> LoadingChart()
                 is Content.Missing -> MissingContent(content.missing)
                 is Content.Error -> ErrorContent(content.message, refresh)
-                is Content.Ready -> ReadyContent(content, state.header, state.notice, onIntent)
+                is Content.Ready -> ReadyContent(content, state.notice, onIntent)
             }
             NavigationBarScrim(modifier = Modifier.align(Alignment.BottomCenter))
         }
@@ -129,7 +128,6 @@ private fun SpotTopBar(
 @Composable
 private fun ReadyContent(
     content: Content.Ready,
-    header: SpotHeaderUi?,
     notice: RefreshNotice?,
     onIntent: (SpotDetailIntent) -> Unit,
 ) {
@@ -145,7 +143,7 @@ private fun ReadyContent(
         verticalArrangement = Arrangement.spacedBy(Spacing.m),
     ) {
         val inset = Modifier.padding(horizontal = Spacing.m)
-        Banners(header, notice, onRetry = { onIntent(SpotDetailIntent.Refresh) }, modifier = inset)
+        Banner(notice, onRetry = { onIntent(SpotDetailIntent.Refresh) }, modifier = inset)
         Text(
             text = stringResource(Res.string.chart_title),
             style = MaterialTheme.typography.titleMedium,
@@ -208,10 +206,9 @@ private fun DetailsAndWindows(
     }
 }
 
-/** Why the chart may not be current, and a warning when the spot's sectors were never checked. */
+/** Why the chart may not be current. */
 @Composable
-private fun Banners(
-    header: SpotHeaderUi?,
+private fun Banner(
     notice: RefreshNotice?,
     onRetry: () -> Unit,
     modifier: Modifier,
@@ -224,13 +221,6 @@ private fun Banners(
             tagPrefix = "spot",
             onRetry = onRetry,
             modifier = modifier,
-        )
-    }
-    if (header?.verified == false) {
-        StatusBanner(
-            icon = AppIcons.Info,
-            text = stringResource(Res.string.spot_unverified),
-            modifier = modifier.testTag("spot.unverified"),
         )
     }
 }

@@ -17,7 +17,6 @@ internal data class SpotEntity(
     val timeZone: String,
     val rideableSectors: String,
     val dangerSectors: String,
-    val verified: Boolean,
 )
 
 @Entity(tableName = "my_spots")

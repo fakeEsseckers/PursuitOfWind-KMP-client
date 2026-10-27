@@ -35,13 +35,12 @@ class SpotsStateMapperTest {
     private fun SpotsInputs.spots() = (SpotsStateMapper.map(this).content as Content.Ready).spots
 
     @Test
-    fun `followed spots show as cached with their favorite flag drive and sector check`() {
+    fun `followed spots show as cached with their favorite flag and drive`() {
         val spots = inputs(lakeWeiss, nordstrand, saltLagoon).spots()
 
         assertEquals(listOf("Lake Weiss", "Nordstrand Bay", "Salt Lagoon"), spots.map { it.name })
         assertEquals(listOf(true, true, false), spots.map { it.favorite })
         assertEquals(listOf(45.minutes, 2.hours, 160.minutes), spots.map { it.drive })
-        assertEquals(listOf(false, true, true), spots.map { it.verified })
         assertTrue(spots.none { it.saving })
     }
 
@@ -81,7 +80,7 @@ class SpotsStateMapperTest {
 
     @Test
     fun `a spot coming back after undo shows at once in its place as it was and cannot change until it is followed`() {
-        val back = RemovedSpot(nordstrand.spot.id, "Nordstrand Bay", verified = true, 2.hours, favorite = true)
+        val back = RemovedSpot(nordstrand.spot.id, "Nordstrand Bay", 2.hours, favorite = true)
         val spots = inputs(lakeWeiss, saltLagoon).copy(restoring = mapOf(back.id to back)).spots()
 
         assertEquals(listOf("Lake Weiss", "Nordstrand Bay", "Salt Lagoon"), spots.map { it.name })
@@ -95,7 +94,7 @@ class SpotsStateMapperTest {
 
     @Test
     fun `a spot followed again meanwhile shows as cached while its undo runs`() {
-        val back = RemovedSpot(saltLagoon.spot.id, "Salt Lagoon", verified = true, 3.hours, favorite = true)
+        val back = RemovedSpot(saltLagoon.spot.id, "Salt Lagoon", 3.hours, favorite = true)
         val spots = inputs(nordstrand, saltLagoon).copy(restoring = mapOf(back.id to back)).spots()
 
         assertEquals(listOf("Nordstrand Bay", "Salt Lagoon"), spots.map { it.name })

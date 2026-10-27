@@ -202,7 +202,7 @@ class SpotsViewModelTest {
             }
             viewModel.effects.test(timeout = TURBINE_TIMEOUT) {
                 assertEquals(
-                    SpotsEffect.Removed(RemovedSpot(saltLagoon, "Salt Lagoon", verified = true, 175.minutes, favorite = true)),
+                    SpotsEffect.Removed(RemovedSpot(saltLagoon, "Salt Lagoon", 175.minutes, favorite = true)),
                     awaitItem(),
                 )
             }
@@ -272,7 +272,7 @@ class SpotsViewModelTest {
                 awaitState { it.inputs.removing.isEmpty() && it.spots().size == 1 }
                 cancelAndIgnoreRemainingEvents()
             }
-            val removed = RemovedSpot(NORDSTRAND, "Nordstrand Bay", verified = true, 2.hours, favorite = true)
+            val removed = RemovedSpot(NORDSTRAND, "Nordstrand Bay", 2.hours, favorite = true)
             viewModel.effects.test(timeout = TURBINE_TIMEOUT) { assertEquals(SpotsEffect.Removed(removed), awaitItem()) }
             assertEquals(listOf(saltLagoon), mySpots().map { it.first })
 
@@ -301,7 +301,7 @@ class SpotsViewModelTest {
                 viewModel.onIntent(SpotsIntent.Remove(NORDSTRAND))
                 awaitState { it.inputs.removing.isEmpty() && it.spots().size == 1 }
                 server.networkMode = NetworkMode.OFFLINE
-                viewModel.onIntent(SpotsIntent.Undo(RemovedSpot(NORDSTRAND, "Nordstrand Bay", verified = true, 2.hours, favorite = true)))
+                viewModel.onIntent(SpotsIntent.Undo(RemovedSpot(NORDSTRAND, "Nordstrand Bay", 2.hours, favorite = true)))
                 awaitState { state -> state.spots().any { it.restoring } }
                 awaitState { state -> state.inputs.restoring.isEmpty() && state.spots().size == 1 }
                 cancelAndIgnoreRemainingEvents()

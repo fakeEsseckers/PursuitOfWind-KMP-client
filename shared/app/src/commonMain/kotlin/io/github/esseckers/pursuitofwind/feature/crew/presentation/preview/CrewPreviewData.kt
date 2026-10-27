@@ -174,6 +174,5 @@ internal object CrewPreviewData {
             timeZone = zone,
             rideableSectors = listOf(Sector.of(180.0, 300.0)),
             dangerSectors = emptyList(),
-            verified = true,
         )
 }

@@ -132,7 +132,7 @@ internal class SpotsViewModel(
                 ?.value
                 ?.firstOrNull { it.spot.id == spotId }
                 ?.spot
-        val removed = RemovedSpot(spotId, listed?.name.orEmpty(), listed?.verified ?: true, edit.driveMinutes.minutes, edit.favorite)
+        val removed = RemovedSpot(spotId, listed?.name.orEmpty(), edit.driveMinutes.minutes, edit.favorite)
         // Drops the unsent edit, so a save still running stops after its current request instead of following it again.
         dispatchResult(SpotsResult.RemoveStarted(spotId))
         viewModelScope.launchFinishing(

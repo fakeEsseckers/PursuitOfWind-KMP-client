@@ -88,7 +88,7 @@ class SpotsScreenTest {
             scrollTo("myspots.card.salt-lagoon")
             onNodeWithTag("myspots.favorite.salt-lagoon").assert(switch(on = false))
             scrollTo("myspots.card.lake-weiss")
-            onNodeWithTag("myspots.card.lake-weiss").assert(hasAnyDescendant(hasText("Wind sectors not checked yet")))
+            onNodeWithTag("myspots.card.lake-weiss").assert(hasAnyDescendant(hasText("Lake Weiss")))
         }
 
     @Test

@@ -26,10 +26,6 @@ private fun SpotDetailReadyDarkPreview() = SpotDetailPreview(SpotDetailPreviewDa
 
 @Preview
 @Composable
-private fun SpotDetailUnverifiedPreview() = SpotDetailPreview(SpotDetailPreviewData.unverified)
-
-@Preview
-@Composable
 private fun SpotDetailOfflinePreview() = SpotDetailPreview(SpotDetailPreviewData.offline)
 
 @Preview

@@ -32,7 +32,7 @@ internal object RideOfferPreviewData {
         )
 
     val nordstrand =
-        Spot(SpotId("nordstrand-bay"), "Nordstrand Bay", GeoPoint(54.5, 8.8), zone, listOf(Sector.of(180.0, 300.0)), emptyList(), true)
+        Spot(SpotId("nordstrand-bay"), "Nordstrand Bay", GeoPoint(54.5, 8.8), zone, listOf(Sector.of(180.0, 300.0)), emptyList())
     val weekendCrew = Crew("crw_weekend", "Weekend Crew", "WIND-4KQ7", memberCount = 4, createdAt = now - 30.days)
     val nightOwls = Crew("crw_owls", "Night Owls", "WIND-7HPX", memberCount = 2, createdAt = now - 3.days)
 

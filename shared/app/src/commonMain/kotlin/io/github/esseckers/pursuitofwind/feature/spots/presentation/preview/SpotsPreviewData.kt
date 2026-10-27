@@ -23,7 +23,7 @@ import kotlin.time.Instant
  */
 internal object SpotsPreviewData {
     val nordstrand = MySpot(spot("nordstrand-bay", "Nordstrand Bay"), 2.hours, favorite = true)
-    val lakeWeiss = MySpot(spot("lake-weiss", "Lake Weiss", verified = false), 45.minutes, favorite = true)
+    val lakeWeiss = MySpot(spot("lake-weiss", "Lake Weiss"), 45.minutes, favorite = true)
     val saltLagoon = MySpot(spot("salt-lagoon", "Salt Lagoon"), 160.minutes, favorite = false)
 
     private val fetchedAt = Instant.parse("2026-10-24T06:00:00Z")
@@ -41,7 +41,7 @@ internal object SpotsPreviewData {
         reduce(
             SpotsResult.DataChanged(Cached(listOf(lakeWeiss, saltLagoon), fetchedAt)),
             SpotsResult.RefreshFinished(null),
-            SpotsResult.RestoreStarted(RemovedSpot(nordstrand.spot.id, "Nordstrand Bay", verified = true, 2.hours, favorite = true)),
+            SpotsResult.RestoreStarted(RemovedSpot(nordstrand.spot.id, "Nordstrand Bay", 2.hours, favorite = true)),
         )
 
     /** The saved spots shown while offline. */
@@ -61,7 +61,6 @@ internal object SpotsPreviewData {
     private fun spot(
         id: String,
         name: String,
-        verified: Boolean = true,
     ): Spot =
         Spot(
             id = SpotId(id),
@@ -70,6 +69,5 @@ internal object SpotsPreviewData {
             timeZone = TimeZone.of("Europe/Berlin"),
             rideableSectors = listOf(Sector.of(180.0, 300.0)),
             dangerSectors = emptyList(),
-            verified = verified,
         )
 }

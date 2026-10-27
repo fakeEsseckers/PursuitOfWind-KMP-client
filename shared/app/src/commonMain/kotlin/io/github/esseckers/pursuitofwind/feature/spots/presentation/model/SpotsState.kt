@@ -42,7 +42,6 @@ internal data class SpotsState(
 internal data class MySpotUi(
     val id: SpotId,
     val name: String,
-    val verified: Boolean,
     val favorite: Boolean,
     val drive: Duration,
     val canShorten: Boolean,

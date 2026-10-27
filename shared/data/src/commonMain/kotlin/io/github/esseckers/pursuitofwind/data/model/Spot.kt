@@ -6,7 +6,7 @@ import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import kotlinx.datetime.TimeZone
 import kotlin.time.Duration
 
-/** A spot from the catalog. [verified] is false while its sectors have not been checked by someone who rides there. */
+/** A spot from the catalog. */
 public data class Spot(
     val id: SpotId,
     val name: String,
@@ -14,7 +14,6 @@ public data class Spot(
     val timeZone: TimeZone,
     val rideableSectors: List<Sector>,
     val dangerSectors: List<Sector>,
-    val verified: Boolean,
 )
 
 public data class GeoPoint(

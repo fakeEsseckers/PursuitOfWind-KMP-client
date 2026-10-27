@@ -38,7 +38,6 @@ import io.github.esseckers.pursuitofwind.core.resources.open_spot
 import io.github.esseckers.pursuitofwind.core.resources.spots_drive
 import io.github.esseckers.pursuitofwind.core.resources.spots_drive_longer
 import io.github.esseckers.pursuitofwind.core.resources.spots_drive_shorter
-import io.github.esseckers.pursuitofwind.core.resources.spots_unverified
 import io.github.esseckers.pursuitofwind.core.ui.Step
 import io.github.esseckers.pursuitofwind.core.ui.durationText
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.MySpotUi
@@ -64,14 +63,6 @@ internal fun SpotCard(
             verticalArrangement = Arrangement.spacedBy(Spacing.s),
         ) {
             Text(text = spot.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
-            if (!spot.verified) {
-                IconLine(
-                    icon = AppIcons.Info,
-                    text = stringResource(Res.string.spots_unverified),
-                    style = MaterialTheme.typography.bodySmall,
-                    iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
             FavoriteRow(favorite = spot.favorite, onToggle = onToggleFavorite, tag = "myspots.favorite.${spot.id.value}")
             Stepper(
                 label = stringResource(Res.string.spots_drive),

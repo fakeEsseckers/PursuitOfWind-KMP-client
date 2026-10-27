@@ -2,7 +2,6 @@ package io.github.esseckers.pursuitofwind.data.internal.mapping
 
 import co.touchlab.kermit.Logger
 import io.github.esseckers.pursuitofwind.contract.ContractJson
-import io.github.esseckers.pursuitofwind.contract.DataQualityDto
 import io.github.esseckers.pursuitofwind.contract.ForecastHourDto
 import io.github.esseckers.pursuitofwind.contract.ModelWindDto
 import io.github.esseckers.pursuitofwind.contract.SectorDto
@@ -50,7 +49,6 @@ private fun SpotDto.toUncheckedEntity(): SpotEntity =
         timeZone = timeZone,
         rideableSectors = ContractJson.encodeToString(SECTORS, rideableSectors),
         dangerSectors = ContractJson.encodeToString(SECTORS, dangerSectors),
-        verified = dataQuality == DataQualityDto.VERIFIED,
     )
 
 internal fun SpotEntity.toSpot(): Spot =
@@ -61,7 +59,6 @@ internal fun SpotEntity.toSpot(): Spot =
         timeZone = TimeZone.of(timeZone),
         rideableSectors = sectors(rideableSectors),
         dangerSectors = sectors(dangerSectors),
-        verified = verified,
     )
 
 internal fun MySpotRow.toMySpot(): MySpot = MySpot(spot.toSpot(), driveMinutes.minutes, favorite)

@@ -224,14 +224,6 @@ class SpotDetailScreenTest {
         }
 
     @Test
-    fun `a spot whose sectors were not checked says verdicts may be off`() =
-        runComposeUiTest {
-            show(data.unverified)
-
-            onNodeWithTag("spot.unverified").assert(hasText("Verdicts may be off.", substring = true))
-        }
-
-    @Test
     fun `loading and the error and a spot not followed each have their own state`() =
         runComposeUiTest {
             var state by mutableStateOf(data.loading)

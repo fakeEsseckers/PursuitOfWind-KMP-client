@@ -16,12 +16,6 @@ public data class SectorDto(
 )
 
 @Serializable
-public enum class DataQualityDto {
-    VERIFIED,
-    UNVERIFIED,
-}
-
-@Serializable
 public data class SpotDto(
     val id: String,
     val name: String,
@@ -29,7 +23,6 @@ public data class SpotDto(
     val timeZone: String,
     val rideableSectors: List<SectorDto>,
     val dangerSectors: List<SectorDto>,
-    val dataQuality: DataQualityDto,
 )
 
 /** `GET /v1/spots/catalog`. [nextCursor] is present when more spots follow. */

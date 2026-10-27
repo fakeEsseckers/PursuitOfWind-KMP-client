@@ -13,11 +13,10 @@ import kotlin.time.Instant
 // UI models of the spot detail screen. Wind for drawing stays in m/s, so the chart's scale does not depend on the
 // unit; wind for reading is rounded in the rider's unit. Times are local to the spot, departures to the rider.
 
-/** The spot above the chart: its name, the drive from home, and whether its wind sectors were checked. */
+/** The spot above the chart: its name and the drive from home. */
 internal data class SpotHeaderUi(
     val name: String,
     val drive: Duration,
-    val verified: Boolean,
 )
 
 /**

@@ -1026,14 +1026,9 @@ components:
         - fromDeg: 300
           toDeg: 60
 
-    DataQuality:
-      type: string
-      description: '`UNVERIFIED` sectors come from the community and have not been checked.'
-      enum: [VERIFIED, UNVERIFIED]
-
     Spot:
       type: object
-      required: [id, name, location, timeZone, rideableSectors, dangerSectors, dataQuality]
+      required: [id, name, location, timeZone, rideableSectors, dangerSectors]
       properties:
         id:
           type: string
@@ -1056,8 +1051,6 @@ components:
           description: Directions that are dangerous here, typically offshore. They win over rideable sectors.
           items:
             $ref: '#/components/schemas/Sector'
-        dataQuality:
-          $ref: '#/components/schemas/DataQuality'
       examples:
         - id: nordstrand-bay
           name: Nordstrand Bay
@@ -1071,7 +1064,6 @@ components:
           dangerSectors:
             - fromDeg: 60
               toDeg: 150
-          dataQuality: VERIFIED
 
     SpotPage:
       type: object
@@ -1096,7 +1088,6 @@ components:
                 - fromDeg: 220
                   toDeg: 320
               dangerSectors: []
-              dataQuality: UNVERIFIED
           nextCursor: c_lake-weiss
 
     MySpotUpdate:
@@ -1139,7 +1130,6 @@ components:
               - fromDeg: 200
                 toDeg: 340
             dangerSectors: []
-            dataQuality: VERIFIED
           driveMinutes: 160
           favorite: true
 
