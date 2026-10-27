@@ -6,7 +6,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.github.esseckers.pursuitofwind.core.mvi.CollectEffects
+import io.github.esseckers.pursuitofwind.core.CollectEffects
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.RideOfferUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayEffect

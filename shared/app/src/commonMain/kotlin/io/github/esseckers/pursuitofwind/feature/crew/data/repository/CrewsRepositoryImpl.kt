@@ -11,12 +11,13 @@ import io.github.esseckers.pursuitofwind.data.repository.CrewRepository
 import io.github.esseckers.pursuitofwind.data.repository.RideRepository
 import io.github.esseckers.pursuitofwind.data.repository.SpotRepository
 import io.github.esseckers.pursuitofwind.feature.crew.domain.entity.CrewDetailsEntity
-import io.github.esseckers.pursuitofwind.feature.crew.domain.mapper.CrewChoiceMapper
 import io.github.esseckers.pursuitofwind.feature.crew.domain.repository.CrewsRepository
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 
 /** [CrewsRepository] over the shared crew, ride, spot and account repositories, which stay the source of truth. */
 internal class CrewsRepositoryImpl(
@@ -32,9 +33,9 @@ internal class CrewsRepositoryImpl(
             CrewDetailsEntity(crewId, members, rides, catalog.value.associateBy { it.id }, user)
         }
 
-    override suspend fun refreshAll(chosen: String?): AppError? =
+    override suspend fun refreshAll(shown: (crews: List<Crew>) -> String?): AppError? =
         crewRepository.refreshCrews().errorOrNull() ?: readCache {
-            CrewChoiceMapper.shownCrew(crewRepository.crews.first().value, chosen)?.let { refresh(it.id) }
+            shown(crewRepository.crews.first().value)?.let { refresh(it) }
         }
 
     /**
@@ -50,11 +51,11 @@ internal class CrewsRepositoryImpl(
 
     override suspend fun join(inviteCode: String): Outcome<Crew> = crewRepository.join(inviteCode)
 
-    override suspend fun takeSeat(rideId: String): AppError? = rides.takeSeat(rideId).errorOrNull()
+    override suspend fun takeSeat(rideId: String): AppError? = withContext(NonCancellable) { rides.takeSeat(rideId).errorOrNull() }
 
-    override suspend fun leaveRide(rideId: String): AppError? = rides.releaseSeat(rideId).errorOrNull()
+    override suspend fun leaveRide(rideId: String): AppError? = withContext(NonCancellable) { rides.releaseSeat(rideId).errorOrNull() }
 
-    override suspend fun cancelRide(rideId: String): AppError? = rides.cancel(rideId).errorOrNull()
+    override suspend fun cancelRide(rideId: String): AppError? = withContext(NonCancellable) { rides.cancel(rideId).errorOrNull() }
 
     private suspend fun catalogCovering(crewId: String): AppError? =
         readCache {

@@ -36,12 +36,22 @@ class NavigatorTest {
     }
 
     @Test
+    fun `a second tap on a screen's back button while it leaves keeps the screen below`() {
+        val stack = mutableListOf<NavKey>(Destination.Today, Destination.Spots, saturday)
+        val navigator = Navigator(stack)
+
+        navigator.back(from = saturday)
+        navigator.back(from = saturday)
+        assertEquals(listOf<NavKey>(Destination.Today, Destination.Spots), stack)
+    }
+
+    @Test
     fun `the Profile tab sits on top of Today so back returns to Today`() {
         val stack = mutableListOf<NavKey>(Destination.Today)
         val navigator = Navigator(stack)
 
-        navigator.selectTab(Destination.Profile)
-        navigator.selectTab(Destination.Profile)
+        navigator.selectTab(AppTab.PROFILE)
+        navigator.selectTab(AppTab.PROFILE)
         assertEquals(listOf<NavKey>(Destination.Today, Destination.Profile), stack)
         navigator.back()
         assertEquals(listOf<NavKey>(Destination.Today), stack)
@@ -52,9 +62,9 @@ class NavigatorTest {
         val stack = mutableListOf<NavKey>(Destination.Today, saturday)
         val navigator = Navigator(stack)
 
-        navigator.selectTab(Destination.Profile)
+        navigator.selectTab(AppTab.PROFILE)
         assertEquals(listOf<NavKey>(Destination.Today, Destination.Profile), stack)
-        navigator.selectTab(Destination.Today)
+        navigator.selectTab(AppTab.TODAY)
         assertEquals(listOf<NavKey>(Destination.Today), stack)
     }
 
@@ -116,13 +126,16 @@ class NavigatorTest {
         val stack = mutableListOf<NavKey>(Destination.Today, Destination.Profile)
         val navigator = Navigator(stack)
 
-        navigator.selectTab(Destination.Spots)
+        navigator.selectTab(AppTab.SPOTS)
         val spots = stack.toList()
-        navigator.selectTab(Destination.Crew)
+        navigator.selectTab(AppTab.CREW)
 
         assertEquals(listOf<NavKey>(Destination.Today, Destination.Spots), spots)
         assertEquals(listOf<NavKey>(Destination.Today, Destination.Crew), stack)
-        assertEquals(listOf(Destination.Today, Destination.Spots, Destination.Crew, Destination.Profile), tabDestinations)
+        assertEquals(
+            listOf(Destination.Today, Destination.Spots, Destination.Crew, Destination.Profile),
+            AppTab.entries.map { it.destination },
+        )
     }
 
     @Test

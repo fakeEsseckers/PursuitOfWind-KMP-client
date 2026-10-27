@@ -1,6 +1,12 @@
 package io.github.esseckers.pursuitofwind.app.navigation
 
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.LocalSaveableStateRegistry
+import androidx.compose.runtime.saveable.SaveableStateRegistry
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
@@ -20,6 +26,11 @@ import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
+import androidx.navigationevent.DirectNavigationEventInput
+import androidx.navigationevent.NavigationEvent
+import androidx.navigationevent.NavigationEventDispatcher
+import androidx.navigationevent.NavigationEventDispatcherOwner
+import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.PursuitOfWindTheme
 import io.github.esseckers.pursuitofwind.core.platform.ShareLauncher
 import io.github.esseckers.pursuitofwind.data.fake.ControllableClock
@@ -317,10 +328,19 @@ class AppNavigationTest {
             }
         }
 
-    private fun androidx.compose.ui.test.ComposeUiTest.showApp() {
+    /** The app on the test graph; [systemBack], when given, is where system back comes from. */
+    private fun ComposeUiTest.showApp(systemBack: SystemBack? = null) {
         setContent {
             KoinIsolatedContext(graph) {
-                CompositionLocalProvider(LocalViewModelStoreOwner provides owner) { PursuitOfWindTheme { AppNavigation() } }
+                CompositionLocalProvider(LocalViewModelStoreOwner provides owner) {
+                    if (systemBack == null) {
+                        PursuitOfWindTheme { AppNavigation() }
+                    } else {
+                        CompositionLocalProvider(
+                            LocalNavigationEventDispatcherOwner provides systemBack,
+                        ) { PursuitOfWindTheme { AppNavigation() } }
+                    }
+                }
             }
         }
     }
@@ -343,6 +363,94 @@ class AppNavigationTest {
             waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("spot.ready")).fetchSemanticsNodes().isNotEmpty() }
             onNodeWithTag("tabs").assertDoesNotExist()
         }
+
+    @Test
+    fun `system back closes the screen on top and from a tab returns to Today`() =
+        runComposeUiTest {
+            val back = SystemBack()
+            showApp(back)
+
+            openNordstrandFromSpots()
+            runOnIdle { back.input.backCompleted() }
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("spot.ready")).fetchSemanticsNodes().isEmpty() }
+            onNodeWithTag("myspots.list").assertIsDisplayed()
+
+            runOnIdle { back.input.backCompleted() }
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("myspots.list")).fetchSemanticsNodes().isEmpty() }
+            onNodeWithTag("today.header").assertIsDisplayed()
+        }
+
+    @Test
+    fun `a predictive back from a spot's forecast previews the Spots tab with its tab bar`() =
+        runComposeUiTest {
+            val back = SystemBack()
+            showApp(back)
+            openNordstrandFromSpots()
+
+            runOnIdle {
+                back.input.backStarted(NavigationEvent(progress = 0f))
+                back.input.backProgressed(NavigationEvent(progress = 0.5f))
+            }
+            waitForIdle()
+            // Halfway through the gesture both screens show, and the tab below already has its bar.
+            assertTrue(onAllNodes(hasTestTag("spot.ready")).fetchSemanticsNodes().isNotEmpty())
+            assertTrue(onAllNodes(hasTestTag("myspots.list")).fetchSemanticsNodes().isNotEmpty())
+            assertTrue(onAllNodes(hasTestTag("tabs")).fetchSemanticsNodes().isNotEmpty())
+
+            runOnIdle { back.input.backCompleted() }
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("spot.ready")).fetchSemanticsNodes().isEmpty() }
+            onNodeWithTag("myspots.list").assertIsDisplayed()
+        }
+
+    @Test
+    fun `the screens on the back stack come back after the app's state is restored`() =
+        runComposeUiTest {
+            // The app's saved state across process death: `StateRestorationTester` does not run on desktop, so the test
+            // saves the registry, disposes the app with its ViewModels and composes it again. The registry takes any
+            // value, so this checks the back stack's round trip through its serializers, not what fits in a Bundle; the
+            // Koin graph and its data stay, as the database and DataStore would.
+            var registry by mutableStateOf(SaveableStateRegistry(restoredValues = null) { true })
+            var shown by mutableStateOf(true)
+            setContent {
+                if (shown) {
+                    CompositionLocalProvider(LocalSaveableStateRegistry provides registry) {
+                        KoinIsolatedContext(graph) {
+                            CompositionLocalProvider(LocalViewModelStoreOwner provides owner) { PursuitOfWindTheme { AppNavigation() } }
+                        }
+                    }
+                }
+            }
+
+            openNordstrandFromSpots()
+            val saved = runOnIdle { registry.performSave() }
+            shown = false
+            waitForIdle()
+            runOnIdle { viewModels.clear() }
+            registry = SaveableStateRegistry(restoredValues = saved) { true }
+            shown = true
+
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("spot.ready")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithContentDescription("Back").performClick()
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("myspots.list")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("tab.spots").assertIsSelected()
+        }
+
+    /** From Today to the Spots tab, then Nordstrand Bay's forecast. */
+    private fun ComposeUiTest.openNordstrandFromSpots() {
+        waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("today.header")).fetchSemanticsNodes().isNotEmpty() }
+        onNodeWithTag("tab.spots").performClick()
+        val open = "myspots.open.nordstrand-bay"
+        waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag(open)).fetchSemanticsNodes().isNotEmpty() }
+        onNodeWithTag("myspots.list").performScrollToNode(hasTestTag(open))
+        onNodeWithTag(open).performClick()
+        waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("spot.ready")).fetchSemanticsNodes().isNotEmpty() }
+    }
+
+    /** System back as Android and iOS send it: through the navigation event dispatcher, not a screen's back button. */
+    private class SystemBack : NavigationEventDispatcherOwner {
+        val input = DirectNavigationEventInput()
+        override val navigationEventDispatcher = NavigationEventDispatcher().apply { addInput(input) }
+    }
 
     private companion object {
         /** Room, DataStore and the HTTP engine run on real threads here; leave room for a cold JVM on CI. */

@@ -153,12 +153,12 @@ class DayCardsMapperTest {
     }
 
     @Test
-    fun `once the time to leave has passed an offered ride leaves at the next quarter hour`() {
+    fun `an offered ride carries the time to leave even once it has passed for the form to decide`() {
         val windyToday = day(THURSDAY) { hour -> if (hour < 10) 12.0 else 18.0 }
         val crew = CrewRidesEntity(emptyList(), hasCrew = true, userId = me.userId)
         val today = assertIs<DayUi.Go>(cards(forecasts = mapOf("nordstrand-bay" to windyToday), rides = crew).single())
 
-        assertEquals(RideOfferUi(SpotId("nordstrand-bay"), at(THURSDAY, 10, 30), at(THURSDAY, 17), at(THURSDAY, 8, 15)), today.offer)
+        assertEquals(RideOfferUi(SpotId("nordstrand-bay"), at(THURSDAY, 10, 30), at(THURSDAY, 17), at(THURSDAY, 5, 30)), today.offer)
     }
 
     @Test

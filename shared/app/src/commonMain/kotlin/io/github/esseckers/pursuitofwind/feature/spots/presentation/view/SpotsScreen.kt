@@ -20,7 +20,6 @@ import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -34,10 +33,12 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import io.github.esseckers.pursuitofwind.core.designsystem.component.ActionButton
+import io.github.esseckers.pursuitofwind.core.designsystem.component.AppSnackbarHost
 import io.github.esseckers.pursuitofwind.core.designsystem.component.MessageState
 import io.github.esseckers.pursuitofwind.core.designsystem.component.Skeleton
 import io.github.esseckers.pursuitofwind.core.designsystem.component.StatusBanner
 import io.github.esseckers.pursuitofwind.core.designsystem.component.TabTitle
+import io.github.esseckers.pursuitofwind.core.designsystem.component.screenInsets
 import io.github.esseckers.pursuitofwind.core.designsystem.icon.AppIcons
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Sizes
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Spacing
@@ -92,7 +93,8 @@ internal fun SpotsScreen(
                 modifier = Modifier.semantics { customActions = refreshAction },
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = { AppSnackbarHost(snackbarHostState) },
+        contentWindowInsets = screenInsets(),
         floatingActionButton = {
             // With no spots, the message offers the same action; one button is enough.
             if (state.content !is Content.Empty) AddSpotsButton(onClick = { onIntent(SpotsIntent.AddSpots) })

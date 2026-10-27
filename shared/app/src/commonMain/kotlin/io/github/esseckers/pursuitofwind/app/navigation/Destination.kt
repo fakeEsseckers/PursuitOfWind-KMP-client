@@ -42,8 +42,9 @@ internal sealed interface Destination : NavKey {
     data object Profile : Destination
 
     /**
-     * "I'm going": the form that offers the crew a ride to [spotId] for the window from [windowStart] to [windowEnd],
-     * leaving at [departAt]. Times are epoch seconds, so the key stays plain.
+     * "I'm going": the form that offers the crew a ride to [spotId] for the window from [windowStart] to [windowEnd].
+     * [departAt] is the time to leave, which may have passed; the form decides the departure. Times are epoch seconds,
+     * so the key stays plain.
      */
     @Serializable
     data class OfferRide(
@@ -61,8 +62,15 @@ internal sealed interface Destination : NavKey {
     ) : Destination
 }
 
-/** The destinations with a tab in the bottom bar, in the bar's order. The bar shows only while one of them is on top. */
-internal val tabDestinations: List<Destination> = listOf(Destination.Today, Destination.Spots, Destination.Crew, Destination.Profile)
+/** The app's tabs, in the bar's order, and the screen each one shows. Every tab's screen carries the tab bar. */
+internal enum class AppTab(
+    val destination: Destination,
+) {
+    TODAY(Destination.Today),
+    SPOTS(Destination.Spots),
+    CREW(Destination.Crew),
+    PROFILE(Destination.Profile),
+}
 
 /**
  * How the back stack is saved. On iOS there is no reflection, so every [Destination] is registered here by hand; a new

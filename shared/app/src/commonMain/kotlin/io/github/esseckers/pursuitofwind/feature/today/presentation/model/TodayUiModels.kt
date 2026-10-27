@@ -64,8 +64,8 @@ internal data class RideUi(
 )
 
 /**
- * A ride the rider can offer for a GO window at [spotId]: the riding time from [windowStart] to [windowEnd], leaving
- * at [departAt], which is the time to leave, or now once that has passed.
+ * A ride the rider can offer for a GO window at [spotId]: the riding time from [windowStart] to [windowEnd], and
+ * [departAt], the time to leave. The ride offer form decides when the car actually leaves.
  */
 internal data class RideOfferUi(
     val spotId: SpotId,

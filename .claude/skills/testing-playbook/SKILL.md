@@ -75,7 +75,7 @@ fun `a retried seat request does not take a second seat`() =
 - `:shared:app` has a JVM target for tests only. A ViewModel test builds the app's own Koin modules for `Environment.Fake` with a `ControllableClock`, and overrides `FakePursuitOfWindServer` with a `Seed` whose `ForecastProfile` makes verdicts known (steady wind, no noise). No fake repositories.
 - Create ViewModels through a `ViewModelStore` (`ViewModelProvider.create(store, viewModelFactory { initializer { … } })`) and `store.clear()` in `@AfterTest` before `koin.close()`. Otherwise a ViewModel from the previous test keeps reading a database that is already closed, and `runTest` reports that error in the next test.
 - Room and DataStore run on real IO threads here, so the cache settles after a refresh ends: wait for the state you need (`awaitState { … }` over `awaitItem()`) instead of assuming the order of emissions.
-- ViewModels that tick (`TodayViewModel(tick = …)`) take `Duration.INFINITE` in tests that do not test time; repeated clock readings are dropped, so a stopped `ControllableClock` costs nothing.
+- ViewModels tick and poll at their own constants (`TICK`, `POLL`), in tests too: repeated readings of a stopped `ControllableClock` are dropped, so ticking costs nothing in a test that does not move the clock, and a test that does sees the next tick.
 - Screen tests render the stateless screen with `TodayPreviewData` states: assert merged card text (`hasText`), test tags, intents sent by buttons, custom accessibility actions, and the Russian strings (`Locale.setDefault`, restored after the test). The 200% font check runs at phone size (`runSkikoComposeUiTest(size, density)`) and fails on text that is clipped or pushed off screen.
 
 ## Property tests (Kotest)

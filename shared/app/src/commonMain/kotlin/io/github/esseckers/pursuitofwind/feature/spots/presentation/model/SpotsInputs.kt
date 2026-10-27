@@ -8,8 +8,9 @@ import kotlin.time.Duration
 
 /**
  * What [SpotsState] is computed from: the cached spots (null until they arrive), how the refresh is going, the
- * rider's [edits] shown on top of the cache, the spots [saving] with a save running, and the spots [removing] that are
- * hidden while they are being removed.
+ * rider's [edits] shown on top of the cache, the spots [saving] with a save running, the spots [removing] that are
+ * hidden while they are being removed, and the spots [restoring] after "Undo", shown again at once as they were until
+ * they are followed again.
  */
 internal data class SpotsInputs(
     val cached: Cached<List<MySpot>>? = null,
@@ -17,6 +18,7 @@ internal data class SpotsInputs(
     val edits: Map<SpotId, SpotEdit> = emptyMap(),
     val saving: Set<SpotId> = emptySet(),
     val removing: Set<SpotId> = emptySet(),
+    val restoring: Map<SpotId, RemovedSpot> = emptyMap(),
 )
 
 /** Whether a refresh runs, whether one has [finished] since the tab opened, and how the last one failed. */
@@ -37,10 +39,11 @@ internal data class SpotEdit(
     }
 }
 
-/** A spot just removed, with what it takes to follow it again as it was. */
+/** A spot just removed, with what it takes to show it and follow it again as it was. */
 internal data class RemovedSpot(
     val id: SpotId,
     val name: String,
+    val verified: Boolean,
     val drive: Duration,
     val favorite: Boolean,
 )

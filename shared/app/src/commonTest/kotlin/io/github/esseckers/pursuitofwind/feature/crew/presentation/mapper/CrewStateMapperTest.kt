@@ -38,10 +38,11 @@ class CrewStateMapperTest {
 
     private fun inputs(
         rides: List<Ride> = details.rides.value,
-        chosen: String? = weekendCrew.id,
+        shown: String? = weekendCrew.id,
     ) = CrewInputs(
         crews = crews,
-        chosen = chosen,
+        chosen = shown,
+        shown = shown,
         details = details.copy(rides = Cached(rides, now)),
         refresh = CrewRefresh(finished = true),
         now = now,
@@ -68,20 +69,21 @@ class CrewStateMapperTest {
     }
 
     @Test
-    fun `the chosen crew shows or else the first and the others are there to switch to`() {
-        val chosen = map(inputs())
-        val first = map(inputs(chosen = null).copy(details = null))
-        val gone = map(inputs(chosen = "crw_gone"))
-        val other = map(inputs(chosen = nightOwls.id))
+    fun `the crew the ViewModel shows is on screen and the others are there to switch to`() {
+        val shown = map(inputs())
+        val reading = map(inputs().copy(details = null))
+        val notListedYet = map(inputs(shown = "crw_new"))
+        val other = map(inputs(shown = nightOwls.id))
 
-        val crew = (chosen.content as Content.Ready).crew
+        val crew = (shown.content as Content.Ready).crew
         assertEquals("Weekend Crew", crew.name)
         assertEquals("WIND-4KQ7", crew.inviteCode)
-        assertEquals(listOf(CrewChoice(weekendCrew.id, "Weekend Crew", true), CrewChoice(nightOwls.id, "Night Owls", false)), chosen.crews)
-        // Weekend Crew is first; its details are still being read.
-        assertEquals(Content.Loading, first.content)
-        assertEquals(listOf(true, false), first.crews.map { it.selected })
-        assertEquals("Weekend Crew", (gone.content as Content.Ready).crew.name)
+        assertEquals(listOf(CrewChoice(weekendCrew.id, "Weekend Crew", true), CrewChoice(nightOwls.id, "Night Owls", false)), shown.crews)
+        // Its details are still being read.
+        assertEquals(Content.Loading, reading.content)
+        // A crew just made, not in the cached list yet: the tab waits for it instead of showing another.
+        assertEquals(Content.Loading, notListedYet.content)
+        assertEquals(listOf(false, false), notListedYet.crews.map { it.selected })
         // The details at hand belong to Weekend Crew.
         assertEquals(Content.Loading, other.content)
         assertEquals(listOf(false, true), other.crews.map { it.selected })

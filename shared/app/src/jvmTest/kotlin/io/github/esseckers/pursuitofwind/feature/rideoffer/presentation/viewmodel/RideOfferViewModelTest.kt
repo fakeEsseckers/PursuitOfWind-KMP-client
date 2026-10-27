@@ -41,7 +41,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -67,21 +66,10 @@ class RideOfferViewModelTest {
         releaseMainDispatcher()
     }
 
-    private fun viewModel(): RideOfferViewModel =
+    private fun viewModel(draft: RideDraftEntity = this.draft): RideOfferViewModel =
         ViewModelProvider.create(
             viewModels,
-            viewModelFactory {
-                // No ticks: the tests move the clock themselves.
-                initializer {
-                    RideOfferViewModel(
-                        draft,
-                        repository = koin.get(),
-                        clock = clock,
-                        riderZone = BERLIN,
-                        tick = Duration.INFINITE,
-                    )
-                }
-            },
+            viewModelFactory { initializer { RideOfferViewModel(draft, repository = koin.get(), clock = clock, riderZone = BERLIN) } },
         )[RideOfferViewModel::class]
 
     private suspend fun riderInWeekendCrew() {
@@ -146,6 +134,18 @@ class RideOfferViewModelTest {
                     .value
                     .single { it.driver.displayName == "Alex" }
             assertEquals(at(SUNDAY, 10, 45), ride.departAt)
+        }
+
+    @Test
+    fun `a drafted departure after the window starts is moved to the start`() =
+        runTest(dispatcher) {
+            riderInWeekendCrew()
+            val viewModel = viewModel(draft.copy(departAt = at(SUNDAY, 13) + 10.minutes))
+
+            viewModel.state.test(timeout = TURBINE_TIMEOUT) {
+                assertEquals("13:00", awaitState { it.summary != null }.summary?.departAt)
+                cancelAndIgnoreRemainingEvents()
+            }
         }
 
     @Test

@@ -11,7 +11,6 @@ import io.github.esseckers.pursuitofwind.data.model.MemberRole
 import io.github.esseckers.pursuitofwind.data.model.Ride
 import io.github.esseckers.pursuitofwind.data.model.RideStatus
 import io.github.esseckers.pursuitofwind.feature.crew.domain.entity.CrewDetailsEntity
-import io.github.esseckers.pursuitofwind.feature.crew.domain.mapper.CrewChoiceMapper
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewChoice
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewInputs
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewRideUi
@@ -23,6 +22,7 @@ import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.MemberU
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.PersonUi
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.RideAction
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.RideDayUi
+import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.shownCrew
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
@@ -34,10 +34,10 @@ internal object CrewStateMapper {
     ): CrewState {
         val refresh = inputs.refresh
         val crews = inputs.crews?.value.orEmpty()
-        val shown = CrewChoiceMapper.shownCrew(crews, inputs.chosen)
+        val shown = inputs.shownCrew()
         val base =
             CrewState(
-                crews = crews.map { CrewChoice(it.id, it.name, selected = it.id == shown?.id) },
+                crews = crews.map { CrewChoice(it.id, it.name, selected = it.id == inputs.shown) },
                 isRefreshing = refresh.refreshing,
                 dialog = inputs.dialog,
                 inputs = inputs,
@@ -62,8 +62,8 @@ internal object CrewStateMapper {
         return when {
             shown != null && details != null -> Content.Ready(crewUi(shown, details, inputs, riderZone))
 
-            // The crew is known, its members and rides are still being read.
-            shown != null -> Content.Loading
+            // The crew is known, its members and rides are still being read; or it is new and not in the list yet.
+            shown != null || inputs.shown != null -> Content.Loading
 
             error != null && cached.updatedAt == null -> Content.Error(error.message())
 

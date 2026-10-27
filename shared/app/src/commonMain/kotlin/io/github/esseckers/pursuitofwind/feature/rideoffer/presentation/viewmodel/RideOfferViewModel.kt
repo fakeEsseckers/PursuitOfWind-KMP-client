@@ -1,8 +1,11 @@
 package io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.viewmodel
 
 import androidx.lifecycle.viewModelScope
+import io.github.esseckers.pursuitofwind.core.launchFinishing
 import io.github.esseckers.pursuitofwind.core.mvi.MviViewModel
+import io.github.esseckers.pursuitofwind.core.ticks
 import io.github.esseckers.pursuitofwind.core.ui.nextQuarterHour
+import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Crew
 import io.github.esseckers.pursuitofwind.data.model.RidePlan
 import io.github.esseckers.pursuitofwind.feature.rideoffer.domain.entity.RideDraftEntity
@@ -10,16 +13,11 @@ import io.github.esseckers.pursuitofwind.feature.rideoffer.domain.repository.Rid
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.RideOfferEffect
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.RideOfferIntent
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.RideOfferState
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
-import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import kotlin.time.Clock
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 
@@ -33,7 +31,6 @@ internal class RideOfferViewModel(
     private val repository: RideOfferRepository,
     private val clock: Clock,
     riderZone: TimeZone,
-    private val tick: Duration = 1.minutes,
 ) : MviViewModel<RideOfferState, RideOfferIntent, RideOfferResult, RideOfferEffect>(
         RideOfferState(),
         RideOfferReducer(draft, riderZone),
@@ -53,7 +50,7 @@ internal class RideOfferViewModel(
         merge(
             repository.crews.map { RideOfferResult.CrewsChanged(it, crewFor(it.value, currentState.inputs.chosen)) },
             repository.spot(draft.spotId).map { RideOfferResult.SpotChanged(it) },
-            ticks().map { RideOfferResult.Ticked(it, departure(it)) },
+            clock.ticks(TICK).map { RideOfferResult.Ticked(it, departure(it)) },
         )
 
     /** Only a crew the rider has: a chip tapped as the list changed may name one they have left. */
@@ -76,10 +73,10 @@ internal class RideOfferViewModel(
         dispatchResult(RideOfferResult.Ticked(now, departAt))
         dispatchResult(RideOfferResult.Sending)
         val plan = RidePlan(draft.spotId, draft.windowStart, draft.windowEnd, departAt, inputs.meetingPoint.trim(), inputs.seats)
-        viewModelScope.launch {
-            val error = repository.offer(crewId, plan)
-            if (error == null) postEffect(RideOfferEffect.Offered) else dispatchResult(RideOfferResult.Failed(error))
-        }
+        viewModelScope.launchFinishing(
+            unfinished = AppError.Unknown("Offering did not finish"),
+            work = { repository.offer(crewId, plan) },
+        ) { error -> if (error == null) postEffect(RideOfferEffect.Offered) else dispatchResult(RideOfferResult.Failed(error)) }
     }
 
     /** The crew the ride goes to: [chosen] while it is still one of [crews], or else the first. */
@@ -89,18 +86,16 @@ internal class RideOfferViewModel(
     ): String? = (crews.firstOrNull { it.id == chosen } ?: crews.firstOrNull())?.id
 
     /**
-     * When the ride leaves at [now]: as drafted, or once that has passed while the form was open, at the next quarter
-     * hour, and never after the window starts.
+     * When the ride leaves at [now]: at the drafted time to leave while it is ahead, else at the next quarter hour, and
+     * never after the window starts.
      */
-    private fun departure(now: Instant): Instant =
-        if (draft.departAt > now) draft.departAt else minOf(nextQuarterHour(now), draft.windowStart)
+    private fun departure(now: Instant): Instant {
+        val planned = if (draft.departAt > now) draft.departAt else nextQuarterHour(now)
+        return minOf(planned, draft.windowStart)
+    }
 
-    /** The clock's time now and after every [tick], so the departure shown moves on once the drafted one has passed. */
-    private fun ticks(): Flow<Instant> =
-        flow {
-            while (true) {
-                emit(clock.now())
-                delay(tick)
-            }
-        }.distinctUntilChanged()
+    private companion object {
+        /** How often the time is read again, so the departure shown moves on once the drafted one has passed. */
+        val TICK = 1.minutes
+    }
 }

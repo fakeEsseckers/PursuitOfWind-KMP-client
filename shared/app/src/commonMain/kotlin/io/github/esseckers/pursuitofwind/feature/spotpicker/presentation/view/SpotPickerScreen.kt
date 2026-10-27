@@ -37,6 +37,7 @@ import io.github.esseckers.pursuitofwind.core.designsystem.component.PrimaryButt
 import io.github.esseckers.pursuitofwind.core.designsystem.component.ScreenTopBar
 import io.github.esseckers.pursuitofwind.core.designsystem.component.Skeleton
 import io.github.esseckers.pursuitofwind.core.designsystem.component.StatusBanner
+import io.github.esseckers.pursuitofwind.core.designsystem.component.screenInsets
 import io.github.esseckers.pursuitofwind.core.designsystem.icon.AppIcons
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Sizes
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Spacing
@@ -92,6 +93,7 @@ internal fun SpotPickerScreen(
             )
         },
         bottomBar = { DoneBar(state = state, onDone = { onIntent(SpotPickerIntent.Done) }) },
+        contentWindowInsets = screenInsets(),
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
             when (val content = state.content) {

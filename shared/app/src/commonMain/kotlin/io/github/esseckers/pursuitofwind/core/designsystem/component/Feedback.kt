@@ -16,16 +16,21 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalAccessibilityManager
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
@@ -38,7 +43,9 @@ import io.github.esseckers.pursuitofwind.core.designsystem.theme.Sizes
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Spacing
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.disclaimer
+import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
+import kotlin.time.Duration.Companion.seconds
 
 /** A small icon followed by text, for facts such as the wind range or the departure time. Decorative icon. */
 @Composable
@@ -164,6 +171,37 @@ internal fun Disclaimer(modifier: Modifier = Modifier) {
         )
     }
 }
+
+/**
+ * The screen's snackbars, each shown for [SNACKBAR_TIME] at most, one with an action too, unless the rider's
+ * accessibility settings ask for more time (Android's "Time to take action", or a screen reader with an action to reach).
+ */
+@Composable
+internal fun AppSnackbarHost(
+    hostState: SnackbarHostState,
+    modifier: Modifier = Modifier,
+) {
+    val accessibility = LocalAccessibilityManager.current
+    SnackbarHost(hostState, modifier) { data ->
+        LaunchedEffect(data) {
+            val time = SNACKBAR_TIME.inWholeMilliseconds
+            val visuals = data.visuals
+            delay(
+                accessibility?.calculateRecommendedTimeoutMillis(
+                    time,
+                    containsIcons = visuals.withDismissAction,
+                    containsText = true,
+                    containsControls = visuals.actionLabel != null,
+                ) ?: time,
+            )
+            data.dismiss()
+        }
+        Snackbar(data)
+    }
+}
+
+/** How long a snackbar stays. */
+internal val SNACKBAR_TIME = 3.seconds
 
 /** A gently pulsing placeholder block while content loads. Size it with [modifier]; screen readers skip it. */
 @Composable

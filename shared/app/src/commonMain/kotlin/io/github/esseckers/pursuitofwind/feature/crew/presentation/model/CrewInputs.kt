@@ -4,18 +4,23 @@ import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.Crew
 import io.github.esseckers.pursuitofwind.feature.crew.domain.entity.CrewDetailsEntity
-import io.github.esseckers.pursuitofwind.feature.crew.domain.mapper.CrewChoiceMapper
 import org.jetbrains.compose.resources.StringResource
 import kotlin.time.Instant
 
 /**
- * What [CrewState] is computed from: the cached [crews] (null until they arrive), the crew the rider [chosen], the
- * [details] of the crew on screen, how the refresh is going, the rides being [cancelling], the open [dialog], and the
- * time [now], which tells rides that have left.
+ * What [CrewState] is computed from: the cached [crews] (null until they arrive), the crew the rider [chosen], a crew
+ * just made or joined that is [arriving] until its first refresh is done, the crew [shown] on screen, the [details] of
+ * that crew, how the refresh is going, the rides being [cancelling], the open [dialog], and the time [now], which tells
+ * rides that have left.
+ *
+ * The reducer works out [shown]: the [arriving] crew while the list does not hold it yet (a list read before it was
+ * saved can still come in and would otherwise put the old crew back for a moment), else [crewToShow].
  */
 internal data class CrewInputs(
     val crews: Cached<List<Crew>>? = null,
     val chosen: String? = null,
+    val arriving: String? = null,
+    val shown: String? = null,
     val details: CrewDetailsEntity? = null,
     val refresh: CrewRefresh = CrewRefresh(),
     val cancelling: Set<String> = emptySet(),
@@ -56,5 +61,11 @@ internal sealed interface CrewDialog {
     }
 }
 
-/** The crew on screen ([CrewChoiceMapper.shownCrew]). */
-internal fun CrewInputs.shownCrew(): Crew? = CrewChoiceMapper.shownCrew(crews?.value.orEmpty(), chosen)
+/** The crew on screen, once the cached list holds it. */
+internal fun CrewInputs.shownCrew(): Crew? = crews?.value?.firstOrNull { it.id == shown }
+
+/** The crew the rider [chosen] while it is one of [crews], else the first; null without crews. */
+internal fun crewToShow(
+    crews: List<Crew>,
+    chosen: String?,
+): Crew? = crews.firstOrNull { it.id == chosen } ?: crews.firstOrNull()

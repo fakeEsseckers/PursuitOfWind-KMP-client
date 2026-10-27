@@ -62,13 +62,14 @@ io.github.esseckers.pursuitofwind.<module>/
 io.github.esseckers.pursuitofwind/
   app/                      # App(), di/appModules(), navigation/ (Navigation 3), platform entry points
   core/
-    mvi/                    # MviViewModel, Reducer, CollectEffects
+    Extensions.kt           # CollectEffects, launchFinishing, Clock.ticks: helpers every screen uses
+    mvi/                    # MviViewModel, Reducer
     designsystem/           # theme/, component/, icon/
     ui/                     # formatting and labels shared by screens
     resources/              # generated Res (packageOfResClass)
   feature/<screen>/         # today, spotdetail, profile, spots, crew, settings
     domain/entity/          # the feature's domain types, named *Entity
-    domain/mapper/          # pure rules over those types (`RefreshErrorMapper`, `CrewChoiceMapper`), with tests
+    domain/mapper/          # pure rules over those types that one layer uses (`RefreshErrorMapper`), with tests
     domain/repository/      # the repository interface the feature needs
     data/repository/        # its implementation over the :shared:data repositories
     presentation/model/     # State, Intent, Effect, UI models

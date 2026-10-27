@@ -1,5 +1,13 @@
 package io.github.esseckers.pursuitofwind.app.navigation
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -17,9 +25,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.metadata
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
@@ -50,7 +60,8 @@ import kotlin.time.Instant
 /**
  * The app's screens and how they connect (Navigation 3). A rider without a profile starts at Welcome and goes through
  * onboarding (profile, then spots) to Today; everyone else starts at Today. Today, Spots, Crew and Profile are tabs
- * in a bottom bar, shown while one of them is on top. Everything shows in the rider's language (`AppLanguage`).
+ * ([AppTab]): each tab's screen carries the tab bar, and moving between tabs fades. Everything shows in the rider's
+ * language (`AppLanguage`).
  *
  * The back stack is a list of [Destination]s in saved state; every entry gets its own ViewModel store, so a screen's
  * ViewModel lives exactly as long as the screen is on the stack. Features do not know each other: this is the only
@@ -81,39 +92,47 @@ internal fun AppNavigation(
     // the screens (scroll positions) starts over with the language: its holder cannot be shared across the switch.
     val viewModels = rememberViewModelStoreNavEntryDecorator<NavKey>()
     AppLanguageScope(language) {
-        val top = backStack.lastOrNull()
-        Scaffold(
+        NavDisplay(
+            backStack = backStack,
             modifier = modifier,
-            bottomBar = { if (top in tabDestinations) TabBar(selected = top, onSelect = navigator::selectTab) },
-        ) { padding ->
-            NavDisplay(
-                backStack = backStack,
-                // The bar's height is taken here, so screens lay out above it and do not add the system bars twice.
-                modifier = Modifier.padding(padding).consumeWindowInsets(padding),
-                onBack = navigator::back,
-                entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator(), viewModels),
-                entryProvider = entries(navigator),
-            )
-        }
+            // System back (gesture, button, iOS swipe) always means the screen on top.
+            onBack = navigator::back,
+            entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator(), viewModels),
+            entryProvider = entries(navigator),
+        )
     }
 }
 
 /** Each destination's screen, with its navigation lambdas. */
 private fun entries(navigator: Navigator): (NavKey) -> NavEntry<NavKey> =
     entryProvider {
-        entry<Destination.Welcome> { WelcomeScreen(onGetStarted = { navigator.open(Destination.SetUpProfile) }) }
-        entry<Destination.SetUpProfile> {
-            ProfileRoute(
-                mode = ProfileMode.SET_UP,
-                onContinue = { navigator.open(Destination.PickSpots) },
-                onBack = navigator::back,
-            )
-        }
-        entry<Destination.PickSpots> { SpotPickerRoute(onFinished = navigator::finishPicking, onBack = navigator::back) }
-        entry<Destination.Today> {
+        onboarding(navigator)
+        tabs(navigator)
+        screensOnTop(navigator)
+    }
+
+/** Welcome, the rider's profile and the spot picker, which Today and the Spots tab open too. */
+private fun EntryProviderScope<NavKey>.onboarding(navigator: Navigator) {
+    entry<Destination.Welcome> { WelcomeScreen(onGetStarted = { navigator.open(Destination.SetUpProfile) }) }
+    entry<Destination.SetUpProfile> { key ->
+        ProfileRoute(
+            mode = ProfileMode.SET_UP,
+            onContinue = { navigator.open(Destination.PickSpots) },
+            onBack = { navigator.back(from = key) },
+        )
+    }
+    entry<Destination.PickSpots> { key ->
+        SpotPickerRoute(onFinished = navigator::finishPicking, onBack = { navigator.back(from = key) })
+    }
+}
+
+/** The tabs, each with the tab bar under it. */
+private fun EntryProviderScope<NavKey>.tabs(navigator: Navigator) {
+    entry<Destination.Today>(metadata = tabTransitions) {
+        TabScreen(AppTab.TODAY, navigator) {
             TodayRoute(
                 onOpenSpot = { spotId, date -> navigator.open(Destination.SpotDetail(spotId.value, date)) },
-                onOpenProfile = { navigator.selectTab(Destination.Profile) },
+                onOpenProfile = { navigator.selectTab(AppTab.PROFILE) },
                 onPickSpots = { navigator.open(Destination.PickSpots) },
                 onOfferRide = { offer ->
                     val key =
@@ -127,62 +146,100 @@ private fun entries(navigator: Navigator): (NavKey) -> NavEntry<NavKey> =
                 },
             )
         }
-        entry<Destination.OfferRide> { key ->
-            val draft =
-                RideDraftEntity(
-                    spotId = SpotId(key.spotId),
-                    windowStart = Instant.fromEpochSeconds(key.windowStart),
-                    windowEnd = Instant.fromEpochSeconds(key.windowEnd),
-                    departAt = Instant.fromEpochSeconds(key.departAt),
-                )
-            RideOfferRoute(draft = draft, onDone = navigator::back, onBack = navigator::back)
-        }
-        entry<Destination.Spots> {
+    }
+    entry<Destination.Spots>(metadata = tabTransitions) {
+        TabScreen(AppTab.SPOTS, navigator) {
             SpotsRoute(
                 onOpenSpot = { spotId -> navigator.open(Destination.SpotDetail(spotId.value)) },
                 onAddSpots = { navigator.open(Destination.PickSpots) },
             )
         }
-        entry<Destination.Crew> {
+    }
+    entry<Destination.Crew>(metadata = tabTransitions) {
+        TabScreen(AppTab.CREW, navigator) {
             CrewRoute(onOpenSpot = { spotId, date -> navigator.open(Destination.SpotDetail(spotId.value, date)) })
         }
-        entry<Destination.Profile> { ProfileRoute(mode = ProfileMode.TAB) }
-        entry<Destination.SpotDetail> { key ->
-            SpotDetailRoute(spotId = SpotId(key.spotId), date = key.date, onBack = navigator::back)
-        }
     }
+    entry<Destination.Profile>(metadata = tabTransitions) {
+        TabScreen(AppTab.PROFILE, navigator) { ProfileRoute(mode = ProfileMode.TAB) }
+    }
+}
+
+/** Screens opened on top of a tab. */
+private fun EntryProviderScope<NavKey>.screensOnTop(navigator: Navigator) {
+    entry<Destination.OfferRide> { key ->
+        val draft =
+            RideDraftEntity(
+                spotId = SpotId(key.spotId),
+                windowStart = Instant.fromEpochSeconds(key.windowStart),
+                windowEnd = Instant.fromEpochSeconds(key.windowEnd),
+                departAt = Instant.fromEpochSeconds(key.departAt),
+            )
+        RideOfferRoute(draft = draft, onDone = { navigator.back(from = key) }, onBack = { navigator.back(from = key) })
+    }
+    entry<Destination.SpotDetail> { key ->
+        SpotDetailRoute(spotId = SpotId(key.spotId), date = key.date, onBack = { navigator.back(from = key) })
+    }
+}
+
+/**
+ * Moving between tabs fades, and the background of the tab bar each tab carries stays solid: a tab that opens fades in
+ * over the one before (a forward move takes the entering scene's transition), and on back the tab on top fades out over
+ * the one below (a pop takes the leaving one's). Today fades in at the end of onboarding too, which replaces the stack.
+ * Screens opened from a tab keep the platform's transitions.
+ */
+private val tabTransitions: Map<String, Any> =
+    metadata {
+        put(NavDisplay.TransitionKey) { fadeIn(tween(TAB_FADE_MILLIS)) togetherWith ExitTransition.KeepUntilTransitionsFinished }
+        put(NavDisplay.PopTransitionKey) { EnterTransition.None togetherWith fadeOut(tween(TAB_FADE_MILLIS)) }
+        put(NavDisplay.PredictivePopTransitionKey) { _ -> EnterTransition.None togetherWith fadeOut(tween(TAB_FADE_MILLIS)) }
+    }
+
+/**
+ * [tab]'s screen with the tab bar under it. The bar is part of the tab, so it comes and goes with it: a screen opened
+ * from the tab covers it, and back (also a predictive back) shows it again with the tab. The bar's height is taken here,
+ * so the tab lays out above it and does not add the navigation bar again; it keeps clear of the other bars itself.
+ */
+@Composable
+private fun TabScreen(
+    tab: AppTab,
+    navigator: Navigator,
+    content: @Composable () -> Unit,
+) {
+    Scaffold(
+        bottomBar = { TabBar(selected = tab, onSelect = navigator::selectTab) },
+        contentWindowInsets = WindowInsets(0),
+    ) { padding ->
+        Box(modifier = Modifier.padding(padding).consumeWindowInsets(padding)) { content() }
+    }
+}
 
 @Composable
 private fun TabBar(
-    selected: NavKey?,
-    onSelect: (Destination) -> Unit,
+    selected: AppTab,
+    onSelect: (AppTab) -> Unit,
 ) {
     NavigationBar(modifier = Modifier.testTag("tabs")) {
-        tabDestinations.forEach { tab ->
+        AppTab.entries.forEach { tab ->
             val (icon, label) = tabLook(tab)
             NavigationBarItem(
                 selected = tab == selected,
                 onClick = { onSelect(tab) },
                 icon = { Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(Sizes.icon)) },
                 label = { Text(text = stringResource(label)) },
-                modifier = Modifier.testTag("tab.${tabName(tab)}"),
+                modifier = Modifier.testTag("tab.${tab.name.lowercase()}"),
             )
         }
     }
 }
 
-private fun tabLook(tab: Destination): Pair<ImageVector, StringResource> =
+private fun tabLook(tab: AppTab): Pair<ImageVector, StringResource> =
     when (tab) {
-        Destination.Spots -> AppIcons.Pin to Res.string.tab_spots
-        Destination.Crew -> AppIcons.Group to Res.string.tab_crew
-        Destination.Profile -> AppIcons.Person to Res.string.tab_profile
-        else -> AppIcons.Wind to Res.string.tab_today
+        AppTab.TODAY -> AppIcons.Wind to Res.string.tab_today
+        AppTab.SPOTS -> AppIcons.Pin to Res.string.tab_spots
+        AppTab.CREW -> AppIcons.Group to Res.string.tab_crew
+        AppTab.PROFILE -> AppIcons.Person to Res.string.tab_profile
     }
 
-private fun tabName(tab: Destination): String =
-    when (tab) {
-        Destination.Spots -> "spots"
-        Destination.Crew -> "crew"
-        Destination.Profile -> "profile"
-        else -> "today"
-    }
+/** As long as Material's medium fade. */
+private const val TAB_FADE_MILLIS = 250

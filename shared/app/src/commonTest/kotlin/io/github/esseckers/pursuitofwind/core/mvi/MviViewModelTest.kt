@@ -10,7 +10,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
@@ -53,6 +55,21 @@ class MviViewModelTest {
         override fun bind(): Flow<Int> =
             source
                 .onStart { events += "bound" }
+                .onCompletion { events += "unbound" }
+    }
+
+    /** Adds each intent to the state, and in [bind] follows its own state: it notes each value and adds nothing. */
+    private class FollowingViewModel(
+        private val events: MutableList<String>,
+    ) : MviViewModel<Int, Int, Int, Nothing>(0, Reducer { state, result -> state + result }) {
+        override fun onIntent(intent: Int) {
+            dispatchResult(intent)
+        }
+
+        override fun bind(): Flow<Int> =
+            select { it }
+                .onEach { events += "saw $it" }
+                .filter { false }
                 .onCompletion { events += "unbound" }
     }
 
@@ -145,6 +162,27 @@ class MviViewModelTest {
                 cancelAndIgnoreRemainingEvents()
             }
             assertEquals(listOf("bound", "unbound", "bound"), events)
+        }
+
+    @Test
+    fun `bind follows the state through select and still stops after the view leaves`() =
+        runTest(dispatcher) {
+            val following =
+                ViewModelProvider.create(viewModels, viewModelFactory { initializer { FollowingViewModel(events) } })[
+                    FollowingViewModel::class,
+                ]
+
+            following.state.test {
+                assertEquals(0, awaitItem())
+                runCurrent()
+                following.onIntent(2)
+                assertEquals(2, awaitItem())
+                runCurrent()
+                cancelAndIgnoreRemainingEvents()
+            }
+            advanceTimeBy(MviViewModel.STOP_AFTER + 1.seconds)
+
+            assertEquals(listOf("saw 0", "saw 2", "unbound"), events)
         }
 
     @Test

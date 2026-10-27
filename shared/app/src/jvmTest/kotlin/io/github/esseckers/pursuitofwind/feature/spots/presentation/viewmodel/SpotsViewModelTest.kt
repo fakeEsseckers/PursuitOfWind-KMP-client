@@ -155,6 +155,28 @@ class SpotsViewModelTest {
         }
 
     @Test
+    fun `changes made just before the tab is left are all still saved`() =
+        runTest(dispatcher) {
+            following()
+            val viewModel = viewModel()
+
+            viewModel.state.test(timeout = TURBINE_TIMEOUT) {
+                awaitSettled()
+                spotSaves.hold()
+                viewModel.onIntent(SpotsIntent.ToggleFavorite(saltLagoon))
+                spotSaves.awaitHeld()
+                // Waits for the held request, which is still running when the tab goes away.
+                viewModel.onIntent(SpotsIntent.ChangeDrive(saltLagoon, 175))
+                cancelAndIgnoreRemainingEvents()
+            }
+            viewModels.clear()
+            spotSaves.release()
+
+            spots.mySpots.first { cached -> cached.value.any { it.spot.id == saltLagoon && it.drive == 175.minutes } }
+            assertEquals(Triple(saltLagoon, 175, true), mySpots().last())
+        }
+
+    @Test
     fun `a spot removed while its save is in flight stays removed and its unsent change is dropped`() =
         runTest(dispatcher) {
             following()
@@ -179,7 +201,10 @@ class SpotsViewModelTest {
                 cancelAndIgnoreRemainingEvents()
             }
             viewModel.effects.test(timeout = TURBINE_TIMEOUT) {
-                assertEquals(SpotsEffect.Removed(RemovedSpot(saltLagoon, "Salt Lagoon", 175.minutes, favorite = true)), awaitItem())
+                assertEquals(
+                    SpotsEffect.Removed(RemovedSpot(saltLagoon, "Salt Lagoon", verified = true, 175.minutes, favorite = true)),
+                    awaitItem(),
+                )
             }
             assertEquals(listOf(NORDSTRAND), mySpots().map { it.first })
         }
@@ -247,16 +272,44 @@ class SpotsViewModelTest {
                 awaitState { it.inputs.removing.isEmpty() && it.spots().size == 1 }
                 cancelAndIgnoreRemainingEvents()
             }
-            val removed = RemovedSpot(NORDSTRAND, "Nordstrand Bay", 2.hours, favorite = true)
+            val removed = RemovedSpot(NORDSTRAND, "Nordstrand Bay", verified = true, 2.hours, favorite = true)
             viewModel.effects.test(timeout = TURBINE_TIMEOUT) { assertEquals(SpotsEffect.Removed(removed), awaitItem()) }
             assertEquals(listOf(saltLagoon), mySpots().map { it.first })
 
             viewModel.state.test(timeout = TURBINE_TIMEOUT) {
+                spotSaves.hold()
                 viewModel.onIntent(SpotsIntent.Undo(removed))
-                awaitState { it.spots().size == 2 }
+                // Back in its place at once, before the server has answered.
+                val back = awaitState { state -> state.spots().any { it.id == NORDSTRAND && it.restoring } }
+                assertEquals(listOf("Nordstrand Bay", "Salt Lagoon"), back.spots().map { it.name })
+                spotSaves.awaitHeld()
+                spotSaves.release()
+                awaitState { state -> state.spots().size == 2 && state.spots().none { it.restoring } }
                 cancelAndIgnoreRemainingEvents()
             }
             assertEquals(listOf(Triple(NORDSTRAND, 120, true), Triple(saltLagoon, 160, false)), mySpots())
+        }
+
+    @Test
+    fun `an undo that cannot be saved takes the spot away again and says why`() =
+        runTest(dispatcher) {
+            following()
+            val viewModel = viewModel()
+
+            viewModel.state.test(timeout = TURBINE_TIMEOUT) {
+                awaitSettled()
+                viewModel.onIntent(SpotsIntent.Remove(NORDSTRAND))
+                awaitState { it.inputs.removing.isEmpty() && it.spots().size == 1 }
+                server.networkMode = NetworkMode.OFFLINE
+                viewModel.onIntent(SpotsIntent.Undo(RemovedSpot(NORDSTRAND, "Nordstrand Bay", verified = true, 2.hours, favorite = true)))
+                awaitState { state -> state.spots().any { it.restoring } }
+                awaitState { state -> state.inputs.restoring.isEmpty() && state.spots().size == 1 }
+                cancelAndIgnoreRemainingEvents()
+            }
+            viewModel.effects.test(timeout = TURBINE_TIMEOUT) {
+                assertIs<SpotsEffect.Removed>(awaitItem())
+                assertEquals(SpotsEffect.SaveFailed(Res.string.error_network), awaitItem())
+            }
         }
 
     @Test

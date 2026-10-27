@@ -2,6 +2,7 @@ package io.github.esseckers.pursuitofwind.feature.spots.presentation.viewmodel
 
 import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.MySpot
+import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.RemovedSpot
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotEdit
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsInputs
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsState
@@ -123,6 +124,26 @@ class SpotsReducerTest {
         val failed = reduce(SpotsResult.RemoveStarted(nordstrand.spot.id), SpotsResult.RemoveFailed(nordstrand.spot.id), from = loaded)
 
         assertEquals(listOf("Nordstrand Bay", "Salt Lagoon"), (failed.content as Content.Ready).spots.map { it.name })
+    }
+
+    @Test
+    fun `a spot comes back at once after undo and the cache read after its restore takes over`() {
+        val back = RemovedSpot(nordstrand.spot.id, "Nordstrand Bay", verified = true, nordstrand.drive, nordstrand.favorite)
+        val restoring = reduce(data(saltLagoon), SpotsResult.RestoreStarted(back), from = loaded)
+        val restored = reduce(SpotsResult.RestoreFinished(back.id, cache(nordstrand, saltLagoon)), from = restoring)
+
+        assertTrue(restoring.spot("Nordstrand Bay").restoring)
+        assertFalse(restored.spot("Nordstrand Bay").restoring)
+        assertTrue(restored.inputs.restoring.isEmpty())
+    }
+
+    @Test
+    fun `a spot that cannot be followed again goes away again`() {
+        val back = RemovedSpot(nordstrand.spot.id, "Nordstrand Bay", verified = true, nordstrand.drive, nordstrand.favorite)
+        val failed = reduce(data(saltLagoon), SpotsResult.RestoreStarted(back), SpotsResult.RestoreFailed(back.id), from = loaded)
+
+        assertEquals(listOf("Salt Lagoon"), (failed.content as Content.Ready).spots.map { it.name })
+        assertTrue(failed.inputs.restoring.isEmpty())
     }
 
     @Test

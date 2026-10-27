@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.github.esseckers.pursuitofwind.core.mvi.CollectEffects
+import io.github.esseckers.pursuitofwind.core.CollectEffects
 import io.github.esseckers.pursuitofwind.feature.rideoffer.domain.entity.RideDraftEntity
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.RideOfferEffect
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.view.RideOfferScreen

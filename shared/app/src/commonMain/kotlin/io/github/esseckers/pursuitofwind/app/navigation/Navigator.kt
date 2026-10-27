@@ -22,9 +22,17 @@ internal class Navigator(
         if (backStack.size > 1) backStack.removeAt(backStack.lastIndex)
     }
 
+    /**
+     * Leaves [from] if it is still the top screen. A screen's own back button calls this: a second tap while the screen
+     * animates out would otherwise close the screen below as well.
+     */
+    fun back(from: NavKey) {
+        if (backStack.lastOrNull() == from) back()
+    }
+
     /** Shows the tab [tab]: Today alone, or [tab] on top of Today. Screens opened on top of the old tab close. */
-    fun selectTab(tab: Destination) {
-        show(if (tab == Destination.Today) listOf(Destination.Today) else listOf(Destination.Today, tab))
+    fun selectTab(tab: AppTab) {
+        show(if (tab == AppTab.TODAY) listOf(Destination.Today) else listOf(Destination.Today, tab.destination))
     }
 
     /** Ends onboarding: Today becomes the only screen. */
