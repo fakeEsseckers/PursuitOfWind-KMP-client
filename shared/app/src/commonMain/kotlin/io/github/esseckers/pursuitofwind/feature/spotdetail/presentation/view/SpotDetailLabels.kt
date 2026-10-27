@@ -14,13 +14,13 @@ import io.github.esseckers.pursuitofwind.core.resources.compass_se_long
 import io.github.esseckers.pursuitofwind.core.resources.compass_sw_long
 import io.github.esseckers.pursuitofwind.core.resources.compass_w_long
 import io.github.esseckers.pursuitofwind.core.resources.wind_single
+import io.github.esseckers.pursuitofwind.core.ui.Compass
 import io.github.esseckers.pursuitofwind.core.ui.DayLabel
 import io.github.esseckers.pursuitofwind.core.ui.dayLabel
 import io.github.esseckers.pursuitofwind.core.ui.windUnitLabel
 import io.github.esseckers.pursuitofwind.data.model.WindUnit
 import io.github.esseckers.pursuitofwind.engine.model.Verdict
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.ChartHourUi
-import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.Compass
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
