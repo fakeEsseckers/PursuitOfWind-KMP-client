@@ -45,7 +45,7 @@ Contract tests in `:shared:contract` parse the spec, check its conventions (oper
 
 ## Fake backend
 
-Until the server exists, the app talks to `FakePursuitOfWindServer`: an in-process Ktor engine that implements every operation of the contract with in-memory state — anonymous sign-in with rotating refresh tokens, profiles, a spot catalog with cursor paging, generated forecasts for three weather models, crews with invite codes, rides with seat counting and versions, a crew feed with paging and `410 FEED_RESET`, and `Idempotency-Key` replay. The app's real HTTP client runs against it, so moving to the real backend means a different engine and base URL ([ADR 0005](docs/adr/0005-contract-first-api-with-in-app-fake-backend.md)).
+Until the server exists, the app talks to `FakePursuitOfWindServer`: an in-process Ktor engine that implements every operation of the contract with in-memory state — anonymous sign-in with rotating refresh tokens, profiles, a spot catalog with cursor paging that riders add spots to, generated forecasts for three weather models at any place, crews with invite codes, rides with seat counting and versions, a crew feed with paging and `410 FEED_RESET`, and `Idempotency-Key` replay. The app's real HTTP client runs against it, so moving to the real backend means a different engine and base URL ([ADR 0005](docs/adr/0005-contract-first-api-with-in-app-fake-backend.md)).
 
 It behaves like a live server: every forecast request is a new model run that moves the wind a little — less for the next hours, more three days out — so pulling to refresh always brings a slightly different forecast. There is no separate demo mode ([ADR 0010](docs/adr/0010-live-fake-backend-instead-of-demo-mode.md)).
 
@@ -149,6 +149,7 @@ open iosApp/iosApp.xcodeproj            # then Run on an iOS simulator
 | [0008](docs/adr/0008-mvi-presentation-in-feature-packages.md) | MVI presentation in feature packages |
 | [0009](docs/adr/0009-navigation-3.md) | Navigation 3 for moving between screens |
 | [0010](docs/adr/0010-live-fake-backend-instead-of-demo-mode.md) | A live fake backend instead of a demo mode |
+| [0013](docs/adr/0013-riders-add-spots-on-a-map.md) | Riders add spots on a map |
 
 ## Roadmap
 
