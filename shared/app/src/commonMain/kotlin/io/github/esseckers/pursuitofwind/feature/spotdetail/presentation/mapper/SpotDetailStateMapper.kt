@@ -6,7 +6,9 @@ import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.spot_no_forecast
 import io.github.esseckers.pursuitofwind.core.ui.message
 import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.entity.SpotDetailSnapshotEntity
+import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.entity.SpotEvaluationEntity
 import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.mapper.SpotEvaluationMapper
+import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.Selection
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailInputs
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState.Content
@@ -42,8 +44,8 @@ internal object SpotDetailStateMapper {
             }
 
             else -> {
-                val forecast =
-                    SpotForecastMapper(profile, SpotEvaluationMapper.evaluate(profile, spot, snapshot.forecast.value, now), now, riderZone)
+                val evaluation = SpotEvaluationMapper.evaluate(profile, spot, snapshot.forecast.value, now)
+                val forecast = SpotForecastMapper(profile, evaluation, now, riderZone)
                 if (forecast.isEmpty) {
                     loading.copy(content = waitingContent(snapshot, inputs.refresh), header = header)
                 } else {
@@ -53,10 +55,38 @@ internal object SpotDetailStateMapper {
                         header = header,
                         updatedAgo = age,
                         notice = RefreshNoticeMapper.notice(inputs.refresh.error, age),
+                        evaluation = evaluation,
                     )
                 }
             }
         }
+    }
+
+    /**
+     * [state] with the hour [selection] points to. Only the selection changed, so the engine's answer and the chart stay
+     * and only that hour is worked out; without a chart on screen, everything is computed as by [map].
+     */
+    fun select(
+        state: SpotDetailState,
+        selection: Selection,
+        riderZone: TimeZone,
+    ): SpotDetailState {
+        val inputs = state.inputs.copy(selection = selection)
+        val content = state.content as? Content.Ready
+        val forecast = state.evaluation?.let { forecastOf(inputs, it, riderZone) }
+        if (content == null || forecast == null) return map(inputs, riderZone)
+        return state.copy(inputs = inputs, content = content.copy(selected = forecast.details(forecast.indexOf(selection))))
+    }
+
+    /** The chart's forecast for [inputs] from an [evaluation] already made; null without a profile or a time. */
+    private fun forecastOf(
+        inputs: SpotDetailInputs,
+        evaluation: SpotEvaluationEntity,
+        riderZone: TimeZone,
+    ): SpotForecastMapper? {
+        val profile = inputs.snapshot?.profile?.value
+        val now = inputs.now
+        return if (profile != null && now != null) SpotForecastMapper(profile, evaluation, now, riderZone) else null
     }
 
     private fun ready(
