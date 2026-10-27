@@ -122,7 +122,7 @@ private fun CrewContent(
         verticalArrangement = Arrangement.spacedBy(Spacing.m),
     ) {
         notice?.let {
-            item(key = "notice") {
+            item(key = "notice", contentType = "notice") {
                 RefreshNoticeBanner(
                     notice = it,
                     offline = Res.string.banner_crew_offline,
@@ -132,11 +132,11 @@ private fun CrewContent(
                 )
             }
         }
-        if (crews.size > 1) item(key = "switch") { CrewSwitch(crews) { onIntent(CrewIntent.ChooseCrew(it)) } }
-        item(key = "header") { CrewHeader(crew) { onIntent(CrewIntent.ShareInvite) } }
+        if (crews.size > 1) item(key = "switch", contentType = "switch") { CrewSwitch(crews) { onIntent(CrewIntent.ChooseCrew(it)) } }
+        item(key = "header", contentType = "header") { CrewHeader(crew) { onIntent(CrewIntent.ShareInvite) } }
         rides(crew, onIntent)
-        item(key = "members") { Members(crew.members) }
-        item(key = "more") { MoreCrews(onIntent) }
+        item(key = "members", contentType = "members") { Members(crew.members) }
+        item(key = "more", contentType = "more") { MoreCrews(onIntent) }
     }
 }
 
@@ -144,9 +144,9 @@ private fun LazyListScope.rides(
     crew: CrewUi,
     onIntent: (CrewIntent) -> Unit,
 ) {
-    item(key = "rides") { SectionTitle(text = stringResource(Res.string.crew_rides)) }
+    item(key = "rides", contentType = "title") { SectionTitle(text = stringResource(Res.string.crew_rides)) }
     if (crew.days.isEmpty()) {
-        item(key = "noRides") {
+        item(key = "noRides", contentType = "empty") {
             Text(
                 text = stringResource(Res.string.crew_no_rides),
                 style = MaterialTheme.typography.bodyLarge,
@@ -156,7 +156,8 @@ private fun LazyListScope.rides(
         }
     }
     crew.days.forEach { day ->
-        item(key = "day.${day.date}") {
+        // Day headings and ride cards repeat: each kind reuses the composition of its own kind as the list scrolls.
+        item(key = "day.${day.date}", contentType = "day") {
             Text(
                 text = dayLabel(day.label),
                 style = MaterialTheme.typography.titleSmall,
@@ -164,7 +165,7 @@ private fun LazyListScope.rides(
                 modifier = Modifier.semantics { heading() },
             )
         }
-        items(day.rides, key = { "ride.${it.id}" }) { ride ->
+        items(day.rides, key = { "ride.${it.id}" }, contentType = { "ride" }) { ride ->
             CrewRideCard(
                 ride = ride,
                 onAction = { action ->

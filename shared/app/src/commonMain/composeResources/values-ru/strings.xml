@@ -136,7 +136,7 @@
     <string name="chart_title">По часам</string>
     <string name="chart_now">Сейчас</string>
     <string name="chart_legend">Столбцы — средний ветер, засечки — порывы, полоса — разброс моделей, тень — темнота.</string>
-    <string name="chart_hour">%1$s %2$s: %3$s, порывы %4$s, ветер %5$s, %6$s</string>
+    <string name="chart_hour">%1$s %2$s: %3$d %4$s, порывы %5$d %4$s, ветер %6$s, %7$s</string>
     <string name="chart_show_details">Показать подробности</string>
     <string name="details_wind">%1$s, порывы %2$s</string>
     <string name="details_direction">Ветер %1$s, %2$d°</string>

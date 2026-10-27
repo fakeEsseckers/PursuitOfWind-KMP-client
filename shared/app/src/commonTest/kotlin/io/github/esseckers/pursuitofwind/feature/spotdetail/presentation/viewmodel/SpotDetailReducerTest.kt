@@ -8,6 +8,8 @@ import io.github.esseckers.pursuitofwind.feature.spotdetail.NORDSTRAND
 import io.github.esseckers.pursuitofwind.feature.spotdetail.SATURDAY
 import io.github.esseckers.pursuitofwind.feature.spotdetail.SUNDAY
 import io.github.esseckers.pursuitofwind.feature.spotdetail.at
+import io.github.esseckers.pursuitofwind.feature.spotdetail.forecast
+import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.mapper.SpotDetailStateMapper
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.Selection
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailInputs
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState
@@ -17,6 +19,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
@@ -50,6 +53,34 @@ class SpotDetailReducerTest {
         assertEquals(RefreshNotice.OFFLINE, retrying.notice)
         assertFalse(worked.isRefreshing)
         assertEquals(null, worked.notice)
+    }
+
+    @Test
+    fun `a selection shows what the whole mapping would and reuses the engine's answer`() {
+        val selections = listOf(Selection.Hour(at(SATURDAY, 10)), Selection.Day(SUNDAY), Selection.First, Selection.Hour(at(SUNDAY, 15)))
+        assertNotNull(ready.evaluation)
+
+        for (selection in selections) {
+            val selected = ready.after(SpotDetailResult.Selected(selection))
+            val mapped = SpotDetailStateMapper.map(ready.inputs.copy(selection = selection), BERLIN)
+
+            assertEquals(mapped.content, selected.content, selection.toString())
+            assertSame(ready.evaluation, selected.evaluation)
+        }
+    }
+
+    @Test
+    fun `a selection after new data or a later hour shows what the whole mapping would for them`() {
+        val sundayOn = snapshot(hours = forecast { local -> if (local.date == SUNDAY && local.hour in 13..16) 22.0 else 6.0 })
+        val changes = listOf(SpotDetailResult.DataChanged(sundayOn), SpotDetailResult.ClockTicked(now + 6.hours))
+
+        for (change in changes) {
+            val changed = ready.after(change)
+            val selected = changed.after(SpotDetailResult.Selected(Selection.First))
+            val mapped = SpotDetailStateMapper.map(changed.inputs.copy(selection = Selection.First), BERLIN)
+
+            assertEquals(mapped.content, selected.content, change.toString())
+        }
     }
 
     @Test

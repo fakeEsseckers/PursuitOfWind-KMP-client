@@ -2,6 +2,7 @@ package io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.viewmo
 
 import io.github.esseckers.pursuitofwind.core.mvi.Reducer
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.mapper.SpotDetailStateMapper
+import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailInputs
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState.Content
 import kotlinx.datetime.TimeZone
@@ -10,6 +11,9 @@ import kotlinx.datetime.TimeZone
  * Records each result in the state's inputs and computes the screen from them; [riderZone] is where the rider is.
  * Parts of the screen that did not change keep their instances: a tap on an hour changes the details, not the chart, so
  * the chart is not drawn again.
+ *
+ * A selection reuses the engine's answer kept in the state; every other result maps everything again, which also keeps
+ * that answer up to date with the data and the time.
  */
 internal class SpotDetailReducer(
     private val riderZone: TimeZone,
@@ -19,31 +23,33 @@ internal class SpotDetailReducer(
         result: SpotDetailResult,
     ): SpotDetailState {
         val inputs = state.inputs
-        val next =
+        val computed =
             when (result) {
                 is SpotDetailResult.DataChanged -> {
-                    inputs.copy(snapshot = result.snapshot)
+                    map(inputs.copy(snapshot = result.snapshot))
                 }
 
                 is SpotDetailResult.ClockTicked -> {
-                    inputs.copy(now = result.now)
+                    map(inputs.copy(now = result.now))
                 }
 
                 is SpotDetailResult.RefreshStarted -> {
-                    inputs.copy(refresh = inputs.refresh.started(at = result.at))
+                    map(inputs.copy(refresh = inputs.refresh.started(at = result.at)))
                 }
 
                 is SpotDetailResult.RefreshFinished -> {
-                    inputs.copy(refresh = inputs.refresh.finished(result.error))
+                    map(inputs.copy(refresh = inputs.refresh.finished(result.error)))
                 }
 
+                // A tap on an hour: the forecast is the same, so only the hour shown is worked out.
                 is SpotDetailResult.Selected -> {
-                    inputs.copy(selection = result.selection)
+                    SpotDetailStateMapper.select(state, result.selection, riderZone)
                 }
             }
-        val computed = SpotDetailStateMapper.map(next, riderZone)
         return computed.copy(content = keepUnchanged(state.content, computed.content))
     }
+
+    private fun map(inputs: SpotDetailInputs): SpotDetailState = SpotDetailStateMapper.map(inputs, riderZone)
 
     private fun keepUnchanged(
         previous: Content,

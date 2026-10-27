@@ -1,6 +1,7 @@
 package io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model
 
 import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
+import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.entity.SpotEvaluationEntity
 import org.jetbrains.compose.resources.StringResource
 import kotlin.time.Duration
 
@@ -11,6 +12,8 @@ import kotlin.time.Duration
  * @property updatedAgo age of the forecast behind the chart; null while no chart is shown.
  * @property notice why the chart may not be current, shown above it.
  * @property inputs what the reducer computes the rest from. The view does not read it.
+ * @property evaluation the engine's answer for the chart on screen, kept so that choosing an hour only works out that
+ *   hour; null while no chart is shown. The view does not read it.
  */
 internal data class SpotDetailState(
     val inputs: SpotDetailInputs,
@@ -19,6 +22,7 @@ internal data class SpotDetailState(
     val isRefreshing: Boolean = false,
     val updatedAgo: Duration? = null,
     val notice: RefreshNotice? = null,
+    val evaluation: SpotEvaluationEntity? = null,
 ) {
     sealed interface Content {
         data object Loading : Content

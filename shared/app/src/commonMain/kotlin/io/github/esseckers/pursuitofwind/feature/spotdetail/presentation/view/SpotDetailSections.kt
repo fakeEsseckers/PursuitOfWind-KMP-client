@@ -121,7 +121,7 @@ internal fun WindowList(
     onShowWindow: (WindowUi) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
+    Column(modifier = modifier.fillMaxWidth().testTag("spot.windows"), verticalArrangement = Arrangement.spacedBy(Spacing.s)) {
         Text(
             text = stringResource(Res.string.windows_title),
             style = MaterialTheme.typography.titleMedium,

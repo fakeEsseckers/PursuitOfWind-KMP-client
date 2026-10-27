@@ -18,18 +18,20 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -48,10 +50,11 @@ import io.github.esseckers.pursuitofwind.core.resources.chart_now
 import io.github.esseckers.pursuitofwind.core.resources.chart_show_details
 import io.github.esseckers.pursuitofwind.core.ui.dayLabel
 import io.github.esseckers.pursuitofwind.core.ui.windUnitLabel
-import io.github.esseckers.pursuitofwind.data.model.WindUnit
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.ChartDayUi
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.ChartHourUi
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.WindChartUi
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filter
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToInt
 
@@ -82,32 +85,43 @@ internal fun WindChart(
     val labelStyle = MaterialTheme.typography.labelSmall
     val layout = rememberChartLayout(labelStyle)
     val colors = windChartColors()
-    val scroll = rememberScrollState()
-    var viewport by remember { mutableIntStateOf(0) }
-    var placed by remember { mutableStateOf(false) }
     val hourPx = with(LocalDensity.current) { Sizes.chartHour.toPx() }
-    LaunchedEffect(selected, viewport, jumps) {
-        if (viewport == 0) return@LaunchedEffect
-        val left = selected * hourPx
-        if (left < scroll.value || left + hourPx > scroll.value + viewport) {
-            val target = (left - viewport / VIEWPORT_LEAD).roundToInt().coerceAtLeast(0)
-            // The first placement jumps; later ones, after a tap on a day or a window, glide.
-            if (placed) scroll.animateScrollTo(target) else scroll.scrollTo(target)
+    // The window's width stands in for the chart's until the chart is measured, so the first frame already shows the
+    // selected hour (a spot opened for tomorrow does not start at today and jump). It is read once and not followed:
+    // after the first frame the effect below scrolls. A window of unknown width leaves that to the effect too.
+    val windowInfo = LocalWindowInfo.current
+    val initial =
+        remember {
+            val window = Snapshot.withoutReadObservation { windowInfo.containerSize.width }
+            if (window > 0) scrollTarget(selected, hourPx, viewport = window, current = 0) ?: 0 else 0
         }
-        placed = true
+    val scroll = rememberScrollState(initial = initial)
+    // Written when the chart is measured and read only by the effect, so measuring it does not compose it again.
+    val viewport = remember { mutableIntStateOf(0) }
+    val placed = remember { mutableStateOf(false) }
+    LaunchedEffect(selected, jumps, hourPx) {
+        snapshotFlow { viewport.intValue }.filter { it > 0 }.collectLatest { width ->
+            val target = scrollTarget(selected, hourPx, width, scroll.value)
+            // The first placement jumps; later ones, after a tap on a day or a window, glide.
+            if (target != null) {
+                if (placed.value) scroll.animateScrollTo(target) else scroll.scrollTo(target)
+            }
+            placed.value = true
+        }
     }
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         Row(modifier = modifier.fillMaxWidth().testTag("spot.chart")) {
             WindScale(chart, layout, colors, labelStyle)
-            Box(modifier = Modifier.weight(1f).onSizeChanged { viewport = it.width }.horizontalScroll(scroll)) {
+            Box(modifier = Modifier.weight(1f).onSizeChanged { viewport.intValue = it.width }.horizontalScroll(scroll)) {
                 val size = Modifier.size(Sizes.chartHour * chart.hours.size, layout.total)
                 ChartCanvas(chart, days, layout, colors, labelStyle, size)
                 NowLine(nowOffset, layout, colors, size)
                 SelectionFrame(selected, layout, colors)
                 Row(modifier = size.selectableGroup()) {
                     val label = stringResource(Res.string.chart_show_details)
+                    val words = rememberHourWords(chart.hours, chart.unit)
                     chart.hours.forEachIndexed { i, hour ->
-                        HourCell(i, hour, chart.unit, isSelected = i == selected, onClickLabel = label, onClick = { onSelectHour(i) })
+                        HourCell(i, hour, words, isSelected = i == selected, onClickLabel = label, onClick = { onSelectHour(i) })
                     }
                 }
             }
@@ -115,25 +129,44 @@ internal fun WindChart(
     }
 }
 
+/**
+ * Where to scroll so the [selected] hour shows a third of the way into a [viewport] scrolled to [current]; null while it
+ * is in view already.
+ */
+private fun scrollTarget(
+    selected: Int,
+    hourPx: Float,
+    viewport: Int,
+    current: Int,
+): Int? {
+    val left = selected * hourPx
+    if (left >= current && left + hourPx <= current + viewport) return null
+    return (left - viewport / VIEWPORT_LEAD).roundToInt().coerceAtLeast(0)
+}
+
 @Composable
 private fun rememberChartLayout(labelStyle: TextStyle): ChartLayout {
     val measurer = rememberTextMeasurer()
     val density = LocalDensity.current
-    // Lanes with text grow with the font size, so labels are never cut at 200%.
-    val textHeight =
-        with(density) {
-            measurer
-                .measure("00:00", labelStyle)
-                .size.height
-                .toDp()
-        }
-    val textLane = textHeight + Spacing.xs * 2
-    return remember(
-        textLane,
-    ) { ChartLayout(dayLane = textLane, plot = Sizes.chartPlot, arrowLane = Sizes.chartArrowLane, timeLane = textLane) }
+    // Lanes with text grow with the font size, so labels are never cut at 200%. Measured once per style and density,
+    // not on every tick or selection.
+    return remember(measurer, labelStyle, density) {
+        val textHeight =
+            with(density) {
+                measurer
+                    .measure("00:00", labelStyle)
+                    .size.height
+                    .toDp()
+            }
+        val textLane = textHeight + Spacing.xs * 2
+        ChartLayout(dayLane = textLane, plot = Sizes.chartPlot, arrowLane = Sizes.chartArrowLane, timeLane = textLane)
+    }
 }
 
-/** Everything but the current time and the selection. Built once per chart, size and theme, then only drawn. */
+/**
+ * Everything but the current time and the selection. Built once per chart, size and theme, then only drawn, in a layer
+ * of its own: a ripple on an hour, a new selection or the line at the current time do not record it again.
+ */
 @Composable
 private fun ChartCanvas(
     chart: WindChartUi,
@@ -148,7 +181,7 @@ private fun ChartCanvas(
     val now = stringResource(Res.string.chart_now)
     Spacer(
         modifier =
-            modifier.drawWithCache {
+            modifier.graphicsLayer().drawWithCache {
                 val plotTop = layout.dayLane.toPx()
                 val plotBottom = plotTop + layout.plot.toPx()
                 val geometry =
@@ -273,12 +306,12 @@ private fun SelectionFrame(
 private fun HourCell(
     index: Int,
     hour: ChartHourUi,
-    unit: WindUnit,
+    words: HourWords,
     isSelected: Boolean,
     onClickLabel: String,
     onClick: () -> Unit,
 ) {
-    val description = hourDescription(hour, unit)
+    val description = hourDescription(hour, words)
     Box(
         modifier =
             Modifier

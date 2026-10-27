@@ -126,7 +126,7 @@
     <string name="chart_title">Hour by hour</string>
     <string name="chart_now">Now</string>
     <string name="chart_legend">Bars: mean wind. Ticks: gusts. Band: range of the weather models. Shaded: dark.</string>
-    <string name="chart_hour">%1$s %2$s: %3$s, gusts %4$s, wind %5$s, %6$s</string>
+    <string name="chart_hour">%1$s %2$s: %3$d %4$s, gusts %5$d %4$s, wind %6$s, %7$s</string>
     <string name="chart_show_details">Show details</string>
     <string name="details_wind">%1$s, gusts %2$s</string>
     <string name="details_direction">Wind %1$s, %2$d°</string>
