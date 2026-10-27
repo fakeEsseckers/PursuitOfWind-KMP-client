@@ -14,7 +14,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -211,8 +211,9 @@ internal fun MoreSettings(
     // Opens by itself when a hidden field needs fixing, so an error is never out of sight.
     val hasErrors = ProfileField.MIN_WIND in errors || ProfileField.MAX_WIND in errors
     var expanded by rememberSaveable { mutableStateOf(hasErrors) }
-    // It stays open once fixed, so the field being typed in does not vanish with the error.
-    LaunchedEffect(hasErrors) { if (hasErrors) expanded = true }
+    // It stays open once fixed, so the field being typed in does not vanish with the error. Only when errors appear: the
+    // rider can still fold it while they are there.
+    SideEffect(hasErrors) { if (hasErrors) expanded = true }
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.m)) {
         MoreSettingsHeader(expanded = expanded, onToggle = { expanded = !expanded })
         if (expanded) {
