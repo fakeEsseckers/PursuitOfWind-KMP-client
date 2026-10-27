@@ -5,12 +5,12 @@ import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.Crew
 import io.github.esseckers.pursuitofwind.data.model.Outcome
 import io.github.esseckers.pursuitofwind.feature.crew.domain.entity.CrewDetailsEntity
-import io.github.esseckers.pursuitofwind.feature.crew.domain.mapper.CrewChoiceMapper
 import kotlinx.coroutines.flow.Flow
 
 /**
  * The rider's crews, their members and rides, and what the rider does in them. The cache is the source of truth;
- * calls return their error, or null when they worked, and never throw, apart from cancellation.
+ * calls return their error, or null when they worked, and never throw, apart from cancellation. A seat taken or left
+ * and a ride cancelled finish even when the caller is cancelled, so leaving the tab does not drop them.
  */
 internal interface CrewsRepository {
     /** The crews the rider belongs to, oldest first, as cached. */
@@ -19,8 +19,11 @@ internal interface CrewsRepository {
     /** Members, rides and the rides' spots of [crewId], as cached; emits again whenever any of them changes. */
     fun details(crewId: String): Flow<CrewDetailsEntity>
 
-    /** Fetches the list of crews, then members and rides of the crew shown for [chosen] (`CrewChoiceMapper.shownCrew`). */
-    suspend fun refreshAll(chosen: String?): AppError?
+    /**
+     * Fetches the list of crews, then members and rides of the crew [shown] picks from the fresh list. Which crew is on
+     * screen is the caller's decision, so the rule lives in one place.
+     */
+    suspend fun refreshAll(shown: (crews: List<Crew>) -> String?): AppError?
 
     /** Brings members and rides of [crewId] up to date, and the names of spots its rides go to. */
     suspend fun refresh(crewId: String): AppError?

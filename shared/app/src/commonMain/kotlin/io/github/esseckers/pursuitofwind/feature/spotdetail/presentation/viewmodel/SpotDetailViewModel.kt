@@ -1,8 +1,9 @@
 package io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.viewmodel
 
 import androidx.lifecycle.viewModelScope
+import io.github.esseckers.pursuitofwind.core.launchFinishing
 import io.github.esseckers.pursuitofwind.core.mvi.MviViewModel
-import io.github.esseckers.pursuitofwind.core.mvi.launchFinishing
+import io.github.esseckers.pursuitofwind.core.ticks
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.repository.SpotDetailRepository
@@ -10,18 +11,14 @@ import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.S
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailInputs
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailIntent
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onStart
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlin.time.Clock
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 
@@ -32,12 +29,11 @@ import kotlin.time.Instant
  * [SpotDetailRefreshPolicy] says so, and on [SpotDetailIntent.Refresh]. No one-off effects: going back is the view's.
  */
 internal class SpotDetailViewModel(
-    private val spotId: SpotId,
-    date: LocalDate?,
     private val repository: SpotDetailRepository,
+    private val spotId: SpotId,
     private val clock: Clock,
+    date: LocalDate?,
     riderZone: TimeZone,
-    private val tick: Duration = 1.minutes,
 ) : MviViewModel<SpotDetailState, SpotDetailIntent, SpotDetailResult, Nothing>(
         initialState = SpotDetailState(SpotDetailInputs(spotId, selection = date?.let(Selection::Day) ?: Selection.First)),
         reducer = SpotDetailReducer(riderZone),
@@ -53,7 +49,7 @@ internal class SpotDetailViewModel(
     override fun bind(): Flow<SpotDetailResult> =
         merge(
             repository.snapshot(spotId).map { SpotDetailResult.DataChanged(it) },
-            ticks().map { SpotDetailResult.ClockTicked(it) },
+            clock.ticks(TICK).map { SpotDetailResult.ClockTicked(it) },
         ).onStart { refreshIfDue() }
 
     private suspend fun refreshIfDue() {
@@ -71,12 +67,8 @@ internal class SpotDetailViewModel(
         ) { error -> dispatchResult(SpotDetailResult.RefreshFinished(error)) }
     }
 
-    /** The clock's time now and after every [tick]. Repeated readings are dropped, so a stopped clock costs nothing. */
-    private fun ticks(): Flow<Instant> =
-        flow {
-            while (true) {
-                emit(clock.now())
-                delay(tick)
-            }
-        }.distinctUntilChanged()
+    private companion object {
+        /** How often the hours are worked out again, so the window and "now" on the chart stay true. */
+        val TICK = 1.minutes
+    }
 }

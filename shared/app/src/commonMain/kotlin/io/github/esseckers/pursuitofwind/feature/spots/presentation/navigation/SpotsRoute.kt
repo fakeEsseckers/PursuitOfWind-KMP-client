@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.github.esseckers.pursuitofwind.core.mvi.CollectEffects
+import io.github.esseckers.pursuitofwind.core.CollectEffects
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.action_undo
 import io.github.esseckers.pursuitofwind.core.resources.my_spots_removed

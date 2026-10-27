@@ -10,7 +10,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -29,6 +31,9 @@ import kotlin.time.Duration.Companion.seconds
  * [bind] is collected while the screen is shown: from the first collector of [state] until [STOP_AFTER] after the last
  * one leaves. A screen in the background stops observing data, and a configuration change does not restart it.
  * [bind] must not collect [state] itself: that collector would count as one more subscriber, and [bind] would never stop.
+ * It follows the state through [select] instead.
+ *
+ * Results are dispatched on the main thread, where the ViewModel runs.
  */
 internal abstract class MviViewModel<State, Intent, Result, Effect>(
     initialState: State,
@@ -36,6 +41,9 @@ internal abstract class MviViewModel<State, Intent, Result, Effect>(
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(initialState)
     val state: StateFlow<State> = mutableState.asStateFlow()
+
+    /** The same state for [select]: its collectors are not the view's, so they do not keep [bind] running. */
+    private val boundState = MutableStateFlow(initialState)
 
     // Unlimited, so an effect sent while nobody collects waits for the view instead of being dropped.
     private val effectChannel = Channel<Effect>(Channel.UNLIMITED)
@@ -60,8 +68,12 @@ internal abstract class MviViewModel<State, Intent, Result, Effect>(
     /** Results from the data the screen observes while it is shown. */
     protected open fun bind(): Flow<Result> = emptyFlow()
 
+    /** The part of the state that [bind] follows, such as the id of the item on screen, each time it changes. */
+    protected fun <T> select(selector: (State) -> T): Flow<T> = boundState.map(selector).distinctUntilChanged()
+
     protected fun dispatchResult(result: Result) {
         mutableState.update { reducer.reduce(it, result) }
+        boundState.value = mutableState.value
     }
 
     protected fun postEffect(effect: Effect) {

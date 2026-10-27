@@ -155,6 +155,28 @@ class SpotsViewModelTest {
         }
 
     @Test
+    fun `changes made just before the tab is left are all still saved`() =
+        runTest(dispatcher) {
+            following()
+            val viewModel = viewModel()
+
+            viewModel.state.test(timeout = TURBINE_TIMEOUT) {
+                awaitSettled()
+                spotSaves.hold()
+                viewModel.onIntent(SpotsIntent.ToggleFavorite(saltLagoon))
+                spotSaves.awaitHeld()
+                // Waits for the held request, which is still running when the tab goes away.
+                viewModel.onIntent(SpotsIntent.ChangeDrive(saltLagoon, 175))
+                cancelAndIgnoreRemainingEvents()
+            }
+            viewModels.clear()
+            spotSaves.release()
+
+            spots.mySpots.first { cached -> cached.value.any { it.spot.id == saltLagoon && it.drive == 175.minutes } }
+            assertEquals(Triple(saltLagoon, 175, true), mySpots().last())
+        }
+
+    @Test
     fun `a spot removed while its save is in flight stays removed and its unsent change is dropped`() =
         runTest(dispatcher) {
             following()

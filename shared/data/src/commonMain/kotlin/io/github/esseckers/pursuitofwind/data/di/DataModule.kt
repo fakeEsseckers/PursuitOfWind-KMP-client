@@ -30,7 +30,7 @@ import kotlin.time.Clock
  *
  * @param clock time for the fake backend, token expiry and "updated" stamps; tests pass a controllable clock.
  */
-public fun dataModule(
+fun dataModule(
     environment: Environment,
     clock: Clock = Clock.System,
 ): Module =

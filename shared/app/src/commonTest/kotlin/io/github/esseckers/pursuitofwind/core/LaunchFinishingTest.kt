@@ -1,4 +1,4 @@
-package io.github.esseckers.pursuitofwind.core.mvi
+package io.github.esseckers.pursuitofwind.core
 
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope

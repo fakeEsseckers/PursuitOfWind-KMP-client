@@ -1,8 +1,8 @@
 package io.github.esseckers.pursuitofwind.feature.profile.presentation.viewmodel
 
 import androidx.lifecycle.viewModelScope
+import io.github.esseckers.pursuitofwind.core.launchFinishing
 import io.github.esseckers.pursuitofwind.core.mvi.MviViewModel
-import io.github.esseckers.pursuitofwind.core.mvi.launchFinishing
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.AppLanguage
 import io.github.esseckers.pursuitofwind.data.model.Outcome
@@ -62,7 +62,7 @@ internal class ProfileViewModel(
 
     private fun store(profile: Profile) {
         dispatchResult(ProfileResult.SaveStarted)
-        viewModelScope.launchFinishing<Outcome<Profile>>(
+        viewModelScope.launchFinishing(
             unfinished = Outcome.Failure(AppError.Unknown("Saving did not finish")),
             work = { repository.save(profile) },
         ) { outcome ->

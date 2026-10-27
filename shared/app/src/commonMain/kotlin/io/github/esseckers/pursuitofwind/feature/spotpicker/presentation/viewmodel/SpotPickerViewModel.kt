@@ -1,14 +1,13 @@
 package io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.viewmodel
 
 import androidx.lifecycle.viewModelScope
+import io.github.esseckers.pursuitofwind.core.launchFinishing
 import io.github.esseckers.pursuitofwind.core.mvi.MviViewModel
-import io.github.esseckers.pursuitofwind.core.mvi.launchFinishing
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.repository.SpotPickerRepository
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerEffect
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerIntent
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerState
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
@@ -22,9 +21,6 @@ import kotlinx.coroutines.flow.onStart
 internal class SpotPickerViewModel(
     private val repository: SpotPickerRepository,
 ) : MviViewModel<SpotPickerState, SpotPickerIntent, SpotPickerResult, SpotPickerEffect>(SpotPickerState(), SpotPickerReducer) {
-    /** The running refresh, which a save waits for: both write the followed spots. */
-    private var refreshJob: Job? = null
-
     override fun onIntent(intent: SpotPickerIntent) {
         when (intent) {
             is SpotPickerIntent.Toggle -> dispatchResult(SpotPickerResult.Toggled(intent.spotId))
@@ -39,15 +35,17 @@ internal class SpotPickerViewModel(
             .map<_, SpotPickerResult> { SpotPickerResult.DataChanged(it) }
             .onStart { if (!currentState.inputs.refresh.finished) refresh() }
 
-    /** One refresh at a time; a tap while one runs joins it, and none starts while saving. */
+    /**
+     * One refresh at a time; a tap while one runs joins it, and none starts while saving. A refresh already running when
+     * the rider saves cannot undo the save: the data layer writes the followed spots one change at a time.
+     */
     private fun refresh() {
         if (currentState.inputs.refresh.refreshing || currentState.saving) return
         dispatchResult(SpotPickerResult.RefreshStarted)
-        refreshJob =
-            viewModelScope.launchFinishing(
-                unfinished = AppError.Unknown("Refresh did not finish"),
-                work = { repository.refresh() },
-            ) { error -> dispatchResult(SpotPickerResult.RefreshFinished(error)) }
+        viewModelScope.launchFinishing(
+            unfinished = AppError.Unknown("Refresh did not finish"),
+            work = { repository.refresh() },
+        ) { error -> dispatchResult(SpotPickerResult.RefreshFinished(error)) }
     }
 
     /** Saves what changed, then finishes; with nothing changed, finishes at once. One save at a time. */
@@ -61,11 +59,7 @@ internal class SpotPickerViewModel(
         dispatchResult(SpotPickerResult.SaveStarted)
         viewModelScope.launchFinishing(
             unfinished = AppError.Unknown("Saving did not finish"),
-            work = {
-                // A refresh that replaces the followed spots after this save would drop what was just chosen.
-                refreshJob?.join()
-                repository.save(changes)
-            },
+            work = { repository.save(changes) },
         ) { error ->
             dispatchResult(SpotPickerResult.SaveFinished(error))
             if (error == null) postEffect(SpotPickerEffect.Finished)

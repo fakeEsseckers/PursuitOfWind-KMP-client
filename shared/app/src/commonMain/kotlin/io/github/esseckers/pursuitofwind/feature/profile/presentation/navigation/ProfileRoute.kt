@@ -7,7 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.github.esseckers.pursuitofwind.core.mvi.CollectEffects
+import io.github.esseckers.pursuitofwind.core.CollectEffects
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.profile_saved
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileEffect

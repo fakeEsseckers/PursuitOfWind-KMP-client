@@ -44,7 +44,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
 
@@ -81,12 +80,11 @@ class SpotDetailViewModelTest {
             viewModelFactory {
                 initializer {
                     SpotDetailViewModel(
-                        spotId,
-                        date,
+                        spotId = spotId,
+                        date = date,
                         repository = koin.get(),
                         clock = clock,
                         riderZone = BERLIN,
-                        tick = Duration.INFINITE,
                     )
                 }
             },

@@ -11,7 +11,7 @@ The first screen (Today, Issue #7) put its ViewModel, state rules, data combinat
 
 - **Packages, not modules.** `:shared:app` keeps one Gradle module ([ADR 0002](0002-module-structure-and-dependency-rules.md)) and is organised by package under `io.github.esseckers.pursuitofwind`:
   - `app` — `App()`, the root Koin graph (`appModules`), platform entry points;
-  - `core` — shared by all screens: `core.mvi` (the MVI base), `core.designsystem` (`theme`, `component`, `icon`), `core.ui` (formatting and labels), `core.resources` (generated `Res`);
+  - `core` — shared by all screens: `core.mvi` (the MVI base), the helpers every screen uses in `core` (`CollectEffects`, `launchFinishing`, `Clock.ticks`), `core.designsystem` (`theme`, `component`, `icon`), `core.ui` (formatting and labels), `core.resources` (generated `Res`);
   - `feature.<screen>` — one package per screen. A feature never imports another feature; what two features share moves to `core` or to `:shared:data`.
 - **Layers inside a feature.**
   - `domain`: the feature's models and the repository interface it needs (`TodayRepository`).
@@ -23,7 +23,8 @@ The first screen (Today, Issue #7) put its ViewModel, state rules, data combinat
   - the ViewModel turns intents, and data it observes in `bind()`, into results;
   - a pure `Reducer<State, Result>` folds each result into the next state;
   - one-off effects go out through `effects`, delivered once. A screen without them uses `Nothing`.
-- **Lifecycle.** `bind()` runs while the view collects the state, and stops 5 seconds after the last collector leaves (`SharingStarted.WhileSubscribed` applied to the state's subscription count). A screen in the background stops observing data, and a configuration change does not restart it.
+- **Lifecycle.** `bind()` runs while the view collects the state, and stops 5 seconds after the last collector leaves (`SharingStarted.WhileSubscribed` applied to the state's subscription count). A screen in the background stops observing data, and a configuration change does not restart it. `bind()` follows the state through `select { … }`, a copy of it whose collectors do not count, so what a screen decides (which crew is on screen) lives in the state and the reducer, not in flows of the ViewModel.
+- **Writes belong to the repository.** A change the rider made (a saved spot, a seat taken) finishes even when the screen that asked for it is gone, and changes to the same data go out in the order they were made. The feature's repository guarantees both (`withContext(NonCancellable)`, a fair `Mutex`); the ViewModel launches the call with `launchFinishing` and keeps no jobs of its own.
 - **Derived state.** When a screen is computed from several inputs, as Today is from cached data, the clock and the refresh status, the state keeps those inputs (`TodayState.inputs`). The reducer records each result there and recomputes the rest with the feature's mapper, so the reducer stays pure and the mapper is tested on its own. The state then changes on every tick even when the screen does not, so the reducer keeps the previous content instance when the new one is equal, and Compose skips the unchanged cards.
 
 ## Alternatives considered
@@ -47,4 +48,4 @@ The first screen (Today, Issue #7) put its ViewModel, state rules, data combinat
 - **The state mapper belongs to the reducer.** Only the reducer calls it; its functions take the inputs and parameters and return the state. Decisions the ViewModel acts on (which crew a ride goes to, when the car leaves) are made in the ViewModel and reach the state as results; what the ViewModel needs from the mapper (the checked profile, what the spot picker saves) comes with the state.
 - **Routes live in `presentation/navigation`, previews in `presentation/preview`.** A Route connects a Screen to its ViewModel and takes the navigation lambdas; previews and their sample states serve tooling and UI tests. Both sit apart from `view`, which keeps the stateless Screens and their parts.
 - **Domain types live in `domain/entity` and end in `Entity`** (`TodaySnapshotEntity`, `RideDraftEntity`). The Room rows of `:shared:data` also end in `Entity`, but they are internal to that module, so a feature never sees both.
-- **Rules over domain types live in `domain/mapper`** (`RefreshErrorMapper`: which of several errors to show; `CrewChoiceMapper`: which crew the tab shows), so entity files hold only types. Each mapper has its own tests.
+- **Rules over domain types live in `domain/mapper`** (`RefreshErrorMapper`: which of several errors to show), so entity files hold only types. A mapper serves one layer, and a rule has one home: which crew the Crew tab shows is `crewToShow` in the tab's presentation model, used by its reducer and ViewModel, and the repository asks for it (`refreshAll { crews -> … }`) instead of keeping a copy or sharing a domain mapper with the presentation. Each mapper has its own tests.

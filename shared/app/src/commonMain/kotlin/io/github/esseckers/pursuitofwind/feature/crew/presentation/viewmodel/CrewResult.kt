@@ -10,10 +10,9 @@ import kotlin.time.Instant
 
 /** What happened, as the reducer sees it. */
 internal sealed interface CrewResult {
-    /** The rider's crews are [cached], and the ViewModel shows [shown] (null without a crew). */
+    /** The rider's crews are [cached]. */
     data class CrewsChanged(
         val cached: Cached<List<Crew>>,
-        val shown: String?,
     ) : CrewResult
 
     data class DetailsChanged(
@@ -26,11 +25,23 @@ internal sealed interface CrewResult {
         val error: AppError?,
     ) : CrewResult
 
-    /** The rider picked, created or joined [crewId], and the ViewModel shows [shown]. */
+    /** Which crew the rider wants on screen. */
+    sealed interface Choice : CrewResult
+
+    /** The rider picked [crewId]. */
     data class Chosen(
         val crewId: String,
-        val shown: String?,
-    ) : CrewResult
+    ) : Choice
+
+    /** The rider created or joined [crewId]: it shows at once, before the cached list holds it. */
+    data class Arrived(
+        val crewId: String,
+    ) : Choice
+
+    /** The first refresh of [crewId], which [Arrived], is done: from here the cached list decides what shows. */
+    data class ArrivalSettled(
+        val crewId: String,
+    ) : Choice
 
     data class Ticked(
         val now: Instant,

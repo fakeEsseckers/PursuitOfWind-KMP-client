@@ -53,7 +53,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
-import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -82,10 +81,10 @@ class TodayViewModelTest {
         releaseMainDispatcher()
     }
 
-    private fun viewModel(tick: Duration = Duration.INFINITE): TodayViewModel =
+    private fun viewModel(): TodayViewModel =
         ViewModelProvider.create(
             viewModels,
-            viewModelFactory { initializer { TodayViewModel(repository = koin.get(), clock = clock, riderZone = BERLIN, tick = tick) } },
+            viewModelFactory { initializer { TodayViewModel(repository = koin.get(), clock = clock, riderZone = BERLIN) } },
         )[
             TodayViewModel::class,
         ]
@@ -206,7 +205,7 @@ class TodayViewModelTest {
         runTest(dispatcher) {
             riderWithFavorite()
 
-            viewModel(tick = 1.minutes).state.test(timeout = TURBINE_TIMEOUT) {
+            viewModel().state.test(timeout = TURBINE_TIMEOUT) {
                 awaitState { it.content is Content.Ready && !it.isRefreshing }
                 clock.set(at(THURSDAY, 20))
 

@@ -1,34 +1,32 @@
 package io.github.esseckers.pursuitofwind.feature.crew.presentation.viewmodel
 
+import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.viewModelScope
 import io.github.esseckers.pursuitofwind.contract.ProblemCode
+import io.github.esseckers.pursuitofwind.core.launchFinishing
 import io.github.esseckers.pursuitofwind.core.mvi.MviViewModel
-import io.github.esseckers.pursuitofwind.core.mvi.launchFinishing
-import io.github.esseckers.pursuitofwind.core.mvi.ticks
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.crew_invite_invalid
 import io.github.esseckers.pursuitofwind.core.resources.crew_ride_was_cancelled
 import io.github.esseckers.pursuitofwind.core.resources.crew_seat_taken
+import io.github.esseckers.pursuitofwind.core.ticks
 import io.github.esseckers.pursuitofwind.core.ui.message
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Crew
 import io.github.esseckers.pursuitofwind.data.model.Outcome
-import io.github.esseckers.pursuitofwind.feature.crew.domain.mapper.CrewChoiceMapper
 import io.github.esseckers.pursuitofwind.feature.crew.domain.repository.CrewsRepository
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewDialog
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewEffect
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewIntent
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.RideAction
+import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.crewToShow
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.ride
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.rideAction
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.shownCrew
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
@@ -36,39 +34,26 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.StringResource
 import kotlin.time.Clock
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 /**
- * The Crew tab in MVI. While it is shown, the crews, the details of the crew on screen and the [clock] (every [tick])
- * come in as results, and the crew's feed is fetched every [poll], so members' rides and seats appear as they happen.
- * It decides which crew is on screen: a crew just made or joined, else the rider's pick while it is still theirs, else
- * the first. The first time it shows, it refreshes everything.
+ * The Crew tab in MVI. While it is shown, the crews, the details of the crew on screen and the [clock] (every [TICK])
+ * come in as results, and the crew's feed is fetched every [POLL], so members' rides and seats appear as they happen.
+ * The reducer works out which crew is on screen (a crew just made or joined, else the rider's pick while it is still
+ * theirs, else the first), and [bind] follows it through [select]. The first time it shows, it refreshes everything.
  *
  * Seat changes show at once; the data layer puts them back when they fail, and the reason comes as
- * [CrewEffect.Failed], such as a last seat someone took first. Seat changes and cancellations finish even when the
- * rider leaves the tab meanwhile.
+ * [CrewEffect.Failed], such as a last seat someone took first. The repository finishes seat changes and cancellations
+ * even when the rider leaves the tab meanwhile.
  */
 internal class CrewViewModel(
     private val repository: CrewsRepository,
     private val clock: Clock,
     riderZone: TimeZone,
-    private val poll: Duration = 30.seconds,
-    private val tick: Duration = 30.seconds,
 ) : MviViewModel<CrewState, CrewIntent, CrewResult, CrewEffect>(CrewState(), CrewReducer(riderZone)) {
-    /** The id of the crew on screen, which [bind] follows. Not read from the state: that would keep [bind] running. */
-    private val shown = MutableStateFlow<String?>(null)
-
-    /**
-     * A crew just made or joined, until its first refresh is done: shown even while the cached list does not hold it, as
-     * a list read before it was saved can still come in and would otherwise put the old crew back for a moment.
-     */
-    private val arriving = MutableStateFlow<String?>(null)
-
     override fun onIntent(intent: CrewIntent) {
         when (intent) {
             CrewIntent.Refresh -> refresh()
@@ -87,37 +72,27 @@ internal class CrewViewModel(
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun bind(): Flow<CrewResult> =
         merge(
-            combine(repository.crews, arriving) { cached, pending ->
-                // A crew just made or joined that the list does not hold yet; else the rider's pick while it is still
-                // one of the crews, else the first.
-                val waiting = pending?.takeIf { id -> cached.value.none { it.id == id } }
-                val id = waiting ?: CrewChoiceMapper.shownCrew(cached.value, currentState.inputs.chosen)?.id
-                shown.value = id
-                CrewResult.CrewsChanged(cached, id)
-            },
-            shown.filterNotNull().flatMapLatest { repository.details(it) }.map { CrewResult.DetailsChanged(it) },
-            clock.ticks(tick).map { CrewResult.Ticked(it) },
+            repository.crews.map { CrewResult.CrewsChanged(it) },
+            select { it.inputs.shown }.filterNotNull().flatMapLatest { repository.details(it) }.map { CrewResult.DetailsChanged(it) },
+            clock.ticks(TICK).map { CrewResult.Ticked(it) },
             polling(),
         ).onStart { if (!currentState.inputs.refresh.finished) refresh() }
 
-    /** One refresh at a time; a pull while one runs does nothing. */
+    /**
+     * One refresh at a time; a pull while one runs does nothing. The crew whose members and rides it fetches is picked
+     * here from the fresh list, by the same rule as the crew on screen.
+     */
     private fun refresh() {
         if (currentState.inputs.refresh.refreshing) return
         dispatchResult(CrewResult.RefreshStarted)
         viewModelScope.launchFinishing(
             unfinished = AppError.Unknown("Refresh did not finish"),
-            work = { repository.refreshAll(currentState.inputs.chosen) },
+            work = { repository.refreshAll { crews -> crewToShow(crews, currentState.inputs.chosen)?.id } },
         ) { error -> dispatchResult(CrewResult.RefreshFinished(error)) }
     }
 
     private fun choose(crewId: String) {
-        val crews =
-            currentState.inputs.crews
-                ?.value
-                .orEmpty()
-        shown.value = CrewChoiceMapper.shownCrew(crews, crewId)?.id
-        dispatchResult(CrewResult.Chosen(crewId, shown.value))
-        arriving.value = null
+        dispatchResult(CrewResult.Chosen(crewId))
         viewModelScope.launch { repository.refresh(crewId) }
     }
 
@@ -133,14 +108,12 @@ internal class CrewViewModel(
                 is Outcome.Success -> {
                     val crew = outcome.value
                     // Shown at once, though the cached list may not hold it yet: the tab waits for it, not for the old one.
-                    shown.value = crew.id
-                    dispatchResult(CrewResult.Chosen(crew.id, crew.id))
-                    arriving.value = crew.id
+                    dispatchResult(CrewResult.Arrived(crew.id))
                     dispatchResult(CrewResult.DialogShown(null))
                     postEffect(if (created) CrewEffect.Created(crew.name, crew.inviteCode) else CrewEffect.Joined(crew.name))
                     repository.refresh(crew.id)
                     // A list read before the save has come in by now; from here the list decides.
-                    arriving.compareAndSet(crew.id, null)
+                    dispatchResult(CrewResult.ArrivalSettled(crew.id))
                 }
 
                 is Outcome.Failure -> {
@@ -162,11 +135,11 @@ internal class CrewViewModel(
             val ride = currentState.ride(rideId)?.takeIf { it.action == wanted && !it.pending } ?: return
             when (wanted) {
                 RideAction.TAKE_SEAT -> {
-                    launchWrite { report(repository.takeSeat(ride.id)) }
+                    viewModelScope.launch { report(repository.takeSeat(ride.id)) }
                 }
 
                 RideAction.LEAVE -> {
-                    launchWrite { report(repository.leaveRide(ride.id)) }
+                    viewModelScope.launch { report(repository.leaveRide(ride.id)) }
                 }
 
                 RideAction.CANCEL -> {
@@ -182,8 +155,10 @@ internal class CrewViewModel(
         val dialog = currentState.inputs.dialog as? CrewDialog.ConfirmCancel ?: return
         dispatchResult(CrewResult.DialogShown(null))
         dispatchResult(CrewResult.CancelStarted(dialog.rideId))
-        launchWrite {
-            val error = repository.cancelRide(dialog.rideId)
+        viewModelScope.launchFinishing(
+            unfinished = AppError.Unknown("Cancelling did not finish"),
+            work = { repository.cancelRide(dialog.rideId) },
+        ) { error ->
             dispatchResult(CrewResult.CancelFinished(dialog.rideId))
             report(error)
         }
@@ -194,25 +169,29 @@ internal class CrewViewModel(
         if (error != null) postEffect(CrewEffect.Failed(error.crewFailure()))
     }
 
-    /** A change the rider made: it finishes even when the rider leaves the tab and this ViewModel is cleared. */
-    private fun launchWrite(block: suspend () -> Unit) {
-        viewModelScope.launch { withContext(NonCancellable) { block() } }
-    }
-
     /**
-     * Fetches the feed of the crew on screen every [poll]; what changed comes in through the cache. Apart from the clock,
+     * Fetches the feed of the crew on screen every [POLL]; what changed comes in through the cache. Apart from the clock,
      * so a slow fetch never holds back rides turning "departed".
      */
     private fun polling(): Flow<CrewResult> =
         flow {
             while (true) {
-                delay(poll)
-                shown.value?.let { repository.refresh(it) }
+                delay(POLL)
+                currentState.inputs.shown?.let { repository.refresh(it) }
             }
         }
+
+    private companion object {
+        /** How often the crew's feed is fetched while the tab is shown, so members' rides and seats appear. */
+        val POLL = 30.seconds
+
+        /** How often the clock is read, so rides turn "departed" without a fetch. */
+        val TICK = 30.seconds
+    }
 }
 
-/** What to tell the rider when an action on the Crew tab failed with this error. */
+/** What to tell the rider when an action on the Crew tab failed with this error. Internal only for its tests. */
+@VisibleForTesting
 internal fun AppError.crewFailure(): StringResource =
     when {
         this == AppError.Conflict(ProblemCode.SEATS_FULL) -> Res.string.crew_seat_taken

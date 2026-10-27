@@ -7,9 +7,12 @@ import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
-/** The Spots tab: its repository over the shared data layer, and its ViewModel. */
+/**
+ * The Spots tab: its repository over the shared data layer, and its ViewModel. One repository for the app, as it keeps
+ * the order of the rider's writes.
+ */
 internal val spotsModule: Module =
     module {
-        factory<SpotsRepository> { SpotsRepositoryImpl(get()) }
+        single<SpotsRepository> { SpotsRepositoryImpl(get()) }
         viewModel { SpotsViewModel(repository = get()) }
     }

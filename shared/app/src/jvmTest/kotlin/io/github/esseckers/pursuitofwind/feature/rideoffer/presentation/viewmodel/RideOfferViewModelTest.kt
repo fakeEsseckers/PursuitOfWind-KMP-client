@@ -41,7 +41,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -70,18 +69,7 @@ class RideOfferViewModelTest {
     private fun viewModel(draft: RideDraftEntity = this.draft): RideOfferViewModel =
         ViewModelProvider.create(
             viewModels,
-            viewModelFactory {
-                // No ticks: the tests move the clock themselves.
-                initializer {
-                    RideOfferViewModel(
-                        draft,
-                        repository = koin.get(),
-                        clock = clock,
-                        riderZone = BERLIN,
-                        tick = Duration.INFINITE,
-                    )
-                }
-            },
+            viewModelFactory { initializer { RideOfferViewModel(draft, repository = koin.get(), clock = clock, riderZone = BERLIN) } },
         )[RideOfferViewModel::class]
 
     private suspend fun riderInWeekendCrew() {
