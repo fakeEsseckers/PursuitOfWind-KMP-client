@@ -4,6 +4,7 @@ import io.github.esseckers.pursuitofwind.core.ui.message
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.MySpot
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.MySpotUi
+import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.RemovedSpot
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotDrive
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotEdit
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsInputs
@@ -18,7 +19,16 @@ internal object SpotsStateMapper {
         val refresh = inputs.refresh
         val base = SpotsState(isRefreshing = refresh.refreshing, inputs = inputs)
         val cached = inputs.cached ?: return base
-        val spots = cached.value.filter { it.spot.id !in inputs.removing }.map { spotUi(it, inputs.edits[it.spot.id]) }
+        val listed =
+            cached.value
+                .filter { it.spot.id !in inputs.removing }
+                .map { spotUi(it, inputs.edits[it.spot.id], restoring = it.spot.id in inputs.restoring) }
+        // A spot coming back after "Undo" shows at once, in its place by name, until the cache holds it.
+        val returning =
+            inputs.restoring.values
+                .filter { spot -> listed.none { it.id == spot.id } }
+                .map(::returningUi)
+        val spots = if (returning.isEmpty()) listed else (listed + returning).sortedBy { it.name }
         val error = refresh.error.takeUnless { refresh.refreshing }
         val content =
             when {
@@ -37,6 +47,7 @@ internal object SpotsStateMapper {
     private fun spotUi(
         spot: MySpot,
         edit: SpotEdit?,
+        restoring: Boolean,
     ): MySpotUi {
         val shown = edit ?: SpotEdit.of(spot)
         return MySpotUi(
@@ -48,8 +59,23 @@ internal object SpotsStateMapper {
             canShorten = shown.driveMinutes > 0,
             canLengthen = shown.driveMinutes < SpotDrive.MAX_STEPPED_MINUTES,
             saving = edit != null,
+            restoring = restoring,
         )
     }
+
+    /** A removed spot as it was, while it is followed again; it cannot change until it is. */
+    private fun returningUi(spot: RemovedSpot): MySpotUi =
+        MySpotUi(
+            id = spot.id,
+            name = spot.name,
+            verified = spot.verified,
+            favorite = spot.favorite,
+            drive = spot.drive,
+            canShorten = false,
+            canLengthen = false,
+            saving = false,
+            restoring = true,
+        )
 
     private fun notice(error: AppError): Notice = if (error == AppError.Network) Notice.OFFLINE else Notice.REFRESH_FAILED
 }

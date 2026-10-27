@@ -10,6 +10,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
@@ -121,6 +122,17 @@ class SpotsScreenTest {
             scrollTo("myspots.card.salt-lagoon")
             onNodeWithTag("myspots.saving.salt-lagoon").assert(hasText("Saving…"))
             onNodeWithTag("myspots.favorite.salt-lagoon").assert(switch(on = true))
+        }
+
+    @Test
+    fun `a spot coming back after undo says so and keeps its drive until it is followed`() =
+        runComposeUiTest {
+            show(SpotsPreviewData.restoring)
+
+            scrollTo("myspots.card.nordstrand-bay")
+            onNodeWithTag("myspots.saving.nordstrand-bay").assert(hasText("Restoring…"))
+            onNodeWithContentDescription("Longer drive to Nordstrand Bay").assertIsNotEnabled()
+            onNodeWithContentDescription("Shorter drive to Nordstrand Bay").assertIsNotEnabled()
         }
 
     @Test

@@ -37,10 +37,11 @@ internal interface SpotsRepository {
 
     /**
      * Follows [spotId] again with [settings], unless it was followed again meanwhile (from the spot picker, say): what
-     * the rider chose there wins over the old values.
+     * the rider chose there wins over the old values. Gives the followed spots as cached afterwards, null if the cache
+     * cannot be read.
      */
     suspend fun restore(
         spotId: SpotId,
         settings: SpotSettingsEntity,
-    ): AppError?
+    ): Outcome<Cached<List<MySpot>>?>
 }

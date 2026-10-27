@@ -32,6 +32,7 @@ import io.github.esseckers.pursuitofwind.core.resources.my_spots_favorite
 import io.github.esseckers.pursuitofwind.core.resources.my_spots_favorite_hint
 import io.github.esseckers.pursuitofwind.core.resources.my_spots_forecast
 import io.github.esseckers.pursuitofwind.core.resources.my_spots_remove
+import io.github.esseckers.pursuitofwind.core.resources.my_spots_restoring
 import io.github.esseckers.pursuitofwind.core.resources.my_spots_saving
 import io.github.esseckers.pursuitofwind.core.resources.open_spot
 import io.github.esseckers.pursuitofwind.core.resources.spots_drive
@@ -84,9 +85,9 @@ internal fun SpotCard(
                 canIncrease = spot.canLengthen,
                 modifier = Modifier.testTag("myspots.drive.${spot.id.value}"),
             )
-            if (spot.saving) {
+            if (spot.restoring || spot.saving) {
                 Text(
-                    text = stringResource(Res.string.my_spots_saving),
+                    text = stringResource(if (spot.restoring) Res.string.my_spots_restoring else Res.string.my_spots_saving),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.testTag("myspots.saving.${spot.id.value}"),

@@ -249,6 +249,7 @@
     <string name="action_undo">Undo</string>
     <string name="action_add_spots">Add spots</string>
     <string name="my_spots_saving">Saving…</string>
+    <string name="my_spots_restoring">Restoring…</string>
     <string name="my_spots_save_failed">Couldn’t save the change.</string>
     <string name="my_spots_loading">Loading your spots</string>
     <string name="my_spots_error_title">Couldn’t load your spots</string>

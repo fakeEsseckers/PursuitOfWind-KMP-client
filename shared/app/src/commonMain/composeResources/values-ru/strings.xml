@@ -261,6 +261,7 @@
     <string name="action_undo">Отменить</string>
     <string name="action_add_spots">Добавить споты</string>
     <string name="my_spots_saving">Сохраняем…</string>
+    <string name="my_spots_restoring">Возвращаем…</string>
     <string name="my_spots_save_failed">Не удалось сохранить изменение.</string>
     <string name="my_spots_loading">Загружаем твои споты</string>
     <string name="my_spots_error_title">Не удалось загрузить твои споты</string>

@@ -7,6 +7,7 @@ import io.github.esseckers.pursuitofwind.data.model.MySpot
 import io.github.esseckers.pursuitofwind.data.model.Spot
 import io.github.esseckers.pursuitofwind.engine.model.Sector
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
+import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.RemovedSpot
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotEdit
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsState
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.viewmodel.SpotsReducer
@@ -34,6 +35,14 @@ internal object SpotsPreviewData {
 
     /** Salt Lagoon just made a favorite, not saved yet. */
     val saving = reduce(SpotsResult.Edited(saltLagoon.spot.id, SpotEdit(driveMinutes = 160, favorite = true)), from = ready)
+
+    /** Nordstrand Bay removed, and back in its place after "Undo" while it is followed again. */
+    val restoring =
+        reduce(
+            SpotsResult.DataChanged(Cached(listOf(lakeWeiss, saltLagoon), fetchedAt)),
+            SpotsResult.RefreshFinished(null),
+            SpotsResult.RestoreStarted(RemovedSpot(nordstrand.spot.id, "Nordstrand Bay", verified = true, 2.hours, favorite = true)),
+        )
 
     /** The saved spots shown while offline. */
     val offline = reduce(SpotsResult.DataChanged(Cached(following, fetchedAt)), SpotsResult.RefreshFinished(AppError.Network))

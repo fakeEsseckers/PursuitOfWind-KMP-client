@@ -6,6 +6,7 @@ import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.MySpot
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.RefreshStatus
+import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.RemovedSpot
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotDrive
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotEdit
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsInputs
@@ -76,6 +77,30 @@ class SpotsStateMapperTest {
         assertTrue(salt.favorite)
         assertTrue(salt.saving)
         assertEquals(listOf("Salt Lagoon"), removing.spots().map { it.name })
+    }
+
+    @Test
+    fun `a spot coming back after undo shows at once in its place as it was and cannot change until it is followed`() {
+        val back = RemovedSpot(nordstrand.spot.id, "Nordstrand Bay", verified = true, 2.hours, favorite = true)
+        val spots = inputs(lakeWeiss, saltLagoon).copy(restoring = mapOf(back.id to back)).spots()
+
+        assertEquals(listOf("Lake Weiss", "Nordstrand Bay", "Salt Lagoon"), spots.map { it.name })
+        val returning = spots.single { it.id == back.id }
+        assertTrue(returning.restoring)
+        assertTrue(returning.favorite)
+        assertEquals(2.hours, returning.drive)
+        assertFalse(returning.canShorten || returning.canLengthen)
+        assertTrue(spots.filter { it.id != back.id }.none { it.restoring })
+    }
+
+    @Test
+    fun `a spot followed again meanwhile shows as cached while its undo runs`() {
+        val back = RemovedSpot(saltLagoon.spot.id, "Salt Lagoon", verified = true, 3.hours, favorite = true)
+        val spots = inputs(nordstrand, saltLagoon).copy(restoring = mapOf(back.id to back)).spots()
+
+        assertEquals(listOf("Nordstrand Bay", "Salt Lagoon"), spots.map { it.name })
+        assertEquals(160.minutes, spots.single { it.id == back.id }.drive)
+        assertTrue(spots.single { it.id == back.id }.restoring)
     }
 
     @Test

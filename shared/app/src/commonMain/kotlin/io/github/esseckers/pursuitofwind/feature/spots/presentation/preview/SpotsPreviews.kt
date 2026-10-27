@@ -30,6 +30,10 @@ private fun SpotsSavingPreview() = SpotsPreview(SpotsPreviewData.saving)
 
 @Preview
 @Composable
+private fun SpotsRestoringPreview() = SpotsPreview(SpotsPreviewData.restoring)
+
+@Preview
+@Composable
 private fun SpotsOfflinePreview() = SpotsPreview(SpotsPreviewData.offline)
 
 @Preview

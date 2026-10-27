@@ -19,7 +19,6 @@ import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsS
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.minutes
 
 /**
@@ -105,14 +104,12 @@ internal class SpotsViewModel(
         val inputs = currentState.inputs
         if (spotId in inputs.removing) return
         val edit = editOf(inputs, spotId) ?: return
-        val name =
+        val listed =
             inputs.cached
                 ?.value
                 ?.firstOrNull { it.spot.id == spotId }
                 ?.spot
-                ?.name
-                .orEmpty()
-        val removed = RemovedSpot(spotId, name, edit.driveMinutes.minutes, edit.favorite)
+        val removed = RemovedSpot(spotId, listed?.name.orEmpty(), listed?.verified ?: true, edit.driveMinutes.minutes, edit.favorite)
         // Drops the unsent edit, so a save still running stops after its current request instead of following it again.
         dispatchResult(SpotsResult.RemoveStarted(spotId))
         viewModelScope.launchFinishing(
@@ -133,11 +130,24 @@ internal class SpotsViewModel(
         }
     }
 
+    /** Follows [spot] again as it was. It shows again at once, marked as coming back, until that is saved. */
     private fun undo(spot: RemovedSpot) {
-        viewModelScope.launch {
-            repository
-                .restore(spot.id, SpotSettingsEntity(spot.drive, spot.favorite))
-                ?.let { postEffect(SpotsEffect.SaveFailed(it.message())) }
+        if (spot.id in currentState.inputs.restoring) return
+        dispatchResult(SpotsResult.RestoreStarted(spot))
+        viewModelScope.launchFinishing(
+            unfinished = Outcome.Failure(AppError.Unknown("Restoring did not finish")),
+            work = { repository.restore(spot.id, SpotSettingsEntity(spot.drive, spot.favorite)) },
+        ) { outcome ->
+            when (outcome) {
+                is Outcome.Success -> {
+                    dispatchResult(SpotsResult.RestoreFinished(spot.id, outcome.value))
+                }
+
+                is Outcome.Failure -> {
+                    dispatchResult(SpotsResult.RestoreFailed(spot.id))
+                    postEffect(SpotsEffect.SaveFailed(outcome.error.message()))
+                }
+            }
         }
     }
 

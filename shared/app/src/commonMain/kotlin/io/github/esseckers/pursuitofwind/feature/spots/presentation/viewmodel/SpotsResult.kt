@@ -4,6 +4,7 @@ import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.MySpot
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
+import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.RemovedSpot
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotEdit
 
 /** What happened, as the reducer sees it. */
@@ -50,4 +51,23 @@ internal sealed interface SpotsResult {
     data class RemoveFailed(
         val spotId: SpotId,
     ) : SpotsResult
+
+    /** A removed spot coming back after "Undo". */
+    sealed interface Restore : SpotsResult
+
+    /** [spot] shows again at once, as it was, while it is followed again. */
+    data class RestoreStarted(
+        val spot: RemovedSpot,
+    ) : Restore
+
+    /** [spotId] is followed again; [cached] was read after that. */
+    data class RestoreFinished(
+        val spotId: SpotId,
+        val cached: Cached<List<MySpot>>?,
+    ) : Restore
+
+    /** Following [spotId] again failed; it goes away again. */
+    data class RestoreFailed(
+        val spotId: SpotId,
+    ) : Restore
 }

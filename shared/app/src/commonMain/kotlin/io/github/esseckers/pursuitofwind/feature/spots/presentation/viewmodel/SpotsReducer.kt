@@ -3,6 +3,7 @@ package io.github.esseckers.pursuitofwind.feature.spots.presentation.viewmodel
 import io.github.esseckers.pursuitofwind.core.mvi.Reducer
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.mapper.SpotsStateMapper
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.RefreshStatus
+import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsInputs
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsState
 
 /**
@@ -61,8 +62,20 @@ internal object SpotsReducer : Reducer<SpotsState, SpotsResult> {
                 is SpotsResult.RemoveFailed -> {
                     inputs.copy(removing = inputs.removing - result.spotId)
                 }
+
+                is SpotsResult.Restore -> {
+                    inputs.restore(result)
+                }
             }
         val computed = SpotsStateMapper.map(next)
         return if (computed.content == state.content) computed.copy(content = state.content) else computed
     }
+
+    /** A spot shows as it was from "Undo" on, and the cache shows it from the end of its restore on. */
+    private fun SpotsInputs.restore(result: SpotsResult.Restore): SpotsInputs =
+        when (result) {
+            is SpotsResult.RestoreStarted -> copy(restoring = restoring + (result.spot.id to result.spot))
+            is SpotsResult.RestoreFinished -> copy(cached = result.cached ?: cached, restoring = restoring - result.spotId)
+            is SpotsResult.RestoreFailed -> copy(restoring = restoring - result.spotId)
+        }
 }

@@ -62,14 +62,15 @@ internal class SpotsRepositoryImpl(
     override suspend fun restore(
         spotId: SpotId,
         settings: SpotSettingsEntity,
-    ): AppError? =
+    ): Outcome<Cached<List<MySpot>>?> =
         write {
-            val followed =
-                current()
-                    ?.value
-                    .orEmpty()
-                    .any { it.spot.id == spotId }
-            if (followed) null else shared.follow(spotId, settings.drive, settings.favorite).errorOrNull()
+            val before = current()
+            if (before?.value.orEmpty().any { it.spot.id == spotId }) {
+                Outcome.Success(before)
+            } else {
+                val error = shared.follow(spotId, settings.drive, settings.favorite).errorOrNull()
+                error?.let { Outcome.Failure(it) } ?: Outcome.Success(current())
+            }
         }
 
     /** Runs [block] after the writes asked for before it, and to its end even when the caller is cancelled. */
