@@ -35,13 +35,14 @@ import androidx.compose.ui.semantics.semantics
 import io.github.esseckers.pursuitofwind.core.designsystem.component.ActionButton
 import io.github.esseckers.pursuitofwind.core.designsystem.component.AppSnackbarHost
 import io.github.esseckers.pursuitofwind.core.designsystem.component.MessageState
+import io.github.esseckers.pursuitofwind.core.designsystem.component.RefreshNoticeBanner
 import io.github.esseckers.pursuitofwind.core.designsystem.component.Skeleton
-import io.github.esseckers.pursuitofwind.core.designsystem.component.StatusBanner
 import io.github.esseckers.pursuitofwind.core.designsystem.component.TabTitle
 import io.github.esseckers.pursuitofwind.core.designsystem.component.screenInsets
 import io.github.esseckers.pursuitofwind.core.designsystem.icon.AppIcons
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Sizes
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Spacing
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.action_add_spots
 import io.github.esseckers.pursuitofwind.core.resources.action_refresh
@@ -58,7 +59,6 @@ import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.MySpot
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsIntent
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsState
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsState.Content
-import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsState.Notice
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -129,7 +129,7 @@ private fun AddSpotsButton(onClick: () -> Unit) {
 @Composable
 private fun SpotList(
     spots: List<MySpotUi>,
-    notice: Notice?,
+    notice: RefreshNotice?,
     onIntent: (SpotsIntent) -> Unit,
 ) {
     LazyColumn(
@@ -144,41 +144,27 @@ private fun SpotList(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        notice?.let { item(key = "notice") { NoticeBanner(it) { onIntent(SpotsIntent.Refresh) } } }
+        notice?.let {
+            item(key = "notice") {
+                RefreshNoticeBanner(
+                    notice = it,
+                    offline = Res.string.banner_spots_offline,
+                    failed = Res.string.banner_spots_failed,
+                    tagPrefix = "myspots",
+                    onRetry = { onIntent(SpotsIntent.Refresh) },
+                )
+            }
+        }
         items(spots, key = { it.id.value }) { spot ->
             SpotCard(
                 spot = spot,
                 onToggleFavorite = { onIntent(SpotsIntent.ToggleFavorite(spot.id)) },
-                onDrive = { minutes -> onIntent(SpotsIntent.ChangeDrive(spot.id, minutes)) },
+                onDrive = { step -> onIntent(SpotsIntent.ChangeDrive(spot.id, step)) },
                 onOpen = { onIntent(SpotsIntent.OpenSpot(spot.id)) },
                 onRemove = { onIntent(SpotsIntent.Remove(spot.id)) },
             )
         }
     }
-}
-
-@Composable
-private fun NoticeBanner(
-    notice: Notice,
-    onRetry: () -> Unit,
-) {
-    val text: StringResource =
-        when (notice) {
-            Notice.OFFLINE -> Res.string.banner_spots_offline
-            Notice.REFRESH_FAILED -> Res.string.banner_spots_failed
-        }
-    StatusBanner(
-        icon = AppIcons.CloudOff,
-        text = stringResource(text),
-        modifier = Modifier.testTag("myspots.notice"),
-        action = {
-            ActionButton(
-                text = stringResource(Res.string.action_retry),
-                onClick = onRetry,
-                modifier = Modifier.testTag("myspots.retry"),
-            )
-        },
-    )
 }
 
 @Composable

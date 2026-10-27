@@ -24,6 +24,7 @@ import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.test.v2.runSkikoComposeUiTest
 import androidx.compose.ui.unit.Density
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.PursuitOfWindTheme
+import io.github.esseckers.pursuitofwind.core.ui.Step
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsIntent
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsState
@@ -105,7 +106,7 @@ class SpotsScreenTest {
             assertEquals(
                 listOf(
                     SpotsIntent.ToggleFavorite(saltLagoon),
-                    SpotsIntent.ChangeDrive(saltLagoon, 175),
+                    SpotsIntent.ChangeDrive(saltLagoon, Step.UP),
                     SpotsIntent.OpenSpot(saltLagoon),
                     SpotsIntent.Remove(saltLagoon),
                     SpotsIntent.AddSpots,

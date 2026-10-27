@@ -1,5 +1,6 @@
 package io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.viewmodel
 
+import io.github.esseckers.pursuitofwind.core.ui.Step
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.entity.SpotPickerSnapshotEntity
@@ -14,9 +15,10 @@ internal sealed interface SpotPickerResult {
         val spotId: SpotId,
     ) : SpotPickerResult
 
+    /** The drive to [spotId] moved one [step]. */
     data class DriveChanged(
         val spotId: SpotId,
-        val minutes: Int,
+        val step: Step,
     ) : SpotPickerResult
 
     data object RefreshStarted : SpotPickerResult

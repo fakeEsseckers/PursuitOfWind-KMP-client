@@ -112,7 +112,7 @@ internal interface SyncStateDao {
     @Query("DELETE FROM sync_state WHERE `key` = :key")
     suspend fun delete(key: String)
 
-    /** Everything but the catalog and forecasts, which do not depend on the user. */
-    @Query("DELETE FROM sync_state WHERE `key` != 'catalog' AND `key` NOT LIKE 'forecast/%'")
+    /** Every key that belongs to the user: all but those of the catalog and forecasts (`CacheOwnershipTest` checks it). */
+    @Query("DELETE FROM sync_state WHERE `key` != '${SyncKeys.CATALOG}' AND `key` NOT LIKE '${SyncKeys.FORECAST_PREFIX}%'")
     suspend fun deleteUserState()
 }

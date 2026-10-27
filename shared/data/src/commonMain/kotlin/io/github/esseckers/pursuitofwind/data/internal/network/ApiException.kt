@@ -1,7 +1,10 @@
 package io.github.esseckers.pursuitofwind.data.internal.network
 
+import androidx.sqlite.SQLiteException
+import co.touchlab.kermit.Logger
 import io.github.esseckers.pursuitofwind.contract.ContractJson
 import io.github.esseckers.pursuitofwind.contract.ProblemDto
+import io.github.esseckers.pursuitofwind.data.internal.local.StorageException
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Outcome
 import io.ktor.client.statement.HttpResponse
@@ -30,8 +33,14 @@ internal class ApiException(
 internal fun Throwable.toAppError(): AppError =
     when (this) {
         is ApiException -> statusError()
+
+        // Before IOException: DataStore fails with one too, and that is not the network.
+        is StorageException, is SQLiteException -> AppError.Storage
+
         is IOException -> AppError.Network
+
         is SerializationException -> AppError.Unknown("Unexpected response: $message")
+
         else -> AppError.Unknown("${this::class.simpleName}: $message")
     }
 
@@ -44,7 +53,10 @@ private fun ApiException.statusError(): AppError =
         else -> AppError.Server(status)
     }
 
-/** Runs [block] and turns any failure except cancellation into [Outcome.Failure]. */
+/**
+ * Runs [block] and turns any failure except cancellation into [Outcome.Failure]. A failure of this device's storage
+ * and anything unexpected (a bug) are logged here with their stack trace, which the [AppError] does not carry.
+ */
 @Suppress("TooGenericExceptionCaught") // Every failure must reach the UI as an AppError, never as a crash.
 internal suspend fun <T> outcome(block: suspend () -> T): Outcome<T> =
     try {
@@ -52,7 +64,9 @@ internal suspend fun <T> outcome(block: suspend () -> T): Outcome<T> =
     } catch (e: CancellationException) {
         throw e
     } catch (e: Exception) {
-        Outcome.Failure(e.toAppError())
+        val error = e.toAppError()
+        if (error == AppError.Storage || error is AppError.Unknown) Logger.withTag("data").e(e) { "A data call failed: $error" }
+        Outcome.Failure(error)
     }
 
 private const val UNAUTHORIZED = 401

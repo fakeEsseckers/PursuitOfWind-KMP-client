@@ -255,6 +255,8 @@
     <string name="my_spots_error_title">Couldn’t load your spots</string>
     <string name="my_spots_empty_title">No spots yet</string>
     <string name="my_spots_empty_body">Add the spots you ride, with the drive from home, to get an answer every day.</string>
+    <string name="my_spots_pick_title">Pick a spot</string>
+    <string name="my_spots_pick_body">Its hourly forecast shows here.</string>
 
     <!-- Errors -->
     <string name="error_network">No connection. Check your internet and try again.</string>
@@ -262,6 +264,7 @@
     <string name="error_unauthorized">Couldn’t sign you in. Try again.</string>
     <string name="error_no_forecast">There’s no forecast for your spots yet. Try again in a moment.</string>
     <string name="error_unknown">Something went wrong. Try again.</string>
+    <string name="error_storage">Couldn’t save on this phone. Free some space and try again.</string>
     <!-- Crew tab -->
     <string name="tab_crew">Crew</string>
     <string name="crew_loading">Loading your crew</string>

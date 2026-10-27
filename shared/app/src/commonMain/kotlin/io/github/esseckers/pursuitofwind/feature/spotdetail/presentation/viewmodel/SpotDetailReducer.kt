@@ -30,11 +30,11 @@ internal class SpotDetailReducer(
                 }
 
                 is SpotDetailResult.RefreshStarted -> {
-                    inputs.copy(refresh = inputs.refresh.copy(refreshing = true, startedAt = result.at))
+                    inputs.copy(refresh = inputs.refresh.started(at = result.at))
                 }
 
                 is SpotDetailResult.RefreshFinished -> {
-                    inputs.copy(refresh = inputs.refresh.copy(refreshing = false, finished = true, error = result.error))
+                    inputs.copy(refresh = inputs.refresh.finished(result.error))
                 }
 
                 is SpotDetailResult.Selected -> {

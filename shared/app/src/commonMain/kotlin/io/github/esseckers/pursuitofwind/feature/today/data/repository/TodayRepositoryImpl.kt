@@ -6,6 +6,7 @@ import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.Outcome
 import io.github.esseckers.pursuitofwind.data.model.Ride
 import io.github.esseckers.pursuitofwind.data.model.errorOrNull
+import io.github.esseckers.pursuitofwind.data.model.outcomeOf
 import io.github.esseckers.pursuitofwind.data.repository.AccountRepository
 import io.github.esseckers.pursuitofwind.data.repository.CrewRepository
 import io.github.esseckers.pursuitofwind.data.repository.ForecastRepository
@@ -19,7 +20,6 @@ import io.github.esseckers.pursuitofwind.feature.today.domain.entity.RefreshResu
 import io.github.esseckers.pursuitofwind.feature.today.domain.entity.TodaySnapshotEntity
 import io.github.esseckers.pursuitofwind.feature.today.domain.mapper.RefreshErrorMapper
 import io.github.esseckers.pursuitofwind.feature.today.domain.repository.TodayRepository
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -59,35 +59,36 @@ internal class TodayRepositoryImpl(
 
     /**
      * Fetches the profile, the followed spots, the favorites' forecasts and the crews' rides. Never throws, apart from
-     * cancellation: a storage failure while reading the cache is reported as [AppError.Unknown].
+     * cancellation: a failure to read the cache is reported as its [AppError], such as [AppError.Storage].
      */
     override suspend fun refresh(): RefreshResultEntity =
-        try {
-            coroutineScope {
-                val profile = async { profiles.refresh() }
-                val crew = async { refreshCrews() }
-                val followed = spots.refreshMySpots()
-                val favorites =
-                    spots.mySpots
-                        .first()
-                        .value
-                        .filter { it.favorite }
-                val forecastResults = favorites.map { async { forecasts.refresh(it.spot.id) } }.awaitAll()
-                val forecastErrors = (listOf(profile.await(), followed) + forecastResults).mapNotNull { it.errorOrNull() }
-                RefreshResultEntity(
-                    forecastError = RefreshErrorMapper.mainError(forecastErrors),
-                    crewError = RefreshErrorMapper.mainError(crew.await().mapNotNull { it.errorOrNull() }),
-                )
+        when (val refreshed = outcomeOf { refreshAll() }) {
+            is Outcome.Success -> {
+                refreshed.value
             }
-        } catch (cancelled: CancellationException) {
-            throw cancelled
-        } catch (
-            // Any storage failure: the screen reports it instead of crashing.
-            @Suppress("TooGenericExceptionCaught")
-            failure: Exception,
-        ) {
-            log.e(failure) { "Refreshing Today failed" }
-            RefreshResultEntity(forecastError = AppError.Unknown(failure.toString()))
+
+            is Outcome.Failure -> {
+                log.e { "Refreshing Today failed: ${refreshed.error}" }
+                RefreshResultEntity(forecastError = refreshed.error)
+            }
+        }
+
+    private suspend fun refreshAll(): RefreshResultEntity =
+        coroutineScope {
+            val profile = async { profiles.refresh() }
+            val crew = async { refreshCrews() }
+            val followed = spots.refreshMySpots()
+            val favorites =
+                spots.mySpots
+                    .first()
+                    .value
+                    .filter { it.favorite }
+            val forecastResults = favorites.map { async { forecasts.refresh(it.spot.id) } }.awaitAll()
+            val forecastErrors = (listOf(profile.await(), followed) + forecastResults).mapNotNull { it.errorOrNull() }
+            RefreshResultEntity(
+                forecastError = RefreshErrorMapper.mainError(forecastErrors),
+                crewError = RefreshErrorMapper.mainError(crew.await().mapNotNull { it.errorOrNull() }),
+            )
         }
 
     /** The crew list, then each crew's feed, which brings its rides up to date. */

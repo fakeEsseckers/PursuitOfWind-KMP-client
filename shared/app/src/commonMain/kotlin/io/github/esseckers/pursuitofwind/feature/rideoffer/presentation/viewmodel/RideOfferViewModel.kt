@@ -4,11 +4,11 @@ import androidx.lifecycle.viewModelScope
 import io.github.esseckers.pursuitofwind.core.launchFinishing
 import io.github.esseckers.pursuitofwind.core.mvi.MviViewModel
 import io.github.esseckers.pursuitofwind.core.ticks
-import io.github.esseckers.pursuitofwind.core.ui.nextQuarterHour
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Crew
 import io.github.esseckers.pursuitofwind.data.model.RidePlan
 import io.github.esseckers.pursuitofwind.feature.rideoffer.domain.entity.RideDraftEntity
+import io.github.esseckers.pursuitofwind.feature.rideoffer.domain.mapper.DepartureMapper
 import io.github.esseckers.pursuitofwind.feature.rideoffer.domain.repository.RideOfferRepository
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.RideOfferEffect
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.model.RideOfferIntent
@@ -48,7 +48,11 @@ internal class RideOfferViewModel(
 
     override fun bind(): Flow<RideOfferResult> =
         merge(
-            repository.crews.map { RideOfferResult.CrewsChanged(it, crewFor(it.value, currentState.inputs.chosen)) },
+            repository.crews.map { cached ->
+                // Put in the state now, not later with the list, which could arrive after a newer pick and undo it.
+                dispatchResult(RideOfferResult.Chosen(crewFor(cached.value, currentState.inputs.chosen)))
+                RideOfferResult.CrewsChanged(cached)
+            },
             repository.spot(draft.spotId).map { RideOfferResult.SpotChanged(it) },
             clock.ticks(TICK).map { RideOfferResult.Ticked(it, departure(it)) },
         )
@@ -89,10 +93,7 @@ internal class RideOfferViewModel(
      * When the ride leaves at [now]: at the drafted time to leave while it is ahead, else at the next quarter hour, and
      * never after the window starts.
      */
-    private fun departure(now: Instant): Instant {
-        val planned = if (draft.departAt > now) draft.departAt else nextQuarterHour(now)
-        return minOf(planned, draft.windowStart)
-    }
+    private fun departure(now: Instant): Instant = DepartureMapper.departure(draft.departAt, draft.windowStart, now)
 
     private companion object {
         /** How often the time is read again, so the departure shown moves on once the drafted one has passed. */

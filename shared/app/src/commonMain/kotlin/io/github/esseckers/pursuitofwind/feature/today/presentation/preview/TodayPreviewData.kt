@@ -1,5 +1,7 @@
 package io.github.esseckers.pursuitofwind.feature.today.presentation.preview
 
+import io.github.esseckers.pursuitofwind.core.domain.entity.RideRoleEntity
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.error_network
 import io.github.esseckers.pursuitofwind.core.ui.DayLabel
@@ -71,8 +73,7 @@ internal object TodayPreviewData {
                         "08:30",
                         departed = false,
                         seatsFree = 2,
-                        youDrive = false,
-                        youRide = false,
+                        role = RideRoleEntity.NONE,
                         pending = false,
                     ),
                 ),
@@ -100,7 +101,7 @@ internal object TodayPreviewData {
         )
 
     val ready = TodayState(Content.Ready(listOf(gustyToday, tooShortTomorrow, saturdayOn)), updatedAgo = 12.minutes)
-    val offline = ready.copy(updatedAgo = 5.hours, notice = TodayState.Notice.OFFLINE)
+    val offline = ready.copy(updatedAgo = 5.hours, notice = RefreshNotice.OFFLINE)
     val loading = TodayState(isRefreshing = true)
     val noProfile = TodayState(Content.Empty(TodayState.Missing.PROFILE))
     val noSpots = TodayState(Content.Empty(TodayState.Missing.FAVORITE_SPOTS))

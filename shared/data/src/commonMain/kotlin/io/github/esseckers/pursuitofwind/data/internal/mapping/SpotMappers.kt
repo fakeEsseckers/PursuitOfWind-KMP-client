@@ -13,14 +13,10 @@ import io.github.esseckers.pursuitofwind.data.internal.local.SpotEntity
 import io.github.esseckers.pursuitofwind.data.model.GeoPoint
 import io.github.esseckers.pursuitofwind.data.model.MySpot
 import io.github.esseckers.pursuitofwind.data.model.Spot
-import io.github.esseckers.pursuitofwind.engine.model.Bearing
 import io.github.esseckers.pursuitofwind.engine.model.ForecastHour
 import io.github.esseckers.pursuitofwind.engine.model.ModelId
-import io.github.esseckers.pursuitofwind.engine.model.ModelWind
 import io.github.esseckers.pursuitofwind.engine.model.Sector
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
-import io.github.esseckers.pursuitofwind.engine.model.ThunderRisk
-import io.github.esseckers.pursuitofwind.engine.model.WindSpeed
 import kotlinx.datetime.TimeZone
 import kotlinx.serialization.builtins.ListSerializer
 import kotlin.time.Duration.Companion.minutes
@@ -70,7 +66,7 @@ internal fun SpotEntity.toSpot(): Spot =
 
 internal fun MySpotRow.toMySpot(): MySpot = MySpot(spot.toSpot(), driveMinutes.minutes, favorite)
 
-private fun sectors(json: String): List<Sector> = ContractJson.decodeFromString(SECTORS, json).map { Sector.of(it.fromDeg, it.toDeg) }
+private fun sectors(json: String): List<Sector> = ContractJson.decodeFromString(SECTORS, json).map { it.toSector() }
 
 internal fun ForecastHourDto.toEntity(spotId: String): ForecastHourEntity =
     ForecastHourEntity(
@@ -86,12 +82,9 @@ internal fun ForecastHourDto.toEntity(spotId: String): ForecastHourEntity =
 internal fun ForecastHourEntity.toForecastHour(): ForecastHour =
     ForecastHour(
         start = Instant.fromEpochMilliseconds(start),
-        byModel =
-            ContractJson.decodeFromString(MODELS, models).associate { model ->
-                ModelId(model.model) to ModelWind(WindSpeed(model.meanMps), WindSpeed(model.gustMps), Bearing(model.bearingDeg))
-            },
+        byModel = ContractJson.decodeFromString(MODELS, models).associate { ModelId(it.model) to it.toModelWind() },
         precipMm = precipitationMm,
         tempC = temperatureC,
-        thunderRisk = ThunderRisk.valueOf(thunderRisk),
+        thunderRisk = cachedThunderRisk(thunderRisk),
         isDaylight = isDaylight,
     )

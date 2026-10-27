@@ -50,6 +50,9 @@ internal fun contiguousSegments(sortedHours: List<HourVerdict>): List<List<HourV
     return segments
 }
 
+/** True when the drive to this spot is longer than [profile] drives. */
+internal fun SpotConfig.isTooFarFor(profile: RiderProfile): Boolean = drive > profile.maxDrive
+
 /** Every window at [spot], qualifying or not. A spot beyond the rider's maximum drive has none. */
 internal fun windowsAt(
     spot: SpotConfig,
@@ -58,7 +61,7 @@ internal fun windowsAt(
     now: Instant,
 ): List<SessionWindow> {
     require(hours.map { it.start }.toSet().size == hours.size) { "Hours at spot ${spot.id} must have distinct start times" }
-    if (spot.drive > profile.maxDrive) return emptyList()
+    if (spot.isTooFarFor(profile)) return emptyList()
     return contiguousSegments(hours.sortedBy { it.start }).flatMap { segment ->
         windowRuns(segment.map { it.verdict }).map { run -> sessionWindow(spot, segment.slice(run), profile, now) }
     }

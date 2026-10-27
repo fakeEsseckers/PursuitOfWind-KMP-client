@@ -1,5 +1,6 @@
 package io.github.esseckers.pursuitofwind.feature.crew.presentation.model
 
+import io.github.esseckers.pursuitofwind.core.domain.entity.RideActionEntity
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import kotlinx.datetime.LocalDate
 
@@ -52,10 +53,10 @@ internal sealed interface CrewIntent {
 }
 
 /** The ride this intent acts on and the action it asks for; null for intents that are not about one ride. */
-internal fun CrewIntent.rideAction(): Pair<String, RideAction>? =
+internal fun CrewIntent.rideAction(): Pair<String, RideActionEntity>? =
     when (this) {
-        is CrewIntent.TakeSeat -> rideId to RideAction.TAKE_SEAT
-        is CrewIntent.LeaveRide -> rideId to RideAction.LEAVE
-        is CrewIntent.CancelRide -> rideId to RideAction.CANCEL
+        is CrewIntent.TakeSeat -> rideId to RideActionEntity.TAKE_SEAT
+        is CrewIntent.LeaveRide -> rideId to RideActionEntity.LEAVE
+        is CrewIntent.CancelRide -> rideId to RideActionEntity.CANCEL
         else -> null
     }

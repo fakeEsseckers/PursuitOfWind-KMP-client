@@ -1,8 +1,8 @@
 package io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.viewmodel
 
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshStatus
 import io.github.esseckers.pursuitofwind.core.ui.Freshness
 import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.entity.SpotDetailSnapshotEntity
-import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.RefreshStatus
 import kotlin.time.Instant
 
 /** When the spot detail screen refreshes the forecast as it appears. */

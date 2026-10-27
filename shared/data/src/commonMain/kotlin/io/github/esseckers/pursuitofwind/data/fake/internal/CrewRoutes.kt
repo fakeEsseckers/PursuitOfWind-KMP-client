@@ -1,5 +1,6 @@
 package io.github.esseckers.pursuitofwind.data.fake.internal
 
+import io.github.esseckers.pursuitofwind.contract.ApiLimits
 import io.github.esseckers.pursuitofwind.contract.CreateCrewRequestDto
 import io.github.esseckers.pursuitofwind.contract.CrewDto
 import io.github.esseckers.pursuitofwind.contract.CrewFeedDto
@@ -16,7 +17,7 @@ internal class CrewRoutes(
 ) {
     fun create(call: FakeCall): FakeResponse {
         val name = call.decode(CreateCrewRequestDto.serializer()).name
-        Validation.requireName(name, "name")
+        Validation.requireCrewName(name)
         val crew = Crew(state.nextId("crw"), name, newInviteCode(), call.now)
         state.crews[crew.id] = crew
         state.addMember(crew, call.userId, MemberRoleDto.OWNER, call.now, announce = false)
@@ -74,7 +75,7 @@ internal class CrewRoutes(
     private fun newInviteCode(): String =
         generateSequence {
             "WIND-" +
-                (1..INVITE_LENGTH).map { INVITE_ALPHABET[state.random.nextInt(INVITE_ALPHABET.length)] }.joinToString("")
+                (1..INVITE_LENGTH).map { INVITE_ALPHABET[state.inviteCodes.nextInt(INVITE_ALPHABET.length)] }.joinToString("")
         }.first { code -> state.crews.values.none { it.inviteCode.equals(code, ignoreCase = true) } }
 
     private companion object {
@@ -82,6 +83,6 @@ internal class CrewRoutes(
         const val INVITE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
         const val INVITE_LENGTH = 4
         const val DEFAULT_LIMIT = 50
-        val LIMITS = 1..100
+        val LIMITS = 1..ApiLimits.Paging.LIMIT_MAX
     }
 }

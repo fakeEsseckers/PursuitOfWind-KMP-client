@@ -1,5 +1,8 @@
 package io.github.esseckers.pursuitofwind.feature.crew.presentation.mapper
 
+import io.github.esseckers.pursuitofwind.core.domain.entity.RideActionEntity
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshStatus
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.error_network
 import io.github.esseckers.pursuitofwind.core.ui.DayLabel
@@ -9,14 +12,11 @@ import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.Ride
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewChoice
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewInputs
-import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewRefresh
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewRideUi
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState.Content
-import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState.Notice
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.MemberUi
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.PersonUi
-import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.RideAction
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.preview.CrewPreviewData
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.preview.CrewPreviewData.alex
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.preview.CrewPreviewData.andreisRide
@@ -44,7 +44,7 @@ class CrewStateMapperTest {
         chosen = shown,
         shown = shown,
         details = details.copy(rides = Cached(rides, now)),
-        refresh = CrewRefresh(finished = true),
+        refresh = RefreshStatus(finished = true),
         now = now,
     )
 
@@ -60,11 +60,11 @@ class CrewStateMapperTest {
 
         assertEquals(Content.Loading, map(CrewInputs()).content)
         assertEquals(Content.Loading, map(noneCached).content)
-        assertEquals(Content.NoCrew, map(noneCached.copy(refresh = CrewRefresh(finished = true))).content)
+        assertEquals(Content.NoCrew, map(noneCached.copy(refresh = RefreshStatus(finished = true))).content)
         assertEquals(Content.NoCrew, map(CrewInputs(crews = Cached(emptyList(), now))).content)
         assertEquals(
             Content.Error(Res.string.error_network),
-            map(noneCached.copy(refresh = CrewRefresh(finished = true, error = AppError.Network))).content,
+            map(noneCached.copy(refresh = RefreshStatus(finished = true, error = AppError.Network))).content,
         )
     }
 
@@ -91,12 +91,12 @@ class CrewStateMapperTest {
 
     @Test
     fun `cached content wins over a failed refresh with a notice above it`() {
-        val offline = map(inputs().copy(refresh = CrewRefresh(finished = true, error = AppError.Network)))
-        val failed = map(inputs().copy(refresh = CrewRefresh(finished = true, error = AppError.Server(503))))
-        val refreshing = map(inputs().copy(refresh = CrewRefresh(refreshing = true, error = AppError.Network)))
+        val offline = map(inputs().copy(refresh = RefreshStatus(finished = true, error = AppError.Network)))
+        val failed = map(inputs().copy(refresh = RefreshStatus(finished = true, error = AppError.Server(503))))
+        val refreshing = map(inputs().copy(refresh = RefreshStatus(refreshing = true, error = AppError.Network)))
 
-        assertEquals(Notice.OFFLINE, offline.notice)
-        assertEquals(Notice.REFRESH_FAILED, failed.notice)
+        assertEquals(RefreshNotice.OFFLINE, offline.notice)
+        assertEquals(RefreshNotice.REFRESH_FAILED, failed.notice)
         assertEquals(null, refreshing.notice)
         assertTrue(refreshing.isRefreshing)
     }
@@ -134,9 +134,9 @@ class CrewStateMapperTest {
     fun `each ride offers the one thing the rider can do on it`() {
         val state = map(inputs())
 
-        assertEquals(RideAction.TAKE_SEAT, state.ride("rid_andrei").action)
+        assertEquals(RideActionEntity.TAKE_SEAT, state.ride("rid_andrei").action)
         assertEquals(null, state.ride("rid_jonas").action)
-        assertEquals(RideAction.CANCEL, state.ride("rid_alex").action)
+        assertEquals(RideActionEntity.CANCEL, state.ride("rid_alex").action)
         assertEquals(null, state.ride("rid_mira").action)
         assertTrue(state.ride("rid_mira").cancelled)
     }
@@ -148,7 +148,7 @@ class CrewStateMapperTest {
         val pending = map(inputs(rides = listOf(andreisRide.copy(pending = true))))
         val cancelling = map(inputs().copy(cancelling = setOf("rid_alex")))
 
-        assertEquals(RideAction.LEAVE, leaving.ride("rid_andrei").action)
+        assertEquals(RideActionEntity.LEAVE, leaving.ride("rid_andrei").action)
         assertEquals(listOf(PersonUi("Mira", false), PersonUi("Alex", true)), leaving.ride("rid_andrei").passengers)
         assertTrue(pending.ride("rid_andrei").pending)
         assertTrue(cancelling.ride("rid_alex").pending)

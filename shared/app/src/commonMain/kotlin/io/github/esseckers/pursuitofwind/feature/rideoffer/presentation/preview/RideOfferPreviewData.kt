@@ -39,7 +39,8 @@ internal object RideOfferPreviewData {
     val empty =
         reduce(
             RideOfferResult.Ticked(now, draft.departAt),
-            RideOfferResult.CrewsChanged(Cached(listOf(weekendCrew, nightOwls), now), chosen = weekendCrew.id),
+            RideOfferResult.Chosen(weekendCrew.id),
+            RideOfferResult.CrewsChanged(Cached(listOf(weekendCrew, nightOwls), now)),
             RideOfferResult.SpotChanged(nordstrand),
         )
 
@@ -52,7 +53,7 @@ internal object RideOfferPreviewData {
     val noCrew =
         reduce(
             RideOfferResult.Ticked(now, draft.departAt),
-            RideOfferResult.CrewsChanged(Cached(emptyList(), now), chosen = null),
+            RideOfferResult.CrewsChanged(Cached(emptyList(), now)),
             RideOfferResult.SpotChanged(nordstrand),
         )
 

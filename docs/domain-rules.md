@@ -84,6 +84,7 @@ The kite is computed for NO_GO hours too; the UI decides whether to show it.
 - `leaveBy = start − drive − 30 min` (30 minutes to rig).
 - If `now` is past `leaveBy`, riding starts at `now + drive + 30 min`; otherwise at `start`. `usable = end − usableStart`, never negative.
 - A window qualifies if `usable ≥ minSession`; a shorter one is reported with `qualifies = false` (WINDOW_TOO_SHORT).
+- Callers ask the window itself rather than repeating these rules: `isReachable` (`usable > 0`), `mustLeaveNow(now)` (`now ≥ leaveBy`) and `hasRidingIn(hourStart)` (the hour overlaps `usableStart`..`end`; the riding wind of a day counts these hours).
 - The window's kite is the most frequent hour kite, the smaller one on a tie.
 - A spot with `drive > maxDrive` has no windows and is reported as TOO_FAR.
 

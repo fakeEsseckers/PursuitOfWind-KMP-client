@@ -8,10 +8,10 @@ import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.error_network
+import io.github.esseckers.pursuitofwind.core.ui.Step
 import io.github.esseckers.pursuitofwind.data.fake.ControllableClock
 import io.github.esseckers.pursuitofwind.data.fake.FakePursuitOfWindServer
 import io.github.esseckers.pursuitofwind.data.fake.NetworkMode
-import io.github.esseckers.pursuitofwind.data.model.MySpot
 import io.github.esseckers.pursuitofwind.data.repository.SpotRepository
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.spotdetail.NORDSTRAND
@@ -111,8 +111,8 @@ class SpotsViewModelTest {
             viewModel.state.test(timeout = TURBINE_TIMEOUT) {
                 awaitSettled()
                 viewModel.onIntent(SpotsIntent.ToggleFavorite(saltLagoon))
-                viewModel.onIntent(SpotsIntent.ChangeDrive(saltLagoon, 175))
-                viewModel.onIntent(SpotsIntent.ChangeDrive(saltLagoon, 190))
+                viewModel.onIntent(SpotsIntent.ChangeDrive(saltLagoon, Step.UP))
+                viewModel.onIntent(SpotsIntent.ChangeDrive(saltLagoon, Step.UP))
                 // Shown at once, before anything is saved.
                 val shown = awaitState { state -> state.spots().single { it.id == saltLagoon }.drive == 190.minutes }
                 assertEquals(true, shown.spots().single { it.id == saltLagoon }.saving)
@@ -140,8 +140,8 @@ class SpotsViewModelTest {
                 spotSaves.hold()
                 viewModel.onIntent(SpotsIntent.ToggleFavorite(saltLagoon))
                 spotSaves.awaitHeld()
-                viewModel.onIntent(SpotsIntent.ChangeDrive(saltLagoon, 175))
-                viewModel.onIntent(SpotsIntent.ChangeDrive(saltLagoon, 190))
+                viewModel.onIntent(SpotsIntent.ChangeDrive(saltLagoon, Step.UP))
+                viewModel.onIntent(SpotsIntent.ChangeDrive(saltLagoon, Step.UP))
                 viewModel.onIntent(SpotsIntent.ToggleFavorite(saltLagoon))
                 spotSaves.release()
 
@@ -166,7 +166,7 @@ class SpotsViewModelTest {
                 viewModel.onIntent(SpotsIntent.ToggleFavorite(saltLagoon))
                 spotSaves.awaitHeld()
                 // Waits for the held request, which is still running when the tab goes away.
-                viewModel.onIntent(SpotsIntent.ChangeDrive(saltLagoon, 175))
+                viewModel.onIntent(SpotsIntent.ChangeDrive(saltLagoon, Step.UP))
                 cancelAndIgnoreRemainingEvents()
             }
             viewModels.clear()
@@ -189,7 +189,7 @@ class SpotsViewModelTest {
                 viewModel.onIntent(SpotsIntent.ToggleFavorite(saltLagoon))
                 spotSaves.awaitHeld()
                 // Waits behind the held save, and would follow the spot again after the removal if it were sent.
-                viewModel.onIntent(SpotsIntent.ChangeDrive(saltLagoon, 175))
+                viewModel.onIntent(SpotsIntent.ChangeDrive(saltLagoon, Step.UP))
                 viewModel.onIntent(SpotsIntent.Remove(saltLagoon))
                 assertEquals(listOf("Nordstrand Bay"), awaitState { it.spots().size == 1 }.spots().map { it.name })
                 spotSaves.release()

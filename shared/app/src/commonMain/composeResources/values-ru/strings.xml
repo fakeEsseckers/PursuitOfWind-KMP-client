@@ -267,6 +267,8 @@
     <string name="my_spots_error_title">Не удалось загрузить твои споты</string>
     <string name="my_spots_empty_title">Спотов пока нет</string>
     <string name="my_spots_empty_body">Добавь споты, на которых катаешься, и время дороги от дома, чтобы каждый день получать ответ.</string>
+    <string name="my_spots_pick_title">Выбери спот</string>
+    <string name="my_spots_pick_body">Здесь появится его почасовой прогноз.</string>
 
     <!-- Errors -->
     <string name="error_network">Нет сети. Проверь подключение и попробуй ещё раз.</string>
@@ -274,6 +276,7 @@
     <string name="error_unauthorized">Не удалось войти. Попробуй ещё раз.</string>
     <string name="error_no_forecast">Для твоих спотов пока нет прогноза. Попробуй чуть позже.</string>
     <string name="error_unknown">Что-то пошло не так. Попробуй ещё раз.</string>
+    <string name="error_storage">Не удалось сохранить на телефоне. Освободи место и попробуй ещё раз.</string>
     <!-- Crew tab -->
     <string name="tab_crew">Компания</string>
     <string name="crew_loading">Загружаем компанию</string>

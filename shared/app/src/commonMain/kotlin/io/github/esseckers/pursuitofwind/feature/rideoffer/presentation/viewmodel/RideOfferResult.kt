@@ -14,18 +14,18 @@ internal sealed interface RideOfferResult {
         val departAt: Instant,
     ) : RideOfferResult
 
-    /** The rider's crews are [cached], and the ride goes to [chosen] (null without a crew). */
+    /** The rider's crews are [cached]. */
     data class CrewsChanged(
         val cached: Cached<List<Crew>>,
-        val chosen: String?,
     ) : RideOfferResult
 
     data class SpotChanged(
         val spot: Spot?,
     ) : RideOfferResult
 
+    /** The ride goes to the crew [crewId] (null without a crew). */
     data class Chosen(
-        val crewId: String,
+        val crewId: String?,
     ) : RideOfferResult
 
     data class SeatsChanged(

@@ -3,6 +3,8 @@ package io.github.esseckers.pursuitofwind.feature.crew.presentation.viewmodel
 import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.viewModelScope
 import io.github.esseckers.pursuitofwind.contract.ProblemCode
+import io.github.esseckers.pursuitofwind.core.domain.entity.RideActionEntity
+import io.github.esseckers.pursuitofwind.core.domain.mapper.RideRulesMapper
 import io.github.esseckers.pursuitofwind.core.launchFinishing
 import io.github.esseckers.pursuitofwind.core.mvi.MviViewModel
 import io.github.esseckers.pursuitofwind.core.resources.Res
@@ -14,12 +16,13 @@ import io.github.esseckers.pursuitofwind.core.ui.message
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Crew
 import io.github.esseckers.pursuitofwind.data.model.Outcome
+import io.github.esseckers.pursuitofwind.data.model.outcomeOf
+import io.github.esseckers.pursuitofwind.data.model.valueOrNull
 import io.github.esseckers.pursuitofwind.feature.crew.domain.repository.CrewsRepository
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewDialog
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewEffect
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewIntent
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState
-import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.RideAction
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.crewToShow
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.ride
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.rideAction
@@ -28,6 +31,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -112,8 +116,10 @@ internal class CrewViewModel(
                     dispatchResult(CrewResult.DialogShown(null))
                     postEffect(if (created) CrewEffect.Created(crew.name, crew.inviteCode) else CrewEffect.Joined(crew.name))
                     repository.refresh(crew.id)
-                    // A list read before the save has come in by now; from here the list decides.
-                    dispatchResult(CrewResult.ArrivalSettled(crew.id))
+                    // Not in the cache even now (left on another device, another account), or the cache cannot be read:
+                    // the list decides.
+                    val cached = outcomeOf { repository.crews.first() }.valueOrNull()
+                    if (cached?.value?.none { it.id == crew.id } != false) dispatchResult(CrewResult.ArrivalMissing(crew.id))
                 }
 
                 is Outcome.Failure -> {
@@ -132,17 +138,23 @@ internal class CrewViewModel(
             cancel()
         } else {
             val (rideId, wanted) = intent.rideAction() ?: return
-            val ride = currentState.ride(rideId)?.takeIf { it.action == wanted && !it.pending } ?: return
+            // What the cached ride allows at the clock's time now, not at the screen's last tick: it may have left since.
+            val details = currentState.inputs.details
+            val ride =
+                currentState.ride(rideId)?.takeIf { shown ->
+                    val cached = details?.rides?.value?.firstOrNull { it.id == rideId }
+                    !shown.pending && cached != null && RideRulesMapper.action(cached, details.userId, clock.now()) == wanted
+                } ?: return
             when (wanted) {
-                RideAction.TAKE_SEAT -> {
+                RideActionEntity.TAKE_SEAT -> {
                     viewModelScope.launch { report(repository.takeSeat(ride.id)) }
                 }
 
-                RideAction.LEAVE -> {
+                RideActionEntity.LEAVE -> {
                     viewModelScope.launch { report(repository.leaveRide(ride.id)) }
                 }
 
-                RideAction.CANCEL -> {
+                RideActionEntity.CANCEL -> {
                     dispatchResult(
                         CrewResult.DialogShown(CrewDialog.ConfirmCancel(ride.id, ride.spotName, ride.passengers.size)),
                     )

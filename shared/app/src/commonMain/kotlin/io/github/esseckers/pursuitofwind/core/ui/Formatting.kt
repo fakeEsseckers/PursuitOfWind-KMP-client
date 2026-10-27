@@ -3,6 +3,7 @@ package io.github.esseckers.pursuitofwind.core.ui
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.error_network
 import io.github.esseckers.pursuitofwind.core.resources.error_server
+import io.github.esseckers.pursuitofwind.core.resources.error_storage
 import io.github.esseckers.pursuitofwind.core.resources.error_unauthorized
 import io.github.esseckers.pursuitofwind.core.resources.error_unknown
 import io.github.esseckers.pursuitofwind.data.model.AppError
@@ -53,6 +54,7 @@ internal fun AppError.message(): StringResource =
     when (this) {
         AppError.Network -> Res.string.error_network
         AppError.Unauthorized -> Res.string.error_unauthorized
+        AppError.Storage -> Res.string.error_storage
         is AppError.Server -> Res.string.error_server
         is AppError.Conflict, is AppError.Rejected, is AppError.Unknown -> Res.string.error_unknown
     }

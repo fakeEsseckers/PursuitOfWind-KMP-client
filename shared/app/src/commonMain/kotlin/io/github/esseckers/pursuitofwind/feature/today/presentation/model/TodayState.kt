@@ -1,5 +1,6 @@
 package io.github.esseckers.pursuitofwind.feature.today.presentation.model
 
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
 import org.jetbrains.compose.resources.StringResource
 import kotlin.time.Duration
 
@@ -8,13 +9,15 @@ import kotlin.time.Duration
  *
  * @property updatedAgo age of the oldest forecast behind the cards; null while no cards are shown.
  * @property notice why the cards may not be current, shown above them.
+ * @property crewFailed the forecast is current but the crew's rides could not be updated; shown when [notice] is not.
  * @property inputs what the reducer computes the rest from. The view does not read it.
  */
 internal data class TodayState(
     val content: Content = Content.Loading,
     val isRefreshing: Boolean = false,
     val updatedAgo: Duration? = null,
-    val notice: Notice? = null,
+    val notice: RefreshNotice? = null,
+    val crewFailed: Boolean = false,
     val inputs: TodayInputs = TodayInputs(),
 ) {
     sealed interface Content {
@@ -39,19 +42,5 @@ internal data class TodayState(
     enum class Missing {
         PROFILE,
         FAVORITE_SPOTS,
-    }
-
-    enum class Notice {
-        /** The last refresh failed because the device is offline. */
-        OFFLINE,
-
-        /** The last refresh failed for another reason. */
-        REFRESH_FAILED,
-
-        /** The forecast is current, but the crew's rides could not be updated. */
-        CREW_FAILED,
-
-        /** The refresh worked earlier, but the forecast is now old. */
-        STALE,
     }
 }

@@ -84,7 +84,7 @@ class OnboardingNavigationTest {
             }
 
             waitFor("welcome")
-            onNodeWithTag("tabs").assertDoesNotExist()
+            onNodeWithTag("tab.today").assertDoesNotExist()
             onNodeWithTag("welcome.start").performScrollTo().performClick()
 
             waitFor("profile.form")

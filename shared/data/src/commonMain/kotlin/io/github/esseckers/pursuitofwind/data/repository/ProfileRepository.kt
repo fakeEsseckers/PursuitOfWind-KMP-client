@@ -1,6 +1,7 @@
 package io.github.esseckers.pursuitofwind.data.repository
 
 import io.github.esseckers.pursuitofwind.data.internal.local.LocalSettings
+import io.github.esseckers.pursuitofwind.data.internal.local.cacheAnswer
 import io.github.esseckers.pursuitofwind.data.internal.mapping.toDto
 import io.github.esseckers.pursuitofwind.data.internal.mapping.toProfile
 import io.github.esseckers.pursuitofwind.data.internal.network.PursuitOfWindApi
@@ -30,7 +31,7 @@ public class ProfileRepository internal constructor(
     public suspend fun save(profile: Profile): Outcome<Profile> =
         outcome {
             val saved = api.putProfile(profile.toDto(), newIdempotencyKey())
-            settings.saveProfile(saved, clock.now())
+            cacheAnswer { settings.saveProfile(saved, clock.now()) }
             saved.toProfile()
         }
 }

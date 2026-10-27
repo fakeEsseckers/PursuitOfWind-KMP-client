@@ -1,6 +1,7 @@
 package io.github.esseckers.pursuitofwind.data.repository
 
 import androidx.room3.RoomDatabase
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import io.github.esseckers.pursuitofwind.data.fake.ControllableClock
 import io.github.esseckers.pursuitofwind.data.internal.local.LocalSettings
 import io.github.esseckers.pursuitofwind.data.internal.local.PursuitOfWindDatabase
@@ -32,11 +33,17 @@ internal class DataHarness(
     feedPageSize: Int,
 ) : AutoCloseable {
     private val scope = CoroutineScope(dispatcher + SupervisorJob())
-    val database = PursuitOfWindDatabase.build(inMemoryDatabaseBuilder(), dispatcher)
-    val settings = LocalSettings.open(temporaryFilePath("${Uuid.random()}.preferences_pb"), scope)
+
+    /** The disk under the database and the settings file; it can fill up or fail. */
+    val disk = DeviceDisk()
+    val database = PursuitOfWindDatabase.build(inMemoryDatabaseBuilder(), dispatcher, disk.database(BundledSQLiteDriver()))
+
+    /** The settings file as stored, under [settings]. */
+    val settingsFile = LocalSettings.dataStore(temporaryFilePath("${Uuid.random()}.preferences_pb"), scope)
+    val settings = LocalSettings(disk.settings(settingsFile), scope)
     val userCache = UserCache(database, settings)
     val network = NetworkHarness(engine, onSignedIn = userCache::claimFor)
-    private val store = CrewStore(network.api, database, clock)
+    private val store = CrewStore(database)
     private val feed = CrewFeedSync(network.api, database, store, clock, feedPageSize)
 
     val account = AccountRepository(network.session)
@@ -44,8 +51,8 @@ internal class DataHarness(
     val preferences = PreferencesRepository(settings)
     val spots = SpotRepository(network.api, database, clock)
     val forecasts = ForecastRepository(network.api, database, clock)
-    val crews = CrewRepository(network.api, database, store, feed, clock)
-    val rides = RideRepository(network.api, database, store, network.session, settings)
+    val crews = CrewRepository(network.api, database, feed, clock)
+    val rides = RideRepository(network.api, database, store, feed, network.session, settings)
 
     override fun close() {
         database.close()

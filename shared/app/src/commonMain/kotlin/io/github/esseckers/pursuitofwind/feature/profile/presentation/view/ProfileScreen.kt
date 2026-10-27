@@ -125,7 +125,14 @@ private fun ProfileForm(
             KiteChoices(kites = state.kites, onEdit = onEdit)
             UnitChoice(unit = state.form.unit, onEdit = onEdit)
             LanguageChoice(language = state.language, onChoose = { onIntent(ProfileIntent.ChooseLanguage(it)) })
-            MoreSettings(form = state.form, version = state.formVersion, errors = state.errors, onEdit = onEdit)
+            MoreSettings(
+                form = state.form,
+                minSession = state.minSession,
+                maxDrive = state.maxDrive,
+                version = state.formVersion,
+                errors = state.errors,
+                onEdit = onEdit,
+            )
             SaveArea(state = state, mode = mode, onSave = { onIntent(ProfileIntent.Save) })
         }
     }

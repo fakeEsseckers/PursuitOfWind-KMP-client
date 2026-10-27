@@ -58,7 +58,7 @@ Everything is still deterministic for a seed, a clock and a sequence of requests
 Screens read from a local cache and never wait for the network: repositories expose Room `Flow`s together with the time of the last fetch ("updated 2 h ago"), and `refresh` calls update the cache in the background. Forecasts, spots and the profile come out as the decision engine's own types, so screens and background checks pass them to `DecisionEngine` unchanged.
 
 - **Session:** the app signs in anonymously with an installation id on first use, refreshes the access token on `401` (one refresh for all parallel requests), and signs in again with the same installation id if a refresh is refused. Tokens are encrypted with an AES-GCM key from the Android Keystore, or kept in the iOS Keychain.
-- **Errors:** every failure reaches the UI as one `AppError` (`Network`, `Unauthorized`, `Conflict(code)`, `Rejected(status, code)`, `Server(status)`, `Unknown`); exceptions are mapped in one place.
+- **Errors:** every failure reaches the UI as one `AppError` (`Network`, `Unauthorized`, `Conflict(code)`, `Rejected(status, code)`, `Server(status)`, `Storage`, `Unknown`); exceptions are mapped in one place, and a failure of the device's own storage is never mistaken for the network.
 - **Retries:** reads, and writes that carry an `Idempotency-Key`, are retried with exponential back-off that honors `Retry-After`; every user action gets its own key, so a retry is never applied twice.
 - **Crew updates:** rides carry a server `version`, and the cache only moves a ride forward. The crew feed is replayed from the last applied event; when the server resets it (`410 FEED_RESET`) the crew is loaded again.
 - **Optimistic seats:** taking or releasing a seat shows the result at once and is rolled back, with the server's state, if the server says no (for example `409 SEATS_FULL`).
@@ -75,7 +75,7 @@ A new rider starts at a welcome screen that says what the app answers, then sets
 
 The app speaks English and Russian. It follows the phone, and the profile has a language choice (each language by its own name) that applies at once and stays on the device. Strings come from Compose Multiplatform resources, which read the platform's locale, so a new language composes the screens again; the back stack and every screen's ViewModel live above that, and the rider stays where they were, with what they typed.
 
-After that the app opens on Today, with Today, Spots and Profile as tabs. The Profile tab is the same form, saved in place: "Save" is on only when something changed, and a failed save says why and keeps what was typed. Today's empty states lead to the profile or the spot picker.
+After that the app opens on Today, with Today, Spots, Crew and Profile as tabs. The Profile tab is the same form, saved in place: "Save" is on only when something changed, and a failed save says why and keeps what was typed. Today's empty states lead to the profile or the spot picker.
 
 Text fields keep their own text and cursor while the form lives in the ViewModel's state, so typing never waits for the state to come back; a form filled or rewritten from outside (the saved profile arriving, wind limits converted to a new unit) resets them.
 
@@ -120,7 +120,7 @@ Tapping a day on Today opens that spot's forecast for today and the next two day
 - The drawing is for the eye only. On top of it, one invisible cell per hour is read by screen readers ("Saturday 13:00: 20 kn, gusts 25 kn, wind from the west, GO") and takes taps, so the chart works without seeing it. Back and refresh are buttons in the top bar, not only gestures. Time runs left to right in right-to-left languages too.
 - The states are the same as on Today: loading, an error with retry, cached data with a notice, and a message when the rider no longer follows the spot.
 
-Screens are connected with Navigation 3 in one place, `app.navigation`. The back stack is a list of serializable destinations, each with its own ViewModel; Today asks for a spot through an MVI effect and does not know the spot screen ([ADR 0009](docs/adr/0009-navigation-3.md)). There is one back stack: Today is its root once the rider is set up, other tabs sit on top of it, so back from a tab returns to Today, and the tab bar shows only while a tab is on top. Where the app starts depends on whether a profile is cached.
+Screens are connected with Navigation 3 in one place, `app.navigation`. The back stack is a list of serializable destinations, each with its own ViewModel; Today asks for a spot through an MVI effect and does not know the spot screen ([ADR 0009](docs/adr/0009-navigation-3.md)). There is one back stack: Today is its root once the rider is set up, other tabs sit on top of it, so back from a tab returns to Today, and the tabs show only while a tab is on top: a bar on a phone, a rail along the side on a tablet or a wide window. On a tablet a spot opened from Spots shows beside the list, and Today shows its days side by side. Where the app starts depends on whether a profile is cached.
 
 ## Build and run
 

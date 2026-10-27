@@ -1,5 +1,6 @@
 package io.github.esseckers.pursuitofwind.feature.spots.presentation.model
 
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import org.jetbrains.compose.resources.StringResource
 import kotlin.time.Duration
@@ -13,7 +14,7 @@ import kotlin.time.Duration
 internal data class SpotsState(
     val content: Content = Content.Loading,
     val isRefreshing: Boolean = false,
-    val notice: Notice? = null,
+    val notice: RefreshNotice? = null,
     val inputs: SpotsInputs = SpotsInputs(),
 ) {
     sealed interface Content {
@@ -31,14 +32,6 @@ internal data class SpotsState(
         data class Ready(
             val spots: List<MySpotUi>,
         ) : Content
-    }
-
-    enum class Notice {
-        /** The last refresh failed because the device is offline. */
-        OFFLINE,
-
-        /** The last refresh failed for another reason. */
-        REFRESH_FAILED,
     }
 }
 

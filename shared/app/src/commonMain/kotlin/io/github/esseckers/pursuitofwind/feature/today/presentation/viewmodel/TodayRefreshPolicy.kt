@@ -1,9 +1,10 @@
 package io.github.esseckers.pursuitofwind.feature.today.presentation.viewmodel
 
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshStatus
 import io.github.esseckers.pursuitofwind.core.ui.Freshness
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.today.domain.entity.TodaySnapshotEntity
-import io.github.esseckers.pursuitofwind.feature.today.presentation.model.RefreshStatus
+import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayInputs
 import kotlin.time.Instant
 
 /** When Today refreshes on its own: as it appears again, and when a favorite spot is new. */
@@ -19,7 +20,7 @@ internal object TodayRefreshPolicy {
     ): Boolean {
         val startedAt = refresh.startedAt
         return startedAt == null ||
-            refresh.last?.forecastError != null ||
+            refresh.error != null ||
             // A device clock set back makes the last refresh look like it is from the future.
             now < startedAt ||
             now - startedAt >= Freshness.REFRESH_AFTER ||
@@ -33,11 +34,11 @@ internal object TodayRefreshPolicy {
      */
     fun hasNewFavorite(
         snapshot: TodaySnapshotEntity,
-        refresh: RefreshStatus,
+        inputs: TodayInputs,
     ): Boolean =
-        !refresh.refreshing &&
+        !inputs.refresh.refreshing &&
             snapshot.spots.value.any {
-                it.favorite && it.spot.id !in refresh.favorites && snapshot.forecasts[it.spot.id]?.value.isNullOrEmpty()
+                it.favorite && it.spot.id !in inputs.refreshedFavorites && snapshot.forecasts[it.spot.id]?.value.isNullOrEmpty()
             }
 
     /** The favorite spots of [snapshot], which a refresh started now fetches. */

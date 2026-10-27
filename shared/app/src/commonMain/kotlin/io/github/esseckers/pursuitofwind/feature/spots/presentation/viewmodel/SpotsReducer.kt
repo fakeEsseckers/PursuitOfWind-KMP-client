@@ -2,7 +2,6 @@ package io.github.esseckers.pursuitofwind.feature.spots.presentation.viewmodel
 
 import io.github.esseckers.pursuitofwind.core.mvi.Reducer
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.mapper.SpotsStateMapper
-import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.RefreshStatus
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsInputs
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsState
 
@@ -25,12 +24,12 @@ internal object SpotsReducer : Reducer<SpotsState, SpotsResult> {
                 }
 
                 SpotsResult.RefreshStarted -> {
-                    inputs.copy(refresh = inputs.refresh.copy(refreshing = true))
+                    inputs.copy(refresh = inputs.refresh.started())
                 }
 
                 is SpotsResult.RefreshFinished -> {
                     inputs.copy(
-                        refresh = RefreshStatus(refreshing = false, finished = true, error = result.error),
+                        refresh = inputs.refresh.finished(result.error),
                     )
                 }
 

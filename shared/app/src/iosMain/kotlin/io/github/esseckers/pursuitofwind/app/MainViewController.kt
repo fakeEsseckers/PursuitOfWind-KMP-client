@@ -2,6 +2,8 @@ package io.github.esseckers.pursuitofwind.app
 
 import androidx.compose.ui.window.ComposeUIViewController
 import io.github.esseckers.pursuitofwind.app.di.startKoinOnce
+import io.github.esseckers.pursuitofwind.app.language.AppLocale
+import io.github.esseckers.pursuitofwind.app.language.IosAppLocale
 import io.github.esseckers.pursuitofwind.core.platform.IosShareLauncher
 import io.github.esseckers.pursuitofwind.core.platform.ShareLauncher
 import org.koin.dsl.module
@@ -13,6 +15,12 @@ import platform.UIKit.UIViewController
  */
 @Suppress("FunctionName", "ktlint:standard:function-naming")
 fun MainViewController(): UIViewController {
-    startKoinOnce(platform = module { single<ShareLauncher> { IosShareLauncher() } })
+    startKoinOnce(
+        platform =
+            module {
+                single<ShareLauncher> { IosShareLauncher() }
+                single<AppLocale> { IosAppLocale() }
+            },
+    )
     return ComposeUIViewController { App() }
 }

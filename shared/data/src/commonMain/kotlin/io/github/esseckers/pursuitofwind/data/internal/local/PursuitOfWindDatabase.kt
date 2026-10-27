@@ -5,6 +5,7 @@ import androidx.room3.Database
 import androidx.room3.RoomDatabase
 import androidx.room3.RoomDatabaseConstructor
 import androidx.sqlite.SQLiteConnection
+import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.sqlite.execSQL
 import kotlinx.coroutines.Dispatchers
@@ -42,17 +43,19 @@ internal abstract class PursuitOfWindDatabase : RoomDatabase() {
     companion object {
         /**
          * Finishes a platform builder (file or in-memory) the same way everywhere. Tests pass their dispatcher as
-         * [queryContext] so database work runs in virtual time with everything else.
+         * [queryContext] so database work runs in virtual time with everything else, and may wrap the [driver] to make
+         * the disk fail.
          */
         fun build(
             builder: Builder<PursuitOfWindDatabase>,
             queryContext: CoroutineContext = Dispatchers.IO,
+            driver: SQLiteDriver = BundledSQLiteDriver(),
         ): PursuitOfWindDatabase =
             builder
                 .fallbackToDestructiveMigration(dropAllTables = true)
                 .addCallback(ClearPendingSeatsOnOpen)
                 .setQueryCoroutineContext(queryContext)
-                .setDriver(BundledSQLiteDriver())
+                .setDriver(driver)
                 .build()
     }
 }

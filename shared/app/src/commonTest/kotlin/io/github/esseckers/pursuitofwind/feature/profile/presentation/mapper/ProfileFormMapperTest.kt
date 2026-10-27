@@ -1,5 +1,6 @@
 package io.github.esseckers.pursuitofwind.feature.profile.presentation.mapper
 
+import io.github.esseckers.pursuitofwind.core.ui.Step
 import io.github.esseckers.pursuitofwind.data.model.WindUnit
 import io.github.esseckers.pursuitofwind.engine.model.SkillLevel
 import io.github.esseckers.pursuitofwind.engine.model.WindSpeed
@@ -162,13 +163,17 @@ class ProfileFormMapperTest {
     }
 
     @Test
-    fun `steppers stay within the limits of the server`() {
-        val form = ProfileForm()
+    fun `steppers move half an hour and stay within the limits of the server`() {
+        val shortest = ProfileForm(minSessionMinutes = 30, maxDriveMinutes = 0)
+        val longest = ProfileForm(minSessionMinutes = 720, maxDriveMinutes = 720)
 
-        assertEquals(30, ProfileFormMapper.edit(form, ProfileEdit.MinSession(0)).minSessionMinutes)
-        assertEquals(720, ProfileFormMapper.edit(form, ProfileEdit.MinSession(750)).minSessionMinutes)
-        assertEquals(0, ProfileFormMapper.edit(form, ProfileEdit.MaxDrive(-30)).maxDriveMinutes)
-        assertEquals(720, ProfileFormMapper.edit(form, ProfileEdit.MaxDrive(750)).maxDriveMinutes)
-        assertIs<ProfileCheck.Invalid>(ProfileFormMapper.check(form))
+        assertEquals(60, ProfileFormMapper.edit(shortest, ProfileEdit.MinSession(Step.UP)).minSessionMinutes)
+        assertEquals(30, ProfileFormMapper.edit(shortest, ProfileEdit.MinSession(Step.DOWN)).minSessionMinutes)
+        assertEquals(720, ProfileFormMapper.edit(longest, ProfileEdit.MinSession(Step.UP)).minSessionMinutes)
+        assertEquals(30, ProfileFormMapper.edit(shortest, ProfileEdit.MaxDrive(Step.UP)).maxDriveMinutes)
+        assertEquals(0, ProfileFormMapper.edit(shortest, ProfileEdit.MaxDrive(Step.DOWN)).maxDriveMinutes)
+        assertEquals(690, ProfileFormMapper.edit(longest, ProfileEdit.MaxDrive(Step.DOWN)).maxDriveMinutes)
+        assertEquals(720, ProfileFormMapper.edit(longest, ProfileEdit.MaxDrive(Step.UP)).maxDriveMinutes)
+        assertIs<ProfileCheck.Invalid>(ProfileFormMapper.check(ProfileForm()))
     }
 }

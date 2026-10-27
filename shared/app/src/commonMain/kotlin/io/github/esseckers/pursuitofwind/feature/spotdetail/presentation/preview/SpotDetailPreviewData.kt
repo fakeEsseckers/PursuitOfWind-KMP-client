@@ -1,5 +1,6 @@
 package io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.preview
 
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshStatus
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.GeoPoint
@@ -18,7 +19,6 @@ import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.engine.model.ThunderRisk
 import io.github.esseckers.pursuitofwind.engine.model.WindSpeed
 import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.entity.SpotDetailSnapshotEntity
-import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.RefreshStatus
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.Selection
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailInputs
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState

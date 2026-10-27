@@ -11,9 +11,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridItemSpanScope
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -22,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -29,15 +35,18 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Density
 import io.github.esseckers.pursuitofwind.core.designsystem.component.ActionButton
 import io.github.esseckers.pursuitofwind.core.designsystem.component.Disclaimer
 import io.github.esseckers.pursuitofwind.core.designsystem.component.MessageState
+import io.github.esseckers.pursuitofwind.core.designsystem.component.RefreshNoticeBanner
 import io.github.esseckers.pursuitofwind.core.designsystem.component.Skeleton
 import io.github.esseckers.pursuitofwind.core.designsystem.component.StatusBanner
 import io.github.esseckers.pursuitofwind.core.designsystem.component.screenInsets
 import io.github.esseckers.pursuitofwind.core.designsystem.icon.AppIcons
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Sizes
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Spacing
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.action_pick_spots
 import io.github.esseckers.pursuitofwind.core.resources.action_refresh
@@ -46,7 +55,6 @@ import io.github.esseckers.pursuitofwind.core.resources.action_set_up_profile
 import io.github.esseckers.pursuitofwind.core.resources.banner_crew_failed
 import io.github.esseckers.pursuitofwind.core.resources.banner_offline
 import io.github.esseckers.pursuitofwind.core.resources.banner_refresh_failed
-import io.github.esseckers.pursuitofwind.core.resources.banner_stale
 import io.github.esseckers.pursuitofwind.core.resources.empty_profile_body
 import io.github.esseckers.pursuitofwind.core.resources.empty_profile_title
 import io.github.esseckers.pursuitofwind.core.resources.empty_spots_body
@@ -55,20 +63,20 @@ import io.github.esseckers.pursuitofwind.core.resources.error_title
 import io.github.esseckers.pursuitofwind.core.resources.today_loading
 import io.github.esseckers.pursuitofwind.core.resources.today_title
 import io.github.esseckers.pursuitofwind.core.ui.updatedText
-import io.github.esseckers.pursuitofwind.feature.today.presentation.mapper.DAYS_SHOWN
+import io.github.esseckers.pursuitofwind.feature.today.domain.mapper.DAYS_SHOWN
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.DayUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayIntent
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState.Content
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState.Missing
-import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState.Notice
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import kotlin.time.Duration
 
 /**
- * "Go?": the answer for today and the next two days. Stateless; `TodayRoute` connects it to [TodayViewModel].
- * Pull to refresh; screen readers get a "Refresh" action on the title and on every day instead of the gesture.
+ * "Go?": the answer for today and the next two days, one under the other on a phone and side by side on a wider window.
+ * Stateless; `TodayRoute` connects it to [TodayViewModel]. Pull to refresh; screen readers get a "Refresh" action on the
+ * title and on every day instead of the gesture.
  */
 @Composable
 internal fun TodayScreen(
@@ -93,7 +101,7 @@ internal fun TodayScreen(
                 Content.Loading -> LoadingDays()
                 is Content.Empty -> EmptyContent(content.missing, onIntent)
                 is Content.Error -> ErrorContent(content.message, refresh)
-                is Content.Ready -> ReadyDays(content.days, state.notice, onIntent, refreshAction)
+                is Content.Ready -> ReadyDays(content.days, state.notice, state.crewFailed, onIntent, refreshAction)
             }
         }
     }
@@ -146,17 +154,33 @@ private fun TodayHeader(
 @Composable
 private fun ReadyDays(
     days: List<DayUi>,
-    notice: Notice?,
+    notice: RefreshNotice?,
+    crewFailed: Boolean,
     onIntent: (TodayIntent) -> Unit,
     refreshAction: List<CustomAccessibilityAction>,
 ) {
     val onRefresh = { onIntent(TodayIntent.Refresh) }
-    LazyColumn(
+    LazyVerticalGrid(
+        columns = DayColumns,
         modifier = Modifier.fillMaxSize().testTag("today.days"),
         contentPadding = PaddingValues(Spacing.m),
         verticalArrangement = Arrangement.spacedBy(Spacing.m),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.m),
     ) {
-        notice?.let { item(key = "notice") { NoticeBanner(it, onRefresh) } }
+        if (notice != null) {
+            item(key = "notice", span = FullWidth) {
+                RefreshNoticeBanner(
+                    notice = notice,
+                    offline = Res.string.banner_offline,
+                    failed = Res.string.banner_refresh_failed,
+                    tagPrefix = "today",
+                    onRetry = onRefresh,
+                    modifier = Modifier.readableWidth(),
+                )
+            }
+        } else if (crewFailed) {
+            item(key = "notice", span = FullWidth) { CrewFailedBanner(onRefresh, Modifier.readableWidth()) }
+        }
         // String keys: Android saves lazy-list keys in a Bundle, which cannot hold a LocalDate.
         items(days, key = { it.date.toString() }) { day ->
             DayCard(
@@ -166,32 +190,24 @@ private fun ReadyDays(
                 modifier = Modifier.semantics { customActions = refreshAction },
             )
         }
-        item(key = "disclaimer") { Disclaimer(modifier = Modifier.padding(top = Spacing.s)) }
+        item(key = "disclaimer", span = FullWidth) {
+            Disclaimer(modifier = Modifier.readableWidth().padding(top = Spacing.s))
+        }
     }
 }
 
+/** The forecast is current, but the crew's rides could not be updated. */
 @Composable
-private fun NoticeBanner(
-    notice: Notice,
-    onRefresh: () -> Unit,
+private fun CrewFailedBanner(
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    val text: StringResource =
-        when (notice) {
-            Notice.OFFLINE -> Res.string.banner_offline
-            Notice.REFRESH_FAILED -> Res.string.banner_refresh_failed
-            Notice.CREW_FAILED -> Res.string.banner_crew_failed
-            Notice.STALE -> Res.string.banner_stale
-        }
     StatusBanner(
-        icon = if (notice == Notice.STALE) AppIcons.Clock else AppIcons.CloudOff,
-        text = stringResource(text),
-        modifier = Modifier.testTag("today.notice"),
+        icon = AppIcons.CloudOff,
+        text = stringResource(Res.string.banner_crew_failed),
+        modifier = modifier.testTag("today.notice"),
         action = {
-            ActionButton(
-                text = stringResource(if (notice == Notice.STALE) Res.string.action_refresh else Res.string.action_retry),
-                onClick = onRefresh,
-                modifier = Modifier.testTag("today.retry"),
-            )
+            ActionButton(text = stringResource(Res.string.action_retry), onClick = onRetry, modifier = Modifier.testTag("today.retry"))
         },
     )
 }
@@ -199,10 +215,12 @@ private fun NoticeBanner(
 @Composable
 private fun LoadingDays() {
     val description = stringResource(Res.string.today_loading)
-    LazyColumn(
+    LazyVerticalGrid(
+        columns = DayColumns,
         modifier = Modifier.fillMaxSize().testTag("today.loading").semantics { contentDescription = description },
         contentPadding = PaddingValues(Spacing.m),
         verticalArrangement = Arrangement.spacedBy(Spacing.m),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.m),
     ) {
         items(DAYS_SHOWN) { Skeleton(modifier = Modifier.fillMaxWidth().height(Sizes.cardPlaceholder)) }
     }
@@ -265,3 +283,28 @@ private fun ErrorContent(
         )
     }
 }
+
+/**
+ * All the days in a row when they fit at [Sizes.dayCardMinWidth] (a tablet in landscape, a desktop window), one under
+ * the other otherwise. Never two in a row and one below: the days read as a sequence, and so does the grid.
+ */
+private object DayColumns : GridCells {
+    override fun Density.calculateCrossAxisCellSizes(
+        availableSize: Int,
+        spacing: Int,
+    ): List<Int> {
+        val inRow = availableSize >= DAYS_SHOWN * Sizes.dayCardMinWidth.roundToPx() + (DAYS_SHOWN - 1) * spacing
+        val columns = if (inRow) DAYS_SHOWN else 1
+        val space = availableSize - (columns - 1) * spacing
+        return List(columns) { column -> space / columns + if (column < space % columns) 1 else 0 }
+    }
+}
+
+/** Banners and the disclaimer span every column. */
+private val FullWidth: LazyGridItemSpanScope.() -> GridItemSpan = { GridItemSpan(maxLineSpan) }
+
+/**
+ * A full-width grid item that stops at [Sizes.contentMaxWidth], so its lines stay readable on a wide window. A grid
+ * measures its items at the exact width of their cells, so the width is let go first.
+ */
+private fun Modifier.readableWidth(): Modifier = wrapContentWidth(Alignment.Start).widthIn(max = Sizes.contentMaxWidth)

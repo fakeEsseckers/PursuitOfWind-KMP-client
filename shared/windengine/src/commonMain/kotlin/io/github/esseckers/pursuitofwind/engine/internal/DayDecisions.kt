@@ -50,7 +50,7 @@ private fun spotDays(
 ): List<Pair<LocalDate, SpotDay>> {
     val spot = forecast.spot
     val today = now.localDate(spot.timeZone)
-    val tooFar = spot.drive > profile.maxDrive
+    val tooFar = spot.isTooFarFor(profile)
     return groupByLocalDate(forecast.hours.sortedBy { it.start }, spot.timeZone) { it.start }
         .filterKeys { it >= today }
         .map { (date, hours) ->

@@ -1,22 +1,20 @@
 package io.github.esseckers.pursuitofwind.data.repository
 
-import androidx.room3.withWriteTransaction
 import io.github.esseckers.pursuitofwind.contract.CreateRideRequestDto
 import io.github.esseckers.pursuitofwind.contract.ProblemCode
 import io.github.esseckers.pursuitofwind.contract.RideDto
 import io.github.esseckers.pursuitofwind.data.internal.local.LocalSettings
 import io.github.esseckers.pursuitofwind.data.internal.local.PursuitOfWindDatabase
-import io.github.esseckers.pursuitofwind.data.internal.local.RideEntity
 import io.github.esseckers.pursuitofwind.data.internal.local.SyncKeys
+import io.github.esseckers.pursuitofwind.data.internal.local.cacheAnswer
 import io.github.esseckers.pursuitofwind.data.internal.local.cached
-import io.github.esseckers.pursuitofwind.data.internal.mapping.canBeTakenBy
-import io.github.esseckers.pursuitofwind.data.internal.mapping.hasPassenger
 import io.github.esseckers.pursuitofwind.data.internal.mapping.toEntity
 import io.github.esseckers.pursuitofwind.data.internal.mapping.toRide
 import io.github.esseckers.pursuitofwind.data.internal.network.AuthSession
 import io.github.esseckers.pursuitofwind.data.internal.network.PursuitOfWindApi
 import io.github.esseckers.pursuitofwind.data.internal.network.outcome
 import io.github.esseckers.pursuitofwind.data.internal.newIdempotencyKey
+import io.github.esseckers.pursuitofwind.data.internal.sync.CrewFeedSync
 import io.github.esseckers.pursuitofwind.data.internal.sync.CrewStore
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Cached
@@ -44,6 +42,7 @@ class RideRepository internal constructor(
     private val api: PursuitOfWindApi,
     private val database: PursuitOfWindDatabase,
     private val store: CrewStore,
+    private val feed: CrewFeedSync,
     private val session: AuthSession,
     private val settings: LocalSettings,
 ) {
@@ -57,7 +56,7 @@ class RideRepository internal constructor(
     fun rides(crewId: String): Flow<Cached<List<Ride>>> =
         sync.cached(SyncKeys.rides(crewId), rides.rides(crewId).map { list -> list.map { it.toRide() } })
 
-    suspend fun refresh(crewId: String): Outcome<Unit> = outcome { store.refreshRides(crewId) }
+    suspend fun refresh(crewId: String): Outcome<Unit> = outcome { feed.refreshRides(crewId) }
 
     suspend fun offer(
         crewId: String,
@@ -90,22 +89,28 @@ class RideRepository internal constructor(
     ): Outcome<Ride> =
         seatChanges.withLock {
             try {
-                markPending(rideId, take)
                 val key = newIdempotencyKey()
-                when (val result = outcome { keep(if (take) api.takeSeat(rideId, key) else api.releaseSeat(rideId, key)) }) {
+                val result =
+                    outcome {
+                        // Inside the outcome: a cache that cannot be written fails the change before anything is sent.
+                        markPending(rideId, take)
+                        keep(if (take) api.takeSeat(rideId, key) else api.releaseSeat(rideId, key))
+                    }
+                when (result) {
                     is Outcome.Success -> result
                     is Outcome.Failure -> afterRefusal(rideId, result)
                 }
             } finally {
                 // Unconditionally: a cancellation can arrive after the overlay was written but before markPending
-                // returned. Only this path writes overlays, and seatChanges lets one run at a time.
-                withContext(NonCancellable) { rides.clearPending(rideId) }
+                // returned. Only this path writes overlays, and seatChanges lets one run at a time. A cache that cannot
+                // be written now has nothing to clear, or keeps the overlay until the next change of the ride.
+                withContext(NonCancellable) { outcome { store.clearPending(rideId) } }
             }
         }
 
     /**
-     * Shows the change at once if it can work on the ride as cached. Nothing to show when the ride is unknown, the
-     * rider is not signed in yet, or the change would not do anything.
+     * Shows the change at once ([CrewStore.markPending]) under the rider's name. Nothing to show before the rider is
+     * signed in.
      */
     private suspend fun markPending(
         rideId: String,
@@ -118,32 +123,26 @@ class RideRepository internal constructor(
                 ?.profile
                 ?.displayName
                 .orEmpty()
-        database.withWriteTransaction {
-            val ride = rides.ride(rideId)
-            val possible = ride != null && ride.pendingSeat == null && if (take) ride.canBeTakenBy(userId) else ride.hasPassenger(userId)
-            if (ride != null && possible) {
-                val change = if (take) RideEntity.TAKE else RideEntity.RELEASE
-                rides.upsert(listOf(ride.copy(pendingSeat = change, pendingUserId = userId, pendingUserName = name)))
-            }
-        }
+        store.markPending(rideId, userId, name, take)
     }
 
     /**
-     * After the server refused, reloads the ride so the cache shows what the server has. A network failure says
-     * nothing about the server, so the cache stays. `ALREADY_JOINED` means the seat is the rider's: success.
+     * After the server refused, reloads the ride so the cache shows what the server has. A network or storage failure
+     * says nothing about the server, so the cache stays. `ALREADY_JOINED` means the seat is the rider's: success.
      */
     private suspend fun afterRefusal(
         rideId: String,
         failure: Outcome.Failure,
     ): Outcome<Ride> {
-        if (failure.error == AppError.Network) return failure
+        if (failure.error == AppError.Network || failure.error == AppError.Storage) return failure
         val reloaded = outcome { keep(api.ride(rideId)) }
         val alreadySeated = failure.error == AppError.Conflict(ProblemCode.ALREADY_JOINED) && reloaded is Outcome.Success
         return if (alreadySeated) reloaded else failure
     }
 
+    /** Caches [ride], the server's answer, and returns it; a cache that cannot be written does not fail the change. */
     private suspend fun keep(ride: RideDto): Ride {
-        store.upsertNewer(ride)
+        cacheAnswer { store.saveNewer(ride) }
         return ride.toEntity().toRide()
     }
 }

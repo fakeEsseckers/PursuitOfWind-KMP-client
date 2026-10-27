@@ -1,6 +1,6 @@
 package io.github.esseckers.pursuitofwind.feature.spots.presentation.model
 
-import io.github.esseckers.pursuitofwind.data.model.AppError
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshStatus
 import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.MySpot
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
@@ -19,13 +19,6 @@ internal data class SpotsInputs(
     val saving: Set<SpotId> = emptySet(),
     val removing: Set<SpotId> = emptySet(),
     val restoring: Map<SpotId, RemovedSpot> = emptyMap(),
-)
-
-/** Whether a refresh runs, whether one has [finished] since the tab opened, and how the last one failed. */
-internal data class RefreshStatus(
-    val refreshing: Boolean = false,
-    val finished: Boolean = false,
-    val error: AppError? = null,
 )
 
 /** A followed spot's drive in minutes and favorite flag, as the rider set them. */

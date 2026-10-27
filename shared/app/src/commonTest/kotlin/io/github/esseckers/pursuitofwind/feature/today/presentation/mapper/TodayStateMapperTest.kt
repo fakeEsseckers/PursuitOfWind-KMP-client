@@ -1,5 +1,7 @@
 package io.github.esseckers.pursuitofwind.feature.today.presentation.mapper
 
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshStatus
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.error_network
 import io.github.esseckers.pursuitofwind.core.resources.error_no_forecast
@@ -14,15 +16,12 @@ import io.github.esseckers.pursuitofwind.feature.today.SUNDAY
 import io.github.esseckers.pursuitofwind.feature.today.THURSDAY_8AM
 import io.github.esseckers.pursuitofwind.feature.today.alex
 import io.github.esseckers.pursuitofwind.feature.today.at
-import io.github.esseckers.pursuitofwind.feature.today.domain.entity.RefreshResultEntity
 import io.github.esseckers.pursuitofwind.feature.today.domain.entity.TodaySnapshotEntity
 import io.github.esseckers.pursuitofwind.feature.today.mySpot
-import io.github.esseckers.pursuitofwind.feature.today.presentation.model.RefreshStatus
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayInputs
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState.Content
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState.Missing
-import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState.Notice
 import io.github.esseckers.pursuitofwind.feature.today.saturdayOn
 import io.github.esseckers.pursuitofwind.feature.today.todaySnapshot
 import kotlin.test.Test
@@ -38,7 +37,7 @@ import kotlin.time.Instant
 class TodayStateMapperTest {
     private val fetched = THURSDAY_8AM - 20.minutes
     private val nordstrand = mySpot("nordstrand-bay")
-    private val refreshed = RefreshStatus(last = RefreshResultEntity(), startedAt = fetched)
+    private val refreshed = RefreshStatus(finished = true, startedAt = fetched)
 
     private val sundayNoon = at(SUNDAY, 12)
 
@@ -54,12 +53,10 @@ class TodayStateMapperTest {
         snapshot: TodaySnapshotEntity = snapshot(),
         now: Instant = THURSDAY_8AM,
         refresh: RefreshStatus = refreshed,
-    ) = TodayStateMapper.map(TodayInputs(snapshot, now, refresh), BERLIN)
-
-    private fun failed(
-        forecastError: AppError? = null,
         crewError: AppError? = null,
-    ) = RefreshStatus(last = RefreshResultEntity(forecastError, crewError), startedAt = fetched)
+    ) = TodayStateMapper.map(TodayInputs(snapshot, now, refresh, crewError = crewError), BERLIN)
+
+    private fun failed(forecastError: AppError) = RefreshStatus(finished = true, error = forecastError, startedAt = fetched)
 
     @Test
     fun `before the data and the clock arrive the screen loads`() {
@@ -145,21 +142,28 @@ class TodayStateMapperTest {
 
     @Test
     fun `cached decisions stay when a refresh fails and a notice says why`() {
-        assertEquals(Notice.OFFLINE, state(refresh = failed(forecastError = AppError.Network)).notice)
-        assertEquals(Notice.REFRESH_FAILED, state(refresh = failed(forecastError = AppError.Server(503))).notice)
+        assertEquals(RefreshNotice.OFFLINE, state(refresh = failed(forecastError = AppError.Network)).notice)
+        assertEquals(RefreshNotice.REFRESH_FAILED, state(refresh = failed(forecastError = AppError.Server(503))).notice)
         assertIs<Content.Ready>(state(refresh = failed(forecastError = AppError.Network)).content)
     }
 
     @Test
     fun `a crew problem only says that the rides could not be updated`() {
-        assertEquals(Notice.CREW_FAILED, state(refresh = failed(crewError = AppError.Network)).notice)
-        assertEquals(Notice.OFFLINE, state(refresh = failed(AppError.Network, crewError = AppError.Network)).notice)
+        val crewOnly = state(crewError = AppError.Network)
+        val both = state(refresh = failed(AppError.Network), crewError = AppError.Network)
+
+        assertNull(crewOnly.notice)
+        assertTrue(crewOnly.crewFailed)
+        assertEquals(RefreshNotice.OFFLINE, both.notice)
+        assertFalse(both.crewFailed)
     }
 
     @Test
     fun `a forecast older than three hours is marked as getting old`() {
         assertNull(state(now = fetched + 3.hours).notice)
-        assertEquals(Notice.STALE, state(now = fetched + 3.hours + 1.minutes).notice)
-        assertEquals(Notice.STALE, state(now = fetched + 4.hours, refresh = failed(crewError = AppError.Network)).notice)
+        assertEquals(RefreshNotice.STALE, state(now = fetched + 3.hours + 1.minutes).notice)
+        val staleWithCrew = state(now = fetched + 4.hours, crewError = AppError.Network)
+        assertEquals(RefreshNotice.STALE, staleWithCrew.notice)
+        assertFalse(staleWithCrew.crewFailed)
     }
 }

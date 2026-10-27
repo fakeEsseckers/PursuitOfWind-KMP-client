@@ -14,6 +14,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
@@ -29,6 +30,7 @@ import androidx.compose.ui.test.v2.runSkikoComposeUiTest
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.PursuitOfWindTheme
+import io.github.esseckers.pursuitofwind.core.designsystem.theme.Sizes
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.today.at
 import io.github.esseckers.pursuitofwind.feature.today.day
@@ -289,6 +291,52 @@ class TodayScreenTest {
         }
 
     @Test
+    fun `on a phone the days are one under the other`() =
+        runSkikoComposeUiTest(size = Size(PHONE_WIDTH_PX, PHONE_HEIGHT_PX), density = Density(PHONE_DENSITY)) {
+            show(TodayPreviewData.ready)
+            scrollTo("today.day.2026-10-23")
+
+            val first = onNodeWithTag("today.day.2026-10-22").getUnclippedBoundsInRoot()
+            val second = onNodeWithTag("today.day.2026-10-23").getUnclippedBoundsInRoot()
+            assertEquals(first.left, second.left)
+            assertTrue(second.top >= first.bottom, "$first $second")
+        }
+
+    @Test
+    fun `where the three days do not fit in a row they stay one under the other`() =
+        runSkikoComposeUiTest(size = Size(PORTRAIT_TABLET_WIDTH, PORTRAIT_TABLET_HEIGHT)) {
+            show(TodayPreviewData.ready)
+            scrollTo("today.day.2026-10-23")
+
+            val first = onNodeWithTag("today.day.2026-10-22").getUnclippedBoundsInRoot()
+            val second = onNodeWithTag("today.day.2026-10-23").getUnclippedBoundsInRoot()
+            assertEquals(first.left, second.left)
+            assertTrue(second.top >= first.bottom, "$first $second")
+        }
+
+    @Test
+    fun `on a tablet the three days sit side by side`() =
+        runSkikoComposeUiTest(size = Size(TABLET_WIDTH, TABLET_HEIGHT)) {
+            show(TodayPreviewData.ready)
+
+            val days =
+                listOf("2026-10-22", "2026-10-23", "2026-10-24").map { date ->
+                    onNodeWithTag("today.day.$date").getUnclippedBoundsInRoot()
+                }
+            assertEquals(1, days.map { it.top }.distinct().size, days.toString())
+            assertTrue(days.zipWithNext().all { (left, right) -> right.left >= left.right }, days.toString())
+        }
+
+    @Test
+    fun `on a tablet a banner across the days stops at a readable width`() =
+        runSkikoComposeUiTest(size = Size(TABLET_WIDTH, TABLET_HEIGHT)) {
+            show(TodayPreviewData.offline)
+
+            val banner = onNodeWithTag("today.notice").getUnclippedBoundsInRoot()
+            assertTrue(banner.right - banner.left <= Sizes.contentMaxWidth, banner.toString())
+        }
+
+    @Test
     fun `russian speakers get the screen in russian`() =
         runComposeUiTest {
             Locale.setDefault(Locale.forLanguageTag("ru"))
@@ -311,5 +359,12 @@ class TodayScreenTest {
         const val PHONE_WIDTH_PX = 1080f
         const val PHONE_HEIGHT_PX = 2340f
         const val PHONE_DENSITY = 2.625f
+
+        // A 1280 × 800 dp tablet in landscape and in portrait, at the test's density of 1. In portrait two days would fit
+        // in a row, three would not.
+        const val TABLET_WIDTH = 1280f
+        const val TABLET_HEIGHT = 800f
+        const val PORTRAIT_TABLET_WIDTH = 800f
+        const val PORTRAIT_TABLET_HEIGHT = 1280f
     }
 }

@@ -27,7 +27,7 @@ The whole data layer — serialization, headers, token refresh, error mapping, r
 
 Rules:
 
-- Determinism: every random source takes a seed; ids are sequential (`usr_0001`, `evt_000001`). The same seed, clock and sequence of requests always produce the same responses (tests depend on it).
+- Determinism: every random source takes a seed, one stream per purpose (tokens, invite codes, the members' schedule, the last-seat race), so more draws of one kind never change another; ids are sequential per prefix (`usr_0001`, `crw_0001`, `evt_000001`). The same seed, clock and sequence of requests always produce the same responses (tests depend on it). A test about something else turns a coin flip off (`lastSeatRace = 0.0`) instead of relying on how it falls.
 - Time comes only from the injected `Clock`; delays only from `delay` on the injected dispatcher. No `Clock.System`, no `Thread.sleep`.
 - Errors are thrown as `ProblemException` from `problem(…)`, `notFound(…)`, `invalid(…)`, `check422(…)`; `FakeApi` turns them into `application/problem+json`. Any other exception from a handler becomes `500 INTERNAL`.
 - Enforce only what `api/openapi.yaml` states (schema limits, rules in schema descriptions); a new rule goes into the spec first. Strings are stored as sent.

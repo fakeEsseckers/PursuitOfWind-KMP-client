@@ -117,8 +117,9 @@ internal object SyncKeys {
     const val CATALOG = "catalog"
     const val MY_SPOTS = "my_spots"
     const val CREWS = "crews"
+    const val FORECAST_PREFIX = "forecast/"
 
-    fun forecast(spotId: String): String = "forecast/$spotId"
+    fun forecast(spotId: String): String = "$FORECAST_PREFIX$spotId"
 
     fun members(crewId: String): String = "members/$crewId"
 

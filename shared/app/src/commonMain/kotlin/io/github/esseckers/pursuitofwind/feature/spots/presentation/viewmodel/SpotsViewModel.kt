@@ -3,6 +3,7 @@ package io.github.esseckers.pursuitofwind.feature.spots.presentation.viewmodel
 import androidx.lifecycle.viewModelScope
 import io.github.esseckers.pursuitofwind.core.launchFinishing
 import io.github.esseckers.pursuitofwind.core.mvi.MviViewModel
+import io.github.esseckers.pursuitofwind.core.ui.SPOT_DRIVE_STEPS
 import io.github.esseckers.pursuitofwind.core.ui.message
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Outcome
@@ -10,7 +11,6 @@ import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.spots.domain.entity.SpotSettingsEntity
 import io.github.esseckers.pursuitofwind.feature.spots.domain.repository.SpotsRepository
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.RemovedSpot
-import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotDrive
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotEdit
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsEffect
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsInputs
@@ -38,13 +38,36 @@ internal class SpotsViewModel(
 ) : MviViewModel<SpotsState, SpotsIntent, SpotsResult, SpotsEffect>(SpotsState(), SpotsReducer) {
     override fun onIntent(intent: SpotsIntent) {
         when (intent) {
-            SpotsIntent.Refresh -> refresh()
-            is SpotsIntent.ToggleFavorite -> edit(intent.spotId) { it.copy(favorite = !it.favorite) }
-            is SpotsIntent.ChangeDrive -> edit(intent.spotId) { it.copy(driveMinutes = intent.minutes.coerceIn(0, SpotDrive.MAX_MINUTES)) }
-            is SpotsIntent.Remove -> remove(intent.spotId)
-            is SpotsIntent.Undo -> undo(intent.spot)
-            is SpotsIntent.OpenSpot -> postEffect(SpotsEffect.OpenSpot(intent.spotId))
-            SpotsIntent.AddSpots -> postEffect(SpotsEffect.AddSpots)
+            SpotsIntent.Refresh -> {
+                refresh()
+            }
+
+            is SpotsIntent.ToggleFavorite -> {
+                edit(intent.spotId) { it.copy(favorite = !it.favorite) }
+            }
+
+            // From the drive the rider last asked for, so taps faster than the screen still add up.
+            is SpotsIntent.ChangeDrive -> {
+                edit(
+                    intent.spotId,
+                ) { it.copy(driveMinutes = SPOT_DRIVE_STEPS.next(it.driveMinutes, intent.step)) }
+            }
+
+            is SpotsIntent.Remove -> {
+                remove(intent.spotId)
+            }
+
+            is SpotsIntent.Undo -> {
+                undo(intent.spot)
+            }
+
+            is SpotsIntent.OpenSpot -> {
+                postEffect(SpotsEffect.OpenSpot(intent.spotId))
+            }
+
+            SpotsIntent.AddSpots -> {
+                postEffect(SpotsEffect.AddSpots)
+            }
         }
     }
 

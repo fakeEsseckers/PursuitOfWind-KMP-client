@@ -3,9 +3,9 @@ package io.github.esseckers.pursuitofwind.data.fake.internal
 import io.github.esseckers.pursuitofwind.contract.CreateRideRequestDto
 import io.github.esseckers.pursuitofwind.contract.RideStatusDto
 import io.github.esseckers.pursuitofwind.data.fake.MemberActivity
-import io.github.esseckers.pursuitofwind.data.internal.mapping.toEntity
 import io.github.esseckers.pursuitofwind.data.internal.mapping.toForecastHour
 import io.github.esseckers.pursuitofwind.data.internal.mapping.toSpot
+import io.github.esseckers.pursuitofwind.data.internal.startOfHour
 import io.github.esseckers.pursuitofwind.data.model.MySpot
 import io.github.esseckers.pursuitofwind.engine.DecisionEngine
 import io.github.esseckers.pursuitofwind.engine.model.RiderProfile
@@ -38,6 +38,9 @@ internal class CrewLife(
     private val seed: Long,
 ) {
     private val random = Random(seed + RANDOM_SALT)
+
+    /** Its own stream, drawn twice per contested seat whoever wants it, so a race never shifts the members' schedule. */
+    private val seatRaces = Random(seed + SEAT_RACE_SALT)
 
     /** When the members act next; set by the first request. */
     private var nextAt: Instant? = null
@@ -77,8 +80,10 @@ internal class CrewLife(
                 userId != ride.driverId &&
                 userId !in ride.passengerIds
         if (!contested) return
-        val rival = seatSeekers(ride, crew, now).randomOrNull(random)
-        if (rival != null && random.nextDouble() < share) state.takeSeat(ride, crew, rival, now)
+        val seekers = seatSeekers(ride, crew, now)
+        val pick = seatRaces.nextInt(Int.MAX_VALUE)
+        val wins = seatRaces.nextDouble() < share
+        if (seekers.isNotEmpty() && wins) state.takeSeat(ride, crew, seekers[pick % seekers.size], now)
     }
 
     private fun act(at: Instant) {
@@ -191,14 +196,15 @@ internal class CrewLife(
 
     /** GO windows of the next two days that leave time to plan, as the engine finds them for a typical member. */
     private fun goodWindows(at: Instant): List<SessionWindow> {
-        val from = Instant.fromEpochSeconds(at.epochSeconds.floorDiv(SECONDS_PER_HOUR) * SECONDS_PER_HOUR)
+        val from = at.startOfHour()
         return state.spots.values.sortedBy { it.spot.id }.flatMap { seedSpot ->
-            val config = MySpot(seedSpot.spot.toEntity().toSpot(), MEMBER_DRIVE, favorite = true).toSpotConfig()
-            val run = ModelRun(number = state.forecastRuns[seedSpot.spot.id] ?: 0, at = at)
+            val config = MySpot(seedSpot.spot.toSpot(), MEMBER_DRIVE, favorite = true).toSpotConfig()
+            // The run riders were last served, so members judge the forecast riders see.
+            val run = state.forecastRuns[seedSpot.spot.id] ?: ModelRun(number = 0, at = at)
             val verdicts =
                 ForecastGenerator
                     .hours(seedSpot, from, LOOK_AHEAD_HOURS, seed, run)
-                    .map { DecisionEngine.evaluateHour(it.toEntity(seedSpot.spot.id).toForecastHour(), MEMBER, config) }
+                    .map { DecisionEngine.evaluateHour(it.toForecastHour(), MEMBER, config) }
             DecisionEngine.findWindows(verdicts, config, MEMBER, at).filter { it.qualifies && it.leaveBy >= at + PLANNING_TIME }
         }
     }
@@ -215,6 +221,7 @@ internal class CrewLife(
 
     private companion object {
         const val RANDOM_SALT = 0x5EA7L
+        const val SEAT_RACE_SALT = 0x5EA70L
         const val MAX_CATCH_UP = 3
         const val MAX_UPCOMING_RIDES = 3
         const val LEAVE_WEIGHT = 1
@@ -223,7 +230,6 @@ internal class CrewLife(
         const val MIN_SEATS = 2
         const val MAX_SEATS = 4
         const val LOOK_AHEAD_HOURS = 48
-        const val SECONDS_PER_HOUR = 3_600L
         val MEMBER_DRIVE = 60.minutes
         val PLANNING_TIME = 2.hours
 

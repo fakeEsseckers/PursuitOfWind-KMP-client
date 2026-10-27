@@ -1,17 +1,16 @@
 package io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.mapper
 
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshNoticeMapper
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshStatus
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.spot_no_forecast
-import io.github.esseckers.pursuitofwind.core.ui.Freshness
 import io.github.esseckers.pursuitofwind.core.ui.message
-import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.entity.SpotDetailSnapshotEntity
-import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.RefreshStatus
+import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.mapper.SpotEvaluationMapper
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailInputs
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState.Content
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState.Missing
-import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState.Notice
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotHeaderUi
 import kotlinx.datetime.TimeZone
 import kotlin.time.Duration
@@ -43,7 +42,8 @@ internal object SpotDetailStateMapper {
             }
 
             else -> {
-                val forecast = SpotForecastMapper(profile, spot, snapshot.forecast.value, now, riderZone)
+                val forecast =
+                    SpotForecastMapper(profile, SpotEvaluationMapper.evaluate(profile, spot, snapshot.forecast.value, now), now, riderZone)
                 if (forecast.isEmpty) {
                     loading.copy(content = waitingContent(snapshot, inputs.refresh), header = header)
                 } else {
@@ -52,7 +52,7 @@ internal object SpotDetailStateMapper {
                         content = ready(forecast, inputs),
                         header = header,
                         updatedAgo = age,
-                        notice = notice(inputs.refresh.error, age),
+                        notice = RefreshNoticeMapper.notice(inputs.refresh.error, age),
                     )
                 }
             }
@@ -89,17 +89,6 @@ internal object SpotDetailStateMapper {
             else -> Content.Error(Res.string.spot_no_forecast)
         }
     }
-
-    private fun notice(
-        error: AppError?,
-        age: Duration?,
-    ): Notice? =
-        when {
-            error == AppError.Network -> Notice.OFFLINE
-            error != null -> Notice.REFRESH_FAILED
-            age != null && age > Freshness.STALE_AFTER -> Notice.STALE
-            else -> null
-        }
 
     /** True when the cached forecast was written by a refresh started at [startedAt] or later. */
     private fun SpotDetailSnapshotEntity.reflects(startedAt: Instant): Boolean = forecast.updatedAt?.let { it >= startedAt } == true

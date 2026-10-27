@@ -43,7 +43,7 @@ Known codes (`ProblemCode`): `UNAUTHORIZED`, `NOT_FOUND`, `VALIDATION_FAILED`, `
 
 ## Mapping errors on the client
 
-All Ktor exceptions and problem bodies map to `AppError` in one function (`toAppError()`), with a unit test per code. `409 SEATS_FULL` and `409 RIDE_CANCELLED` become `AppError.Conflict(code)`: the UI rolls back the optimistic seat with a specific message and reloads the ride (`GET /v1/rides/{rideId}`). `409 ALREADY_JOINED` means the rider already has the seat: keep it and reload the ride.
+All Ktor exceptions and problem bodies map to `AppError` in one function (`toAppError()`), with a unit test per code. A failure of the device's own storage is `AppError.Storage`: DataStore and the token store wrap theirs in `StorageException` (`storage { }`, `storageErrors()`), since DataStore throws the same `IOException` as the network, and Room's `SQLiteException` maps to it directly. Code above the data layer that reads the cache itself uses `outcomeOf { }` for the same mapping. `409 SEATS_FULL` and `409 RIDE_CANCELLED` become `AppError.Conflict(code)`: the UI rolls back the optimistic seat with a specific message and reloads the ride (`GET /v1/rides/{rideId}`). `409 ALREADY_JOINED` means the rider already has the seat: keep it and reload the ride.
 
 ## How the contract is checked
 
@@ -56,6 +56,7 @@ All Ktor exceptions and problem bodies map to `AppError` in one function (`toApp
 - every schema maps to a DTO with exactly the same fields, required fields and field types (enums: same values, sealed `CrewEventDto`: same variants);
 - every 4xx and `default` response is `application/problem+json` with the `Problem` schema; error examples use a known `ProblemCode` and the status of their response; every `ProblemCode` is listed in the `Problem` schema;
 - seat counts in examples add up (`seatsFree = seatsTotal − passengers`).
+- `ApiLimits` (field limits for the client's forms and the fake's validation) equals the spec's `maxLength`, `minimum`, `maximum` and `maxItems` (`ApiLimitsContractTest`); a changed limit changes both. Text lengths count code points (`ApiLimits.lengthOf`, `ApiLimits.cut`), as JSON Schema does.
 
 A new schema needs an entry in the test's `dtoBySchema` map and at least one example. A new operation needs an `ApiRoute` entry; update the fake server in the same change.
 

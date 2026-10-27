@@ -1,5 +1,7 @@
 package io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.mapper
 
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshStatus
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.error_network
 import io.github.esseckers.pursuitofwind.core.resources.spot_no_forecast
@@ -9,12 +11,10 @@ import io.github.esseckers.pursuitofwind.feature.spotdetail.NORDSTRAND
 import io.github.esseckers.pursuitofwind.feature.spotdetail.SATURDAY
 import io.github.esseckers.pursuitofwind.feature.spotdetail.at
 import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.entity.SpotDetailSnapshotEntity
-import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.RefreshStatus
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.Selection
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailInputs
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState.Content
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState.Missing
-import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState.Notice
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotHeaderUi
 import io.github.esseckers.pursuitofwind.feature.spotdetail.snapshot
 import kotlin.test.Test
@@ -89,14 +89,14 @@ class SpotDetailStateMapperTest {
         val failed = state(refresh = RefreshStatus(finished = true, error = AppError.Server(503)))
 
         assertIs<Content.Ready>(offline.content)
-        assertEquals(Notice.OFFLINE, offline.notice)
-        assertEquals(Notice.REFRESH_FAILED, failed.notice)
+        assertEquals(RefreshNotice.OFFLINE, offline.notice)
+        assertEquals(RefreshNotice.REFRESH_FAILED, failed.notice)
     }
 
     @Test
     fun `a forecast older than three hours is marked as getting old`() {
         assertNull(state(now = fetched + 3.hours).notice)
-        assertEquals(Notice.STALE, state(now = fetched + 3.hours + 1.minutes).notice)
+        assertEquals(RefreshNotice.STALE, state(now = fetched + 3.hours + 1.minutes).notice)
     }
 
     @Test

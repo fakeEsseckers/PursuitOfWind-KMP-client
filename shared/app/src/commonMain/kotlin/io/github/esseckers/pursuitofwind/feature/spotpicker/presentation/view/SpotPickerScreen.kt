@@ -34,13 +34,14 @@ import io.github.esseckers.pursuitofwind.core.designsystem.component.ActionButto
 import io.github.esseckers.pursuitofwind.core.designsystem.component.BarIconButton
 import io.github.esseckers.pursuitofwind.core.designsystem.component.MessageState
 import io.github.esseckers.pursuitofwind.core.designsystem.component.PrimaryButton
+import io.github.esseckers.pursuitofwind.core.designsystem.component.RefreshNoticeBanner
 import io.github.esseckers.pursuitofwind.core.designsystem.component.ScreenTopBar
 import io.github.esseckers.pursuitofwind.core.designsystem.component.Skeleton
-import io.github.esseckers.pursuitofwind.core.designsystem.component.StatusBanner
 import io.github.esseckers.pursuitofwind.core.designsystem.component.screenInsets
 import io.github.esseckers.pursuitofwind.core.designsystem.icon.AppIcons
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Sizes
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Spacing
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.action_back
 import io.github.esseckers.pursuitofwind.core.resources.action_done
@@ -59,7 +60,6 @@ import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.P
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerIntent
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerState
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerState.Content
-import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerState.Notice
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -109,7 +109,7 @@ internal fun SpotPickerScreen(
 @Composable
 private fun SpotList(
     spots: List<PickSpotUi>,
-    notice: Notice?,
+    notice: RefreshNotice?,
     onIntent: (SpotPickerIntent) -> Unit,
 ) {
     LazyColumn(
@@ -125,39 +125,26 @@ private fun SpotList(
                 modifier = Modifier.padding(bottom = Spacing.s),
             )
         }
-        notice?.let { item(key = "notice") { NoticeBanner(it) { onIntent(SpotPickerIntent.Refresh) } } }
+        notice?.let {
+            item(key = "notice") {
+                RefreshNoticeBanner(
+                    notice = it,
+                    offline = Res.string.banner_spots_offline,
+                    failed = Res.string.banner_spots_failed,
+                    tagPrefix = "spots",
+                    onRetry = { onIntent(SpotPickerIntent.Refresh) },
+                    modifier = Modifier.padding(bottom = Spacing.s),
+                )
+            }
+        }
         items(spots, key = { it.id.value }) { spot ->
             SpotRow(
                 spot = spot,
                 onToggle = { onIntent(SpotPickerIntent.Toggle(spot.id)) },
-                onDrive = { minutes -> onIntent(SpotPickerIntent.ChangeDrive(spot.id, minutes)) },
+                onDrive = { step -> onIntent(SpotPickerIntent.ChangeDrive(spot.id, step)) },
             )
         }
     }
-}
-
-@Composable
-private fun NoticeBanner(
-    notice: Notice,
-    onRetry: () -> Unit,
-) {
-    val text: StringResource =
-        when (notice) {
-            Notice.OFFLINE -> Res.string.banner_spots_offline
-            Notice.REFRESH_FAILED -> Res.string.banner_spots_failed
-        }
-    StatusBanner(
-        icon = AppIcons.CloudOff,
-        text = stringResource(text),
-        modifier = Modifier.padding(bottom = Spacing.s).testTag("spots.notice"),
-        action = {
-            ActionButton(
-                text = stringResource(Res.string.action_retry),
-                onClick = onRetry,
-                modifier = Modifier.testTag("spots.retry"),
-            )
-        },
-    )
 }
 
 @Composable

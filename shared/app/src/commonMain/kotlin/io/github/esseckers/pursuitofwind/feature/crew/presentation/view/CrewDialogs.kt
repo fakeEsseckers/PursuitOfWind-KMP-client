@@ -20,6 +20,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import io.github.esseckers.pursuitofwind.contract.ApiLimits
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Sizes
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.action_cancel_ride
@@ -115,7 +116,7 @@ private fun TextDialog(
         text = {
             OutlinedTextField(
                 value = text,
-                onValueChange = { if (it.length <= maxLength) text = it },
+                onValueChange = { if (ApiLimits.lengthOf(it) <= maxLength) text = it },
                 label = { Text(stringResource(label)) },
                 placeholder = hint?.let { { Text(stringResource(it)) } },
                 isError = error != null,
@@ -188,7 +189,7 @@ private fun ConfirmCancelDialog(
 }
 
 /** The API's limit for crew names. */
-private const val MAX_CREW_NAME = 40
+private const val MAX_CREW_NAME = ApiLimits.Crew.NAME_MAX_LENGTH
 
 /** Invite codes look like `WIND-4KQ7`; some room for spaces pasted along. */
 private const val MAX_INVITE_CODE = 20

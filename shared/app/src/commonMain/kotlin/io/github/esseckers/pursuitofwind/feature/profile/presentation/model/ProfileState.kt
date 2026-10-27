@@ -1,5 +1,6 @@
 package io.github.esseckers.pursuitofwind.feature.profile.presentation.model
 
+import io.github.esseckers.pursuitofwind.core.ui.StepperUi
 import io.github.esseckers.pursuitofwind.data.model.AppLanguage
 import io.github.esseckers.pursuitofwind.data.model.Profile
 import org.jetbrains.compose.resources.StringResource
@@ -11,6 +12,7 @@ import org.jetbrains.compose.resources.StringResource
  * @property formVersion changes whenever the form's text changes from outside its text fields (filled from the saved
  *   profile, wind limits converted to a new unit). Text fields keep their own cursor and start over from the form when
  *   it changes.
+ * @property minSession the minimum session stepper, in minutes; [maxDrive] likewise for the longest drive.
  * @property errors what to fix, shown once the rider has tried to save.
  * @property validProfile the form as a profile, ready to save; null while a field needs fixing.
  * @property hasChanges whether the form differs from the saved profile (always true before there is one).
@@ -23,6 +25,8 @@ internal data class ProfileState(
     val form: ProfileForm = ProfileForm(),
     val formVersion: Int = 0,
     val kites: List<KiteChoice> = emptyList(),
+    val minSession: StepperUi = ProfileLimits.MIN_SESSION_STEPS.stepper(form.minSessionMinutes),
+    val maxDrive: StepperUi = ProfileLimits.MAX_DRIVE_STEPS.stepper(form.maxDriveMinutes),
     val errors: Map<ProfileField, ProfileError> = emptyMap(),
     val validProfile: Profile? = null,
     val hasChanges: Boolean = true,

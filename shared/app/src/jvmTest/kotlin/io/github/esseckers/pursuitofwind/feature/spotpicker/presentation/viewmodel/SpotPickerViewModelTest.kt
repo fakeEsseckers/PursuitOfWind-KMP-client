@@ -8,6 +8,7 @@ import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.error_network
+import io.github.esseckers.pursuitofwind.core.ui.Step
 import io.github.esseckers.pursuitofwind.data.fake.ControllableClock
 import io.github.esseckers.pursuitofwind.data.fake.FakePursuitOfWindServer
 import io.github.esseckers.pursuitofwind.data.fake.NetworkMode
@@ -96,7 +97,7 @@ class SpotPickerViewModelTest {
             viewModel.state.test(timeout = TURBINE_TIMEOUT) {
                 awaitReady()
                 viewModel.onIntent(SpotPickerIntent.Toggle(saltLagoon))
-                viewModel.onIntent(SpotPickerIntent.ChangeDrive(saltLagoon, 75))
+                viewModel.onIntent(SpotPickerIntent.ChangeDrive(saltLagoon, Step.UP))
                 viewModel.onIntent(SpotPickerIntent.Done)
                 awaitState { !it.saving && !it.hasChanges && it.selectedCount == 1 }
                 cancelAndIgnoreRemainingEvents()

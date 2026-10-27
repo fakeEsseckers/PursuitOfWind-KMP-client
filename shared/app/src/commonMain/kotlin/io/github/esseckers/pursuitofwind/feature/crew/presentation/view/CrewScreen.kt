@@ -3,8 +3,6 @@ package io.github.esseckers.pursuitofwind.feature.crew.presentation.view
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,10 +13,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -35,46 +31,35 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import io.github.esseckers.pursuitofwind.core.designsystem.component.ActionButton
 import io.github.esseckers.pursuitofwind.core.designsystem.component.AppSnackbarHost
-import io.github.esseckers.pursuitofwind.core.designsystem.component.ChoiceChip
-import io.github.esseckers.pursuitofwind.core.designsystem.component.IconLine
 import io.github.esseckers.pursuitofwind.core.designsystem.component.MessageState
+import io.github.esseckers.pursuitofwind.core.designsystem.component.RefreshNoticeBanner
 import io.github.esseckers.pursuitofwind.core.designsystem.component.SectionTitle
 import io.github.esseckers.pursuitofwind.core.designsystem.component.Skeleton
-import io.github.esseckers.pursuitofwind.core.designsystem.component.StatusBanner
 import io.github.esseckers.pursuitofwind.core.designsystem.component.TabTitle
 import io.github.esseckers.pursuitofwind.core.designsystem.component.screenInsets
 import io.github.esseckers.pursuitofwind.core.designsystem.icon.AppIcons
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Sizes
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Spacing
+import io.github.esseckers.pursuitofwind.core.domain.entity.RideActionEntity
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
 import io.github.esseckers.pursuitofwind.core.resources.Res
-import io.github.esseckers.pursuitofwind.core.resources.action_create_crew
-import io.github.esseckers.pursuitofwind.core.resources.action_join_crew
 import io.github.esseckers.pursuitofwind.core.resources.action_refresh
 import io.github.esseckers.pursuitofwind.core.resources.action_retry
-import io.github.esseckers.pursuitofwind.core.resources.action_share_invite
 import io.github.esseckers.pursuitofwind.core.resources.banner_crew_offline
 import io.github.esseckers.pursuitofwind.core.resources.banner_crew_refresh_failed
 import io.github.esseckers.pursuitofwind.core.resources.crew_error_title
-import io.github.esseckers.pursuitofwind.core.resources.crew_invite_code
 import io.github.esseckers.pursuitofwind.core.resources.crew_loading
-import io.github.esseckers.pursuitofwind.core.resources.crew_member_owner
-import io.github.esseckers.pursuitofwind.core.resources.crew_member_you
-import io.github.esseckers.pursuitofwind.core.resources.crew_members
 import io.github.esseckers.pursuitofwind.core.resources.crew_no_rides
 import io.github.esseckers.pursuitofwind.core.resources.crew_none_body
 import io.github.esseckers.pursuitofwind.core.resources.crew_none_title
 import io.github.esseckers.pursuitofwind.core.resources.crew_rides
-import io.github.esseckers.pursuitofwind.core.resources.crew_switch
 import io.github.esseckers.pursuitofwind.core.resources.tab_crew
 import io.github.esseckers.pursuitofwind.core.ui.dayLabel
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewChoice
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewIntent
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState.Content
-import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState.Notice
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewUi
-import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.MemberUi
-import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.RideAction
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -128,7 +113,7 @@ internal fun CrewScreen(
 private fun CrewContent(
     crew: CrewUi,
     crews: List<CrewChoice>,
-    notice: Notice?,
+    notice: RefreshNotice?,
     onIntent: (CrewIntent) -> Unit,
 ) {
     LazyColumn(
@@ -136,7 +121,17 @@ private fun CrewContent(
         contentPadding = PaddingValues(Spacing.m),
         verticalArrangement = Arrangement.spacedBy(Spacing.m),
     ) {
-        notice?.let { item(key = "notice") { NoticeBanner(it) { onIntent(CrewIntent.Refresh) } } }
+        notice?.let {
+            item(key = "notice") {
+                RefreshNoticeBanner(
+                    notice = it,
+                    offline = Res.string.banner_crew_offline,
+                    failed = Res.string.banner_crew_refresh_failed,
+                    tagPrefix = "crew",
+                    onRetry = { onIntent(CrewIntent.Refresh) },
+                )
+            }
+        }
         if (crews.size > 1) item(key = "switch") { CrewSwitch(crews) { onIntent(CrewIntent.ChooseCrew(it)) } }
         item(key = "header") { CrewHeader(crew) { onIntent(CrewIntent.ShareInvite) } }
         rides(crew, onIntent)
@@ -175,9 +170,9 @@ private fun LazyListScope.rides(
                 onAction = { action ->
                     val intent =
                         when (action) {
-                            RideAction.TAKE_SEAT -> CrewIntent.TakeSeat(ride.id)
-                            RideAction.LEAVE -> CrewIntent.LeaveRide(ride.id)
-                            RideAction.CANCEL -> CrewIntent.CancelRide(ride.id)
+                            RideActionEntity.TAKE_SEAT -> CrewIntent.TakeSeat(ride.id)
+                            RideActionEntity.LEAVE -> CrewIntent.LeaveRide(ride.id)
+                            RideActionEntity.CANCEL -> CrewIntent.CancelRide(ride.id)
                         }
                     onIntent(intent)
                 },
@@ -185,26 +180,6 @@ private fun LazyListScope.rides(
             )
         }
     }
-}
-
-@Composable
-private fun NoticeBanner(
-    notice: Notice,
-    onRetry: () -> Unit,
-) {
-    val text: StringResource =
-        when (notice) {
-            Notice.OFFLINE -> Res.string.banner_crew_offline
-            Notice.REFRESH_FAILED -> Res.string.banner_crew_refresh_failed
-        }
-    StatusBanner(
-        icon = AppIcons.CloudOff,
-        text = stringResource(text),
-        modifier = Modifier.testTag("crew.notice"),
-        action = {
-            ActionButton(text = stringResource(Res.string.action_retry), onClick = onRetry, modifier = Modifier.testTag("crew.retry"))
-        },
-    )
 }
 
 @Composable

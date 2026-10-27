@@ -1,5 +1,8 @@
 package io.github.esseckers.pursuitofwind.feature.crew.presentation.mapper
 
+import io.github.esseckers.pursuitofwind.core.domain.entity.RideRoleEntity
+import io.github.esseckers.pursuitofwind.core.domain.mapper.RideRulesMapper
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshNoticeMapper
 import io.github.esseckers.pursuitofwind.core.ui.DayLabel
 import io.github.esseckers.pursuitofwind.core.ui.TimeRange
 import io.github.esseckers.pursuitofwind.core.ui.clockTime
@@ -16,11 +19,9 @@ import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewInp
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewRideUi
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState.Content
-import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewState.Notice
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.CrewUi
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.MemberUi
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.PersonUi
-import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.RideAction
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.RideDayUi
 import io.github.esseckers.pursuitofwind.feature.crew.presentation.model.shownCrew
 import kotlinx.datetime.TimeZone
@@ -42,12 +43,12 @@ internal object CrewStateMapper {
                 dialog = inputs.dialog,
                 inputs = inputs,
             )
-        val error = refresh.error.takeUnless { refresh.refreshing }
+        val error = refresh.shownError
         val content = content(inputs, shown, error, riderZone)
         return base.copy(
             content = content,
             // Cached content wins over an error: it stays, with a notice above it.
-            notice = if (content is Content.Ready) error?.let(::notice) else null,
+            notice = if (content is Content.Ready) RefreshNoticeMapper.notice(error) else null,
         )
     }
 
@@ -97,7 +98,7 @@ internal object CrewStateMapper {
         val now = inputs.now
         val today = now?.toLocalDateTime(riderZone)?.date
         return details.rides.value
-            .filter { now == null || it.windowEnd > now }
+            .filter { now == null || !RideRulesMapper.hasEnded(it, now) }
             .sortedBy { it.departAt }
             .map { ride -> rideUi(ride, details, inputs, riderZone) }
             .groupBy { it.date }
@@ -127,18 +128,7 @@ internal object CrewStateMapper {
         val spot = details.spots[ride.spotId]
         val zone = spot?.timeZone ?: riderZone
         val you = details.userId
-        val youDrive = ride.driver.userId == you
-        val youRide = ride.passengers.any { it.userId == you }
-        val cancelled = ride.status == RideStatus.CANCELLED
-        val departed = inputs.now?.let { ride.departAt <= it } ?: false
-        val action =
-            when {
-                cancelled || departed -> null
-                youDrive -> RideAction.CANCEL
-                youRide -> RideAction.LEAVE
-                ride.seatsFree > 0 -> RideAction.TAKE_SEAT
-                else -> null
-            }
+        val now = inputs.now
         return CrewRideUi(
             id = ride.id,
             spotId = ride.spotId,
@@ -146,18 +136,16 @@ internal object CrewStateMapper {
             date = ride.windowStart.toLocalDateTime(zone).date,
             window = TimeRange(ride.windowStart.clockTime(zone), ride.windowEnd.clockTime(zone)),
             departAt = ride.departAt.clockTime(riderZone),
-            departed = departed,
+            departed = now != null && RideRulesMapper.hasDeparted(ride, now),
             meetingPoint = ride.meetingPoint,
             driverName = ride.driver.displayName,
-            youDrive = youDrive,
+            youDrive = RideRulesMapper.role(ride, you) == RideRoleEntity.DRIVER,
             passengers = ride.passengers.map { PersonUi(it.displayName, you = it.userId == you) },
             seatsFree = ride.seatsFree,
             seatsTotal = ride.seatsTotal,
-            cancelled = cancelled,
+            cancelled = ride.status == RideStatus.CANCELLED,
             pending = ride.pending || ride.id in inputs.cancelling,
-            action = action,
+            action = RideRulesMapper.action(ride, you, now),
         )
     }
-
-    private fun notice(error: AppError): Notice = if (error == AppError.Network) Notice.OFFLINE else Notice.REFRESH_FAILED
 }

@@ -1,16 +1,15 @@
 package io.github.esseckers.pursuitofwind.feature.spots.presentation.mapper
 
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshNoticeMapper
+import io.github.esseckers.pursuitofwind.core.ui.SPOT_DRIVE_STEPS
 import io.github.esseckers.pursuitofwind.core.ui.message
-import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.MySpot
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.MySpotUi
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.RemovedSpot
-import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotDrive
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotEdit
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsInputs
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsState
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsState.Content
-import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsState.Notice
 import kotlin.time.Duration.Companion.minutes
 
 /** Pure rules of the Spots tab: what it shows for its inputs, with the rider's unsaved changes on top of the cache. */
@@ -29,7 +28,7 @@ internal object SpotsStateMapper {
                 .filter { spot -> listed.none { it.id == spot.id } }
                 .map(::returningUi)
         val spots = if (returning.isEmpty()) listed else (listed + returning).sortedBy { it.name }
-        val error = refresh.error.takeUnless { refresh.refreshing }
+        val error = refresh.shownError
         val content =
             when {
                 spots.isNotEmpty() -> Content.Ready(spots)
@@ -40,7 +39,7 @@ internal object SpotsStateMapper {
         return base.copy(
             content = content,
             // Cached spots win over an error: the list stays, with a notice above it.
-            notice = if (content is Content.Ready) error?.let(::notice) else null,
+            notice = if (content is Content.Ready) RefreshNoticeMapper.notice(error) else null,
         )
     }
 
@@ -50,14 +49,15 @@ internal object SpotsStateMapper {
         restoring: Boolean,
     ): MySpotUi {
         val shown = edit ?: SpotEdit.of(spot)
+        val drive = SPOT_DRIVE_STEPS.stepper(shown.driveMinutes)
         return MySpotUi(
             id = spot.spot.id,
             name = spot.spot.name,
             verified = spot.spot.verified,
             favorite = shown.favorite,
             drive = shown.driveMinutes.minutes,
-            canShorten = shown.driveMinutes > 0,
-            canLengthen = shown.driveMinutes < SpotDrive.MAX_STEPPED_MINUTES,
+            canShorten = drive.canDecrease,
+            canLengthen = drive.canIncrease,
             saving = edit != null,
             restoring = restoring,
         )
@@ -76,6 +76,4 @@ internal object SpotsStateMapper {
             saving = false,
             restoring = true,
         )
-
-    private fun notice(error: AppError): Notice = if (error == AppError.Network) Notice.OFFLINE else Notice.REFRESH_FAILED
 }

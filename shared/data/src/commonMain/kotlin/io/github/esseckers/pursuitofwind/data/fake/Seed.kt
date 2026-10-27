@@ -1,5 +1,6 @@
 package io.github.esseckers.pursuitofwind.data.fake
 
+import io.github.esseckers.pursuitofwind.contract.ApiLimits
 import io.github.esseckers.pursuitofwind.contract.DataQualityDto
 import io.github.esseckers.pursuitofwind.contract.GeoPointDto
 import io.github.esseckers.pursuitofwind.contract.MemberRoleDto
@@ -130,7 +131,7 @@ public data class SeedRide(
     val createdAt: Instant,
 ) {
     init {
-        require(seatsTotal in 1..MAX_SEATS) { "Ride $id offers $seatsTotal seats, the spec allows 1 to $MAX_SEATS" }
+        require(seatsTotal in SEATS) { "Ride $id offers $seatsTotal seats, the spec allows ${SEATS.first} to ${SEATS.last}" }
         require(passengerIds.size <= seatsTotal) { "Ride $id has more passengers than seats" }
         requireUnique("passenger of ride $id", passengerIds)
         require(driverId !in passengerIds) { "The driver of ride $id cannot be a passenger" }
@@ -139,7 +140,7 @@ public data class SeedRide(
     }
 
     private companion object {
-        const val MAX_SEATS = 8
+        val SEATS = ApiLimits.Ride.SEATS_MIN..ApiLimits.Ride.SEATS_MAX
     }
 }
 

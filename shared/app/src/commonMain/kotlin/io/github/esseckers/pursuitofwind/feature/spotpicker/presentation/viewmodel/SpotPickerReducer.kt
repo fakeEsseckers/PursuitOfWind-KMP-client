@@ -1,10 +1,9 @@
 package io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.viewmodel
 
 import io.github.esseckers.pursuitofwind.core.mvi.Reducer
+import io.github.esseckers.pursuitofwind.core.ui.SPOT_DRIVE_STEPS
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.mapper.SpotPickerStateMapper
-import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.DriveLimits
-import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.RefreshStatus
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotChoice
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerInputs
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerState
@@ -30,15 +29,15 @@ internal object SpotPickerReducer : Reducer<SpotPickerState, SpotPickerResult> {
                 }
 
                 is SpotPickerResult.DriveChanged -> {
-                    inputs.choose(result.spotId) { it.copy(driveMinutes = result.minutes.coerceIn(0, DriveLimits.API_MAX_MINUTES)) }
+                    inputs.choose(result.spotId) { it.copy(driveMinutes = SPOT_DRIVE_STEPS.next(it.driveMinutes, result.step)) }
                 }
 
                 SpotPickerResult.RefreshStarted -> {
-                    inputs.copy(refresh = inputs.refresh.copy(refreshing = true))
+                    inputs.copy(refresh = inputs.refresh.started())
                 }
 
                 is SpotPickerResult.RefreshFinished -> {
-                    inputs.copy(refresh = RefreshStatus(refreshing = false, finished = true, error = result.error))
+                    inputs.copy(refresh = inputs.refresh.finished(result.error))
                 }
 
                 SpotPickerResult.SaveStarted -> {

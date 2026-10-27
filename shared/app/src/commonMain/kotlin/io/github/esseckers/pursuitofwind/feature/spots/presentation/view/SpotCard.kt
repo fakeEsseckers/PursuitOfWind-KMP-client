@@ -39,9 +39,9 @@ import io.github.esseckers.pursuitofwind.core.resources.spots_drive
 import io.github.esseckers.pursuitofwind.core.resources.spots_drive_longer
 import io.github.esseckers.pursuitofwind.core.resources.spots_drive_shorter
 import io.github.esseckers.pursuitofwind.core.resources.spots_unverified
+import io.github.esseckers.pursuitofwind.core.ui.Step
 import io.github.esseckers.pursuitofwind.core.ui.durationText
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.MySpotUi
-import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotDrive
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -53,7 +53,7 @@ import org.jetbrains.compose.resources.stringResource
 internal fun SpotCard(
     spot: MySpotUi,
     onToggleFavorite: () -> Unit,
-    onDrive: (Int) -> Unit,
+    onDrive: (Step) -> Unit,
     onOpen: () -> Unit,
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
@@ -73,14 +73,13 @@ internal fun SpotCard(
                 )
             }
             FavoriteRow(favorite = spot.favorite, onToggle = onToggleFavorite, tag = "myspots.favorite.${spot.id.value}")
-            val minutes = spot.drive.inWholeMinutes.toInt()
             Stepper(
                 label = stringResource(Res.string.spots_drive),
                 value = durationText(spot.drive),
                 decreaseLabel = stringResource(Res.string.spots_drive_shorter, spot.name),
                 increaseLabel = stringResource(Res.string.spots_drive_longer, spot.name),
-                onDecrease = { onDrive(SpotDrive.shorter(minutes)) },
-                onIncrease = { onDrive(SpotDrive.longer(minutes)) },
+                onDecrease = { onDrive(Step.DOWN) },
+                onIncrease = { onDrive(Step.UP) },
                 canDecrease = spot.canShorten,
                 canIncrease = spot.canLengthen,
                 modifier = Modifier.testTag("myspots.drive.${spot.id.value}"),

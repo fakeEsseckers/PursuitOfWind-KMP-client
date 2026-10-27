@@ -29,6 +29,7 @@ import io.github.esseckers.pursuitofwind.core.designsystem.component.BarIconButt
 import io.github.esseckers.pursuitofwind.core.designsystem.component.Disclaimer
 import io.github.esseckers.pursuitofwind.core.designsystem.component.MessageState
 import io.github.esseckers.pursuitofwind.core.designsystem.component.NavigationBarScrim
+import io.github.esseckers.pursuitofwind.core.designsystem.component.RefreshNoticeBanner
 import io.github.esseckers.pursuitofwind.core.designsystem.component.ScreenTopBar
 import io.github.esseckers.pursuitofwind.core.designsystem.component.Skeleton
 import io.github.esseckers.pursuitofwind.core.designsystem.component.StatusBanner
@@ -37,13 +38,13 @@ import io.github.esseckers.pursuitofwind.core.designsystem.component.screenInset
 import io.github.esseckers.pursuitofwind.core.designsystem.icon.AppIcons
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Sizes
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Spacing
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.action_back
 import io.github.esseckers.pursuitofwind.core.resources.action_refresh
 import io.github.esseckers.pursuitofwind.core.resources.action_retry
 import io.github.esseckers.pursuitofwind.core.resources.banner_offline
 import io.github.esseckers.pursuitofwind.core.resources.banner_refresh_failed
-import io.github.esseckers.pursuitofwind.core.resources.banner_stale
 import io.github.esseckers.pursuitofwind.core.resources.chart_legend
 import io.github.esseckers.pursuitofwind.core.resources.chart_title
 import io.github.esseckers.pursuitofwind.core.resources.empty_profile_body
@@ -59,7 +60,6 @@ import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.S
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState.Content
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState.Missing
-import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState.Notice
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotHeaderUi
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -127,7 +127,7 @@ private fun SpotTopBar(
 private fun ReadyContent(
     content: Content.Ready,
     header: SpotHeaderUi?,
-    notice: Notice?,
+    notice: RefreshNotice?,
     onIntent: (SpotDetailIntent) -> Unit,
 ) {
     Column(
@@ -192,11 +192,20 @@ private fun ReadyContent(
 @Composable
 private fun Banners(
     header: SpotHeaderUi?,
-    notice: Notice?,
+    notice: RefreshNotice?,
     onRetry: () -> Unit,
     modifier: Modifier,
 ) {
-    notice?.let { NoticeBanner(it, onRetry = onRetry, modifier = modifier) }
+    notice?.let {
+        RefreshNoticeBanner(
+            notice = it,
+            offline = Res.string.banner_offline,
+            failed = Res.string.banner_refresh_failed,
+            tagPrefix = "spot",
+            onRetry = onRetry,
+            modifier = modifier,
+        )
+    }
     if (header?.verified == false) {
         StatusBanner(
             icon = AppIcons.Info,
@@ -204,32 +213,6 @@ private fun Banners(
             modifier = modifier.testTag("spot.unverified"),
         )
     }
-}
-
-@Composable
-private fun NoticeBanner(
-    notice: Notice,
-    onRetry: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val text: StringResource =
-        when (notice) {
-            Notice.OFFLINE -> Res.string.banner_offline
-            Notice.REFRESH_FAILED -> Res.string.banner_refresh_failed
-            Notice.STALE -> Res.string.banner_stale
-        }
-    StatusBanner(
-        icon = if (notice == Notice.STALE) AppIcons.Clock else AppIcons.CloudOff,
-        text = stringResource(text),
-        modifier = modifier.testTag("spot.notice"),
-        action = {
-            ActionButton(
-                text = stringResource(if (notice == Notice.STALE) Res.string.action_refresh else Res.string.action_retry),
-                onClick = onRetry,
-                modifier = Modifier.testTag("spot.retry"),
-            )
-        },
-    )
 }
 
 @Composable

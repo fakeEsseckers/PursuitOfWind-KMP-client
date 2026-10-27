@@ -78,7 +78,11 @@ internal data class StoredResponse(
 internal class FakeState(
     seed: Seed,
 ) {
-    val random = Random(seed.randomSeed)
+    /**
+     * The random draws of new invite codes. Draws are split by purpose, each its own stream of the seed, so that more
+     * draws of one kind (a sign-in more) never change the values of another (the next invite code).
+     */
+    val inviteCodes = Random(seed.randomSeed + INVITE_STREAM)
     val spots: Map<String, SeedSpot> = seed.spots.associateBy { it.spot.id }
     val users = mutableMapOf<String, User>()
     val installations = mutableMapOf<String, String>()
@@ -91,12 +95,17 @@ internal class FakeState(
     val idempotency = mutableMapOf<IdempotencyScope, StoredResponse>()
     val pushTokens = mutableMapOf<String, PushTokenRequestDto>()
 
-    /** Model runs served per spot: each forecast request is the next one. */
-    val forecastRuns = mutableMapOf<String, Int>()
+    /** The model run last served per spot: each forecast request is the next one. */
+    val forecastRuns = mutableMapOf<String, ModelRun>()
 
     /** The seeded crew members. They cannot sign in; [CrewLife] acts for them. */
     val seedMemberIds: Set<String> = seed.crews.flatMap { crew -> crew.members.map { it.userId } }.toSet()
-    private var sequence = 0
+
+    /** The random draws of tokens, a stream of their own (see [inviteCodes]). */
+    private val tokens = Random(seed.randomSeed + TOKEN_STREAM)
+
+    /** The last number given out per id prefix: a user more does not move the ids of crews or rides. */
+    private val sequences = mutableMapOf<String, Int>()
     private var eventSequence = 0
 
     init {
@@ -111,10 +120,14 @@ internal class FakeState(
         seed.rides.forEach(::addSeedRide)
     }
 
-    fun nextId(prefix: String): String = prefix + "_" + (++sequence).toString().padStart(ID_DIGITS, '0')
+    fun nextId(prefix: String): String {
+        val number = (sequences[prefix] ?: 0) + 1
+        sequences[prefix] = number
+        return prefix + "_" + number.toString().padStart(ID_DIGITS, '0')
+    }
 
     /** An unguessable-looking but seeded token. */
-    fun newToken(prefix: String): String = nextId(prefix) + "_" + random.nextLong().toULong().toString(TOKEN_RADIX)
+    fun newToken(prefix: String): String = nextId(prefix) + "_" + tokens.nextLong().toULong().toString(TOKEN_RADIX)
 
     fun displayName(userId: String): String = profiles[userId]?.displayName ?: users[userId]?.fallbackName ?: userId
 
@@ -177,6 +190,8 @@ internal class FakeState(
         const val ID_DIGITS = 4
         const val EVENT_DIGITS = 6
         const val TOKEN_RADIX = 36
+        const val INVITE_STREAM = 0x1C0DEL
+        const val TOKEN_STREAM = 0x70CE4L
         val SEED_SEAT_GAP = 10.minutes
     }
 }

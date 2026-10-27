@@ -1,11 +1,13 @@
 package io.github.esseckers.pursuitofwind.data.repository
 
 import androidx.room3.withWriteTransaction
+import io.github.esseckers.pursuitofwind.contract.ApiLimits
 import io.github.esseckers.pursuitofwind.contract.MySpotUpdateDto
 import io.github.esseckers.pursuitofwind.contract.SpotDto
 import io.github.esseckers.pursuitofwind.data.internal.local.MySpotEntity
 import io.github.esseckers.pursuitofwind.data.internal.local.PursuitOfWindDatabase
 import io.github.esseckers.pursuitofwind.data.internal.local.SyncKeys
+import io.github.esseckers.pursuitofwind.data.internal.local.cacheAnswer
 import io.github.esseckers.pursuitofwind.data.internal.local.cached
 import io.github.esseckers.pursuitofwind.data.internal.local.markUpdated
 import io.github.esseckers.pursuitofwind.data.internal.mapping.toEntity
@@ -96,9 +98,11 @@ public class SpotRepository internal constructor(
             mySpotsChanges.withLock {
                 val saved = api.putMySpot(spotId.value, MySpotUpdateDto(drive.inWholeMinutes.toInt(), favorite), newIdempotencyKey())
                 val spot = saved.spot.toEntity()
-                database.withWriteTransaction {
-                    spots.upsertSpots(listOf(spot))
-                    spots.upsertMySpots(listOf(MySpotEntity(spot.id, saved.driveMinutes, saved.favorite)))
+                cacheAnswer {
+                    database.withWriteTransaction {
+                        spots.upsertSpots(listOf(spot))
+                        spots.upsertMySpots(listOf(MySpotEntity(spot.id, saved.driveMinutes, saved.favorite)))
+                    }
                 }
                 MySpot(spot.toSpot(), saved.driveMinutes.minutes, saved.favorite)
             }
@@ -108,11 +112,12 @@ public class SpotRepository internal constructor(
         outcome {
             mySpotsChanges.withLock {
                 api.deleteMySpot(spotId.value, newIdempotencyKey())
-                spots.deleteMySpot(spotId.value)
+                cacheAnswer { spots.deleteMySpot(spotId.value) }
             }
         }
 
     private companion object {
-        const val CATALOG_PAGE_SIZE = 100
+        /** The longest page the API gives. */
+        const val CATALOG_PAGE_SIZE = ApiLimits.Paging.LIMIT_MAX
     }
 }

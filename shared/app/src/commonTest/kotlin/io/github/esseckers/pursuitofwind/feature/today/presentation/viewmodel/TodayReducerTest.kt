@@ -1,13 +1,13 @@
 package io.github.esseckers.pursuitofwind.feature.today.presentation.viewmodel
 
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshStatus
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.feature.today.BERLIN
 import io.github.esseckers.pursuitofwind.feature.today.THURSDAY_8AM
 import io.github.esseckers.pursuitofwind.feature.today.domain.entity.RefreshResultEntity
-import io.github.esseckers.pursuitofwind.feature.today.presentation.model.RefreshStatus
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState.Content
-import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState.Notice
 import io.github.esseckers.pursuitofwind.feature.today.todaySnapshot
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -40,7 +40,7 @@ class TodayReducerTest {
         assertTrue(started.isRefreshing)
         assertEquals(RefreshStatus(refreshing = true, startedAt = THURSDAY_8AM), started.inputs.refresh)
         assertFalse(finished.isRefreshing)
-        assertEquals(RefreshStatus(last = RefreshResultEntity(), startedAt = THURSDAY_8AM), finished.inputs.refresh)
+        assertEquals(RefreshStatus(finished = true, startedAt = THURSDAY_8AM), finished.inputs.refresh)
     }
 
     @Test
@@ -54,7 +54,7 @@ class TodayReducerTest {
             )
 
         assertIs<Content.Ready>(state.content)
-        assertEquals(Notice.OFFLINE, state.notice)
+        assertEquals(RefreshNotice.OFFLINE, state.notice)
     }
 
     @Test
@@ -76,8 +76,8 @@ class TodayReducerTest {
             )
         val retrying = offline.after(TodayResult.RefreshStarted(at = THURSDAY_8AM + 1.minutes))
 
-        assertEquals(RefreshResultEntity(forecastError = AppError.Network), retrying.inputs.refresh.last)
-        assertEquals(Notice.OFFLINE, retrying.notice)
+        assertEquals(AppError.Network, retrying.inputs.refresh.error)
+        assertEquals(RefreshNotice.OFFLINE, retrying.notice)
     }
 
     @Test

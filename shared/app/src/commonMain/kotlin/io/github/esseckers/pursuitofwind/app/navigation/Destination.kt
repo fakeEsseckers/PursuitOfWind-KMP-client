@@ -54,15 +54,19 @@ internal sealed interface Destination : NavKey {
         val departAt: Long,
     ) : Destination
 
-    /** The hourly forecast of the spot [spotId], opened at [date] (local to the spot) if given. */
+    /**
+     * The hourly forecast of the spot [spotId], opened at [date] (local to the spot) if given. [besideList] when it was
+     * opened from the Spots list: on a wide window it then shows beside the list instead of over it.
+     */
     @Serializable
     data class SpotDetail(
         val spotId: String,
         val date: LocalDate? = null,
+        val besideList: Boolean = false,
     ) : Destination
 }
 
-/** The app's tabs, in the bar's order, and the screen each one shows. Every tab's screen carries the tab bar. */
+/** The app's tabs, in the order they show, and the screen each one shows. Every tab's screen carries the tabs. */
 internal enum class AppTab(
     val destination: Destination,
 ) {

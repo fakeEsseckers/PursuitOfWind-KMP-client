@@ -22,6 +22,7 @@ import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.test.v2.runSkikoComposeUiTest
 import androidx.compose.ui.unit.Density
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.PursuitOfWindTheme
+import io.github.esseckers.pursuitofwind.core.ui.Step
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerIntent
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerState
@@ -102,8 +103,8 @@ class SpotPickerScreenTest {
             assertEquals(
                 listOf(
                     SpotPickerIntent.Toggle(SpotId("salt-lagoon")),
-                    SpotPickerIntent.ChangeDrive(SpotId("nordstrand-bay"), 135),
-                    SpotPickerIntent.ChangeDrive(SpotId("nordstrand-bay"), 105),
+                    SpotPickerIntent.ChangeDrive(SpotId("nordstrand-bay"), Step.UP),
+                    SpotPickerIntent.ChangeDrive(SpotId("nordstrand-bay"), Step.DOWN),
                     SpotPickerIntent.Done,
                 ),
                 intents,

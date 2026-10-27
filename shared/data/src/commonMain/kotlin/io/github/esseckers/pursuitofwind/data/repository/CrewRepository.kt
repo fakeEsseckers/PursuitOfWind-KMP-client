@@ -4,6 +4,7 @@ import androidx.room3.withWriteTransaction
 import io.github.esseckers.pursuitofwind.data.internal.local.CrewEntity
 import io.github.esseckers.pursuitofwind.data.internal.local.PursuitOfWindDatabase
 import io.github.esseckers.pursuitofwind.data.internal.local.SyncKeys
+import io.github.esseckers.pursuitofwind.data.internal.local.cacheAnswer
 import io.github.esseckers.pursuitofwind.data.internal.local.cached
 import io.github.esseckers.pursuitofwind.data.internal.local.markUpdated
 import io.github.esseckers.pursuitofwind.data.internal.mapping.toCrew
@@ -13,7 +14,6 @@ import io.github.esseckers.pursuitofwind.data.internal.network.PursuitOfWindApi
 import io.github.esseckers.pursuitofwind.data.internal.network.outcome
 import io.github.esseckers.pursuitofwind.data.internal.newIdempotencyKey
 import io.github.esseckers.pursuitofwind.data.internal.sync.CrewFeedSync
-import io.github.esseckers.pursuitofwind.data.internal.sync.CrewStore
 import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.Crew
 import io.github.esseckers.pursuitofwind.data.model.CrewMember
@@ -28,7 +28,6 @@ import kotlin.time.Clock
 public class CrewRepository internal constructor(
     private val api: PursuitOfWindApi,
     private val database: PursuitOfWindDatabase,
-    private val store: CrewStore,
     private val feed: CrewFeedSync,
     private val clock: Clock,
 ) {
@@ -59,7 +58,7 @@ public class CrewRepository internal constructor(
             }
         }
 
-    public suspend fun refreshMembers(crewId: String): Outcome<Unit> = outcome { store.refreshMembers(crewId) }
+    public suspend fun refreshMembers(crewId: String): Outcome<Unit> = outcome { feed.refreshMembers(crewId) }
 
     public suspend fun create(name: String): Outcome<Crew> =
         outcome { crewListChanges.withLock { save(api.createCrew(name, newIdempotencyKey()).toEntity()) } }
@@ -74,8 +73,9 @@ public class CrewRepository internal constructor(
      */
     public suspend fun sync(crewId: String): Outcome<Unit> = outcome { feed.sync(crewId) }
 
+    /** Caches [crew], the server's answer, and returns it; a cache that cannot be written does not fail the change. */
     private suspend fun save(crew: CrewEntity): Crew {
-        crewDao.upsertCrews(listOf(crew))
+        cacheAnswer { crewDao.upsertCrews(listOf(crew)) }
         return crew.toCrew()
     }
 }

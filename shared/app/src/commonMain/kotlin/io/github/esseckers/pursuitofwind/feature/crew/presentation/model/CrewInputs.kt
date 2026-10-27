@@ -1,6 +1,6 @@
 package io.github.esseckers.pursuitofwind.feature.crew.presentation.model
 
-import io.github.esseckers.pursuitofwind.data.model.AppError
+import io.github.esseckers.pursuitofwind.core.refresh.RefreshStatus
 import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.Crew
 import io.github.esseckers.pursuitofwind.feature.crew.domain.entity.CrewDetailsEntity
@@ -9,9 +9,9 @@ import kotlin.time.Instant
 
 /**
  * What [CrewState] is computed from: the cached [crews] (null until they arrive), the crew the rider [chosen], a crew
- * just made or joined that is [arriving] until its first refresh is done, the crew [shown] on screen, the [details] of
- * that crew, how the refresh is going, the rides being [cancelling], the open [dialog], and the time [now], which tells
- * rides that have left.
+ * just made or joined that is [arriving] until the list holds it (or the cache turns out not to after its first
+ * refresh), the crew [shown] on screen, the [details] of that crew, how the refresh is going, the rides being
+ * [cancelling], the open [dialog], and the time [now], which tells rides that have left.
  *
  * The reducer works out [shown]: the [arriving] crew while the list does not hold it yet (a list read before it was
  * saved can still come in and would otherwise put the old crew back for a moment), else [crewToShow].
@@ -22,17 +22,10 @@ internal data class CrewInputs(
     val arriving: String? = null,
     val shown: String? = null,
     val details: CrewDetailsEntity? = null,
-    val refresh: CrewRefresh = CrewRefresh(),
+    val refresh: RefreshStatus = RefreshStatus(),
     val cancelling: Set<String> = emptySet(),
     val dialog: CrewDialog? = null,
     val now: Instant? = null,
-)
-
-/** Whether a refresh runs, whether one has [finished] since the tab opened, and how the last one failed. */
-internal data class CrewRefresh(
-    val refreshing: Boolean = false,
-    val finished: Boolean = false,
-    val error: AppError? = null,
 )
 
 /** A dialog over the tab; [sending] while its request runs, when it stays open. */
