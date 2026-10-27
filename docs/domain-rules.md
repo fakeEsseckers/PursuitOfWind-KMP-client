@@ -13,6 +13,7 @@ How `:shared:windengine` turns a forecast into GO / NO-GO. The engine is pure Ko
 | `evaluateHour(hour, profile, spot)` | `HourVerdict`: GO / MARGINAL / NO_GO, reasons, recommended kite, consensus wind |
 | `findWindows(hours, spot, profile, now)` | `SessionWindow`s of one spot, qualifying or not |
 | `decideDays(forecasts, profile, now)` | one `DayDecision` (`Go` or `NoGo`) per local date from today on |
+| `sectorsFacing(water)` | `ShoreSectors`: the rideable and danger sector of a spot whose open water lies towards `water` |
 
 `localHourLabel(start, zone)` formats an hour slot for charts (see [Time](#time)).
 
@@ -104,6 +105,16 @@ The kite is computed for NO_GO hours too; the UI decides whether to show it.
   3. otherwise the most frequent reason across the daylight hours of reachable spots, the more severe one on a tie; DARK if there is no daylight hour.
 - `NoGo.details`: the same rule applied to each spot on its own (TOO_FAR for spots beyond the drive).
 - `NoGo.nextGoDay`: the earliest later date in the forecast with a `Go`.
+
+## 8. Sectors from the water
+
+Riders add spots themselves, so a spot's sectors come from one direction they give: where the open water lies, seen from the beach. `sectorsFacing(water)` turns it into sectors, and the server stores them with the spot:
+
+- rideable: wind from within 100° of the water, which covers onshore, side-onshore, side-shore and a little past it;
+- danger: wind from within 60° of the land (`water + 180°`), offshore and side-offshore, which blows a rider away from the shore;
+- the 20° between them on either side is neither, so an hour with that wind is DIRECTION_UNRIDEABLE.
+
+A lagoon or a spit with water on two sides gets the sectors of the side the rider chose.
 
 ## Time
 

@@ -25,13 +25,14 @@ The decision engine (`:shared:windengine`, package `io.github.esseckers.pursuito
 | `SkillLevel` | BEGINNER, INTERMEDIATE, ADVANCED |
 | `RiderProfile` | weightKg, level, quiverM2, optional `minWind` / `maxWind` (`WindSpeed`), `minSession` (2 h), `maxDrive` (3 h) as `Duration` |
 | `SpotConfig` | `SpotId`, name, IANA `timeZone`, rideableSectors (non-empty), dangerSectors, `drive: Duration`. Data quality is spot metadata for the UI; the engine does not use it |
+| `ShoreSectors` | rideable and danger `Sector` of a spot on a shore, from the direction of its water (`sectorsFacing`) |
 | `ForecastHour` | start `Instant`, `byModel: Map<ModelId, ModelWind(mean, gust, bearing)>`, precipMm, tempC, `ThunderRisk`, isDaylight |
 | `HourVerdict` | start, verdict, reasons (sorted by severity), `recommendedKiteM2` or null, consensus `HourWind` (mean, gust, bearing, modelSpread) |
 | `SessionWindow` | spotId, start, end, hours, marginalHours, leaveBy, usableStart, `usable: Duration`, confidence, score, recommendedKiteM2, `qualifies`; asked with `isReachable`, `mustLeaveNow(now)`, `hasRidingIn(hourStart)` |
 | `SpotForecast` | spot + its forecast hours; input of `decideDays` |
 | `DayDecision` | `Go(date, window, alternatives)` or `NoGo(date, primaryReason, details: List<SpotNoGo>, nextGoDay)` |
 
-Entry points: `DecisionEngine.evaluateHour`, `DecisionEngine.findWindows`, `DecisionEngine.decideDays`, plus `localHourLabel(start, zone)` for chart labels.
+Entry points: `DecisionEngine.evaluateHour`, `DecisionEngine.findWindows`, `DecisionEngine.decideDays`, `DecisionEngine.sectorsFacing`, plus `localHourLabel(start, zone)` for chart labels.
 
 ## Rules
 
@@ -107,6 +108,11 @@ candidates  = quiver sizes within [0.8 × idealM2, 1.15 × idealM2]
 - `NoGo.primaryReason`: if all favorite spots are TOO_FAR → TOO_FAR. If any GO hour existed that day but no window qualified → WINDOW_TOO_SHORT. Otherwise the most frequent reason across daylight hours (hours without DARK) of reachable spots, counting every reason of an hour; tie → more severe; no daylight hour → DARK.
 - `NoGo.details`: one `SpotNoGo` per spot, same rule per spot.
 - `nextGoDay`: earliest later date within the forecast horizon that has a `Go`.
+
+### 8. Sectors from the water
+
+- A rider adds a spot by saying where its open water lies, as a direction from the beach (`water`). `sectorsFacing(water)` gives its sectors; the server stores them with the spot.
+- Rideable: wind from within 100° of `water` (onshore, side-onshore, side-shore and a little past). Danger: wind from within 60° of `water + 180` (offshore, side-offshore). The 20° between them on either side is neither, so it is DIRECTION_UNRIDEABLE.
 
 ## UI copy guidance (EN, short, plain)
 

@@ -113,3 +113,15 @@ Window 13:00–17:00 local (Europe/Berlin, summer, so 11:00Z–15:00Z) on 2026-0
 | H2 | hourly slots 2026-10-24T20:00Z … 2026-10-26T00:00Z grouped by local date | local 2026-10-25 has 25 slots (first 2026-10-24T22:00Z, last 2026-10-25T22:00Z) |
 | H3 | local labels on 2026-10-25 | "02:00" appears twice; labels for those two slots must stay distinguishable (show UTC offset) |
 | H4 | local labels on 2026-03-29 | no slot labelled "02:00" |
+
+## I. Sectors from the water
+
+`DecisionEngine.sectorsFacing(water)`, where `water` is the direction from the beach to open water. Rideable: within 100° of the water. Danger: within 60° of the land (`water + 180`). The 20° between them on either side is neither.
+
+| ID | Water | Expected |
+| --- | --- | --- |
+| I1 | 270 (west) | rideable `Sector(170, 10)`, danger `Sector(30, 150)` |
+| I2 | 0 (north) | rideable `Sector(260, 100)`, danger `Sector(120, 240)` |
+| I3 | 90; wind from 90 / 190 / 200 / 210 / 270 | rideable / rideable / neither / danger / danger |
+| I4 | 350 | rideable `Sector(250, 90)`, danger `Sector(110, 230)` |
+| I5 | any water; wind from `water + k`, k in [-180, 180] | \|k\| ≤ 100: rideable only; \|k\| ≥ 120: danger only; otherwise neither |
