@@ -75,6 +75,9 @@ internal object Sizes {
     /** The narrowest a day card on Today gets in a row of days; narrower, the days go one under the other. */
     val dayCardMinWidth = 280.dp
 
+    /** The narrowest the hour's details and the windows get side by side on a spot's screen; narrower, one goes below. */
+    val detailsMinWidth = 320.dp
+
     /** The list pane beside a spot's forecast on a wide window: a phone's width of list plus the 96 dp tab rail. */
     val listPaneWidth = 456.dp
 

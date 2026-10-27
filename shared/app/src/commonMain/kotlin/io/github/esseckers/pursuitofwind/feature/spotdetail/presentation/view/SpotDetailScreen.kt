@@ -2,10 +2,12 @@ package io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.view
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -61,6 +63,7 @@ import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.S
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState.Content
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotDetailState.Missing
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.SpotHeaderUi
+import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.WindowUi
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import kotlin.time.Duration
@@ -175,9 +178,8 @@ private fun ReadyContent(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = inset,
         )
-        HourDetails(details = content.selected, modifier = inset)
-        WindowList(
-            windows = content.windows,
+        DetailsAndWindows(
+            content = content,
             onShowWindow = {
                 jumps++
                 onIntent(SpotDetailIntent.SelectHour(chart.hours[it.firstHour].start))
@@ -185,6 +187,24 @@ private fun ReadyContent(
             modifier = inset,
         )
         Disclaimer(modifier = inset.padding(top = Spacing.s))
+    }
+}
+
+/** The selected hour's details and the windows: side by side on a wide window, one under the other on a phone. */
+@Composable
+private fun DetailsAndWindows(
+    content: Content.Ready,
+    onShowWindow: (WindowUi) -> Unit,
+    modifier: Modifier,
+) {
+    FlowRow(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.m),
+        verticalArrangement = Arrangement.spacedBy(Spacing.m),
+    ) {
+        val half = Modifier.weight(1f).widthIn(min = Sizes.detailsMinWidth)
+        HourDetails(details = content.selected, modifier = half)
+        WindowList(windows = content.windows, onShowWindow = onShowWindow, modifier = half)
     }
 }
 

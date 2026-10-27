@@ -17,6 +17,7 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
@@ -163,6 +164,28 @@ class SpotDetailScreenTest {
         }
 
     @Test
+    fun `on a phone the hour's details and the windows sit one under the other`() =
+        runSkikoComposeUiTest(size = Size(PHONE_WIDTH_PX, PHONE_HEIGHT_PX), density = Density(PHONE_DENSITY)) {
+            show(data.ready)
+
+            val details = onNodeWithTag("spot.details").getUnclippedBoundsInRoot()
+            val windows = onNodeWithTag("spot.windows").getUnclippedBoundsInRoot()
+            assertEquals(details.left, windows.left)
+            assertTrue(windows.top >= details.bottom, "$details $windows")
+        }
+
+    @Test
+    fun `on a tablet the hour's details and the windows sit side by side`() =
+        runSkikoComposeUiTest(size = Size(TABLET_WIDTH, TABLET_HEIGHT)) {
+            show(data.ready)
+
+            val details = onNodeWithTag("spot.details").getUnclippedBoundsInRoot()
+            val windows = onNodeWithTag("spot.windows").getUnclippedBoundsInRoot()
+            assertEquals(details.top, windows.top)
+            assertTrue(windows.left >= details.right, "$details $windows")
+        }
+
+    @Test
     fun `time runs left to right in right to left languages too`() =
         runComposeUiTest {
             setContent {
@@ -268,5 +291,9 @@ class SpotDetailScreenTest {
         const val PHONE_WIDTH_PX = 1080f
         const val PHONE_HEIGHT_PX = 2340f
         const val PHONE_DENSITY = 2.625f
+
+        /** A tablet in landscape at a density of 1. */
+        const val TABLET_WIDTH = 1280f
+        const val TABLET_HEIGHT = 800f
     }
 }
