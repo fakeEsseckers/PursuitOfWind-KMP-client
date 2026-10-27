@@ -1,15 +1,25 @@
 package io.github.esseckers.pursuitofwind.data.fake.internal
 
 import io.github.esseckers.pursuitofwind.contract.ApiLimits
+import io.github.esseckers.pursuitofwind.contract.CreateSpotRequestDto
 import io.github.esseckers.pursuitofwind.contract.MySpotDto
 import io.github.esseckers.pursuitofwind.contract.MySpotListDto
 import io.github.esseckers.pursuitofwind.contract.MySpotUpdateDto
+import io.github.esseckers.pursuitofwind.contract.ProblemCode
+import io.github.esseckers.pursuitofwind.contract.SectorDto
+import io.github.esseckers.pursuitofwind.contract.SpotDto
 import io.github.esseckers.pursuitofwind.contract.SpotForecastDto
 import io.github.esseckers.pursuitofwind.contract.SpotPageDto
+import io.github.esseckers.pursuitofwind.contract.SpotUpdateDto
+import io.github.esseckers.pursuitofwind.data.fake.SeedSpot
 import io.github.esseckers.pursuitofwind.data.internal.startOfHour
+import io.github.esseckers.pursuitofwind.engine.DecisionEngine
+import io.github.esseckers.pursuitofwind.engine.model.Bearing
+import io.github.esseckers.pursuitofwind.engine.model.Sector
+import io.ktor.http.HttpStatusCode
 import kotlin.time.Duration.Companion.hours
 
-/** Catalog, followed spots and forecasts. */
+/** Catalog, spots riders add, followed spots and forecasts. */
 internal class SpotRoutes(
     private val state: FakeState,
     private val forecastSeed: Long,
@@ -29,6 +39,40 @@ internal class SpotRoutes(
         val page = remaining.take(limit)
         val next = if (remaining.size > limit) CURSOR_PREFIX + page.last().id else null
         return json(SpotPageDto.serializer(), SpotPageDto(page, next))
+    }
+
+    /** Adds a spot to the catalog for everyone; its sectors come from the direction of its water. */
+    fun create(call: FakeCall): FakeResponse {
+        val request = call.decode(CreateSpotRequestDto.serializer())
+        Validation.spot(request.name, request.location, request.waterBearingDeg, request.timeZone)
+        val spot =
+            SpotDto(
+                id = state.nextId(SPOT_PREFIX),
+                name = request.name,
+                location = request.location,
+                timeZone = request.timeZone,
+                rideableSectors = emptyList(),
+                dangerSectors = emptyList(),
+                waterBearingDeg = request.waterBearingDeg,
+                createdBy = call.userId,
+            ).facing(request.waterBearingDeg)
+        state.spots[spot.id] = SeedSpot(spot, PlaceForecasts.profile(spot.location, forecastSeed))
+        return json(SpotDto.serializer(), spot, HttpStatusCode.Created)
+    }
+
+    /** Renames or moves a spot, or turns its water; only the rider who added it can. A moved spot gets the new place's weather. */
+    fun update(call: FakeCall): FakeResponse {
+        val id = call.pathParameter("spotId")
+        val current = state.spots[id] ?: throw notFound("Spot $id")
+        if (current.spot.createdBy != call.userId) {
+            throw problem(HttpStatusCode.Forbidden, ProblemCode.NOT_THE_CREATOR, "Only the rider who added this spot can change it")
+        }
+        val update = call.decode(SpotUpdateDto.serializer())
+        Validation.spot(update.name, update.location, update.waterBearingDeg)
+        val spot = current.spot.copy(name = update.name, location = update.location).facing(update.waterBearingDeg)
+        val forecast = if (spot.location == current.spot.location) current.forecast else PlaceForecasts.profile(spot.location, forecastSeed)
+        state.spots[id] = SeedSpot(spot, forecast)
+        return json(SpotDto.serializer(), spot)
     }
 
     fun mySpots(call: FakeCall): FakeResponse {
@@ -66,7 +110,20 @@ internal class SpotRoutes(
         return json(SpotForecastDto.serializer(), forecast)
     }
 
+    /** This spot with its water towards [waterBearingDeg] and the sectors the decision engine works out from it. */
+    private fun SpotDto.facing(waterBearingDeg: Double): SpotDto {
+        val sectors = DecisionEngine.sectorsFacing(Bearing(waterBearingDeg))
+        return copy(
+            waterBearingDeg = waterBearingDeg,
+            rideableSectors = listOf(sectors.rideable.toDto()),
+            dangerSectors = listOf(sectors.danger.toDto()),
+        )
+    }
+
+    private fun Sector.toDto(): SectorDto = SectorDto(from.degrees, to.degrees)
+
     private companion object {
+        const val SPOT_PREFIX = "spt"
         const val CURSOR_PREFIX = "c_"
         const val DEFAULT_LIMIT = 50
         const val DEFAULT_HOURS = 72

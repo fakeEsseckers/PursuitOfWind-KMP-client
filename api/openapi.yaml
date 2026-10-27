@@ -179,6 +179,90 @@ paths:
         default:
           $ref: '#/components/responses/Problem'
 
+  /v1/spots:
+    post:
+      tags: [Spots]
+      operationId: createSpot
+      summary: Add a spot to the catalog
+      description: |
+        The spot is in the catalog for every rider at once, and only its creator can change it. The server works out its
+        sectors from `waterBearingDeg` (the decision engine's `sectorsFacing`: rideable within 100° of the water,
+        dangerous within 60° of the land) and may correct `timeZone` from the location. The rider does not follow the
+        spot yet; `PUT /v1/me/spots/{spotId}` does that.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSpotRequest'
+      responses:
+        '201':
+          description: The new spot.
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Spot'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        default:
+          $ref: '#/components/responses/Problem'
+
+  /v1/spots/{spotId}:
+    parameters:
+      - $ref: '#/components/parameters/SpotId'
+    put:
+      tags: [Spots]
+      operationId: updateSpot
+      summary: Rename or move a spot the rider added, or change where its water is
+      description: |
+        Only the spot's creator can change it. The sectors are worked out again from `waterBearingDeg`; when the spot
+        moves, the server may work its time zone out again from the new location. Riders who follow the spot see the
+        change with their next list of spots.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpotUpdate'
+      responses:
+        '200':
+          description: The changed spot.
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Spot'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Someone else added the spot (`NOT_THE_CREATOR`).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: /problems/not-the-creator
+                title: Only the rider who added this spot can change it
+                status: 403
+                code: NOT_THE_CREATOR
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationFailed'
+        default:
+          $ref: '#/components/responses/Problem'
+
   /v1/me/spots:
     get:
       tags: [Spots]
@@ -844,7 +928,7 @@ components:
       description: |
         Error body (RFC 9457). Clients branch on `code`, never on `title` or `detail`.
         Known codes: `UNAUTHORIZED`, `NOT_FOUND`, `VALIDATION_FAILED`, `NOT_A_MEMBER`, `NOT_THE_DRIVER`,
-        `INVITE_INVALID`, `SEATS_FULL`, `ALREADY_JOINED`, `RIDE_CANCELLED`, `FEED_RESET`, `IDEMPOTENCY_KEY_REUSED`,
+        `NOT_THE_CREATOR`, `INVITE_INVALID`, `SEATS_FULL`, `ALREADY_JOINED`, `RIDE_CANCELLED`, `FEED_RESET`, `IDEMPOTENCY_KEY_REUSED`,
         `RATE_LIMITED`, `SERVICE_UNAVAILABLE`, `INTERNAL`. New codes may be added; treat unknown ones by `status`.
       required: [type, title, status, code]
       properties:
@@ -1028,7 +1112,8 @@ components:
 
     Spot:
       type: object
-      required: [id, name, location, timeZone, rideableSectors, dangerSectors]
+      description: A spot of the catalog. Riders add spots themselves; every rider sees every spot.
+      required: [id, name, location, timeZone, rideableSectors, dangerSectors, waterBearingDeg, createdBy]
       properties:
         id:
           type: string
@@ -1043,6 +1128,9 @@ components:
           description: IANA time zone of the spot.
         rideableSectors:
           type: array
+          description: |
+            Wind directions that work here. For a spot a rider adds or changes, the server works them out from
+            `waterBearingDeg`.
           minItems: 1
           items:
             $ref: '#/components/schemas/Sector'
@@ -1051,6 +1139,15 @@ components:
           description: Directions that are dangerous here, typically offshore. They win over rideable sectors.
           items:
             $ref: '#/components/schemas/Sector'
+        waterBearingDeg:
+          type: number
+          minimum: 0
+          exclusiveMaximum: 360
+          description: Direction from the beach to open water, clockwise from true north; wind from there blows onshore.
+        createdBy:
+          type: string
+          minLength: 1
+          description: Id of the user who added the spot; only they can change it.
       examples:
         - id: nordstrand-bay
           name: Nordstrand Bay
@@ -1064,6 +1161,64 @@ components:
           dangerSectors:
             - fromDeg: 60
               toDeg: 150
+          waterBearingDeg: 240
+          createdBy: usr_andrei
+
+    CreateSpotRequest:
+      type: object
+      required: [name, location, waterBearingDeg, timeZone]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 40
+          pattern: '\S'
+          description: Must contain a non-space character.
+        location:
+          $ref: '#/components/schemas/GeoPoint'
+        waterBearingDeg:
+          type: number
+          minimum: 0
+          exclusiveMaximum: 360
+          description: Direction from the beach to open water, clockwise from true north; wind from there blows onshore.
+        timeZone:
+          type: string
+          minLength: 1
+          description: |
+            IANA time zone of the rider's device as a region id (`Europe/Berlin`) or `UTC`, a first guess for the
+            spot's; the server may correct it from the location. A fixed offset (`+02:00`, `GMT+1`) or a zone the server
+            does not know fails with `422`.
+      examples:
+        - name: Sandbank North
+          location:
+            lat: 54.6102
+            lon: 8.3569
+          waterBearingDeg: 250
+          timeZone: Europe/Berlin
+
+    SpotUpdate:
+      type: object
+      required: [name, location, waterBearingDeg]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 40
+          pattern: '\S'
+          description: Must contain a non-space character.
+        location:
+          $ref: '#/components/schemas/GeoPoint'
+        waterBearingDeg:
+          type: number
+          minimum: 0
+          exclusiveMaximum: 360
+          description: Direction from the beach to open water, clockwise from true north; wind from there blows onshore.
+      examples:
+        - name: Sandbank North
+          location:
+            lat: 54.6115
+            lon: 8.3548
+          waterBearingDeg: 235
 
     SpotPage:
       type: object
@@ -1088,6 +1243,8 @@ components:
                 - fromDeg: 220
                   toDeg: 320
               dangerSectors: []
+              waterBearingDeg: 270
+              createdBy: usr_jonas
           nextCursor: c_lake-weiss
 
     MySpotUpdate:
@@ -1130,6 +1287,8 @@ components:
               - fromDeg: 200
                 toDeg: 340
             dangerSectors: []
+            waterBearingDeg: 270
+            createdBy: usr_mira
           driveMinutes: 160
           favorite: true
 

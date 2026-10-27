@@ -47,6 +47,8 @@ class OpenApiContractTest {
             "GeoPoint" to GeoPointDto.serializer(),
             "Sector" to SectorDto.serializer(),
             "Spot" to SpotDto.serializer(),
+            "CreateSpotRequest" to CreateSpotRequestDto.serializer(),
+            "SpotUpdate" to SpotUpdateDto.serializer(),
             "SpotPage" to SpotPageDto.serializer(),
             "MySpotUpdate" to MySpotUpdateDto.serializer(),
             "MySpot" to MySpotDto.serializer(),

@@ -16,6 +16,8 @@ public enum class ApiRoute(
     GET_PROFILE("GET", "/v1/me/profile"),
     PUT_PROFILE("PUT", "/v1/me/profile"),
     LIST_SPOT_CATALOG("GET", "/v1/spots/catalog"),
+    CREATE_SPOT("POST", "/v1/spots"),
+    UPDATE_SPOT("PUT", "/v1/spots/{spotId}"),
     LIST_MY_SPOTS("GET", "/v1/me/spots"),
     PUT_MY_SPOT("PUT", "/v1/me/spots/{spotId}"),
     DELETE_MY_SPOT("DELETE", "/v1/me/spots/{spotId}"),

@@ -20,9 +20,10 @@ The whole data layer — serialization, headers, token refresh, error mapping, r
 | `internal/Router` | method + path → `ApiRoute` and path parameters |
 | `internal/FakeApi` | one handler per `ApiRoute` (checked complete at startup), Bearer authentication, `Idempotency-Key` storage and replay |
 | `internal/*Routes` | `AuthRoutes`, `ProfileRoutes`, `SpotRoutes`, `CrewRoutes`, `RideRoutes`: the operations |
-| `internal/FakeState` | users, tokens, profiles, followed spots, crews with their feeds, rides, idempotency records, model runs per spot; `RideChanges.kt` holds the ride changes routes and members share |
+| `internal/FakeState` | users, tokens, profiles, the catalog (seeded spots, then the ones riders add), followed spots, crews with their feeds, rides, idempotency records, model runs per spot; `RideChanges.kt` holds the ride changes routes and members share |
 | `internal/CrewLife` | the seeded members acting: caught up before every request, plus the race for a ride's last seat |
 | `internal/ForecastGenerator` | hourly forecasts for `ecmwf`, `icon`, `gfs` as a pure function of seed, spot, hour, model and model run; `SunTimes` sets `isDaylight` |
+| `internal/PlaceForecasts` | the `ForecastProfile` of a spot a rider adds, from its place (snapped to about 10 m) and the seed; warmer nearer the equator; moving the spot gives the new place's. Crew members only ride to the seeded spots (`FakeState.seededSpotIds`) |
 | `internal/Validation` | the spec's field limits and cross-field rules, failing with `422 VALIDATION_FAILED` |
 
 Rules:
@@ -58,4 +59,4 @@ There is no demo mode (`docs/adr/0010-live-fake-backend-instead-of-demo-mode.md`
 
 ## Sample data
 
-`Seed.default(now)`: five fictional spots on the German coast and inland, among them `Nordstrand Bay` (rideable 180–300°, danger 60–150°), `Salt Lagoon` and `Lake Weiss`, and Andrei's "Weekend Crew" (Andrei, Mira, Jonas; invite code `WIND-4KQ7`) with one ride two days after `now`. App previews and tests use the sample rider "Alex", 80 kg, INTERMEDIATE, kites 7 / 9 / 12 m².
+`Seed.default(now)`: five fictional spots on the German coast and inland, added by the crew's members and with sectors drawn by hand, among them `Nordstrand Bay` (rideable 180–300°, danger 60–150°, water 240°), `Salt Lagoon` and `Lake Weiss`, and Andrei's "Weekend Crew" (Andrei, Mira, Jonas; invite code `WIND-4KQ7`) with one ride two days after `now`. App previews and tests use the sample rider "Alex", 80 kg, INTERMEDIATE, kites 7 / 9 / 12 m².

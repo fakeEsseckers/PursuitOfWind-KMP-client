@@ -12,6 +12,7 @@ import io.github.esseckers.pursuitofwind.data.internal.local.SpotEntity
 import io.github.esseckers.pursuitofwind.data.model.GeoPoint
 import io.github.esseckers.pursuitofwind.data.model.MySpot
 import io.github.esseckers.pursuitofwind.data.model.Spot
+import io.github.esseckers.pursuitofwind.engine.model.Bearing
 import io.github.esseckers.pursuitofwind.engine.model.ForecastHour
 import io.github.esseckers.pursuitofwind.engine.model.ModelId
 import io.github.esseckers.pursuitofwind.engine.model.Sector
@@ -49,6 +50,8 @@ private fun SpotDto.toUncheckedEntity(): SpotEntity =
         timeZone = timeZone,
         rideableSectors = ContractJson.encodeToString(SECTORS, rideableSectors),
         dangerSectors = ContractJson.encodeToString(SECTORS, dangerSectors),
+        waterBearingDeg = waterBearingDeg,
+        createdBy = createdBy,
     )
 
 internal fun SpotEntity.toSpot(): Spot =
@@ -59,6 +62,8 @@ internal fun SpotEntity.toSpot(): Spot =
         timeZone = TimeZone.of(timeZone),
         rideableSectors = sectors(rideableSectors),
         dangerSectors = sectors(dangerSectors),
+        water = Bearing(waterBearingDeg),
+        createdBy = createdBy,
     )
 
 internal fun MySpotRow.toMySpot(): MySpot = MySpot(spot.toSpot(), driveMinutes.minutes, favorite)

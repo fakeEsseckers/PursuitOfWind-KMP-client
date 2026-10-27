@@ -31,6 +31,8 @@ internal fun SpotDto.toSpot(): Spot =
         timeZone = TimeZone.of(timeZone),
         rideableSectors = rideableSectors.map { it.toSector() },
         dangerSectors = dangerSectors.map { it.toSector() },
+        water = Bearing(waterBearingDeg),
+        createdBy = createdBy,
     )
 
 internal fun ForecastHourDto.toForecastHour(): ForecastHour =

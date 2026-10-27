@@ -55,7 +55,17 @@ internal object SpotDetailPreviewData {
 
     fun spot(): MySpot =
         MySpot(
-            spot = Spot(spotId, "Nordstrand Bay", GeoPoint(54.5, 8.8), zone, listOf(Sector.of(180.0, 300.0)), emptyList()),
+            spot =
+                Spot(
+                    spotId,
+                    "Nordstrand Bay",
+                    GeoPoint(54.5, 8.8),
+                    zone,
+                    listOf(Sector.of(180.0, 300.0)),
+                    emptyList(),
+                    Bearing(240.0),
+                    "usr_andrei",
+                ),
             drive = 2.hours,
             favorite = true,
         )

@@ -7,7 +7,7 @@ import androidx.room3.PrimaryKey
 // Cache tables. Instants are epoch milliseconds; nested lists are JSON in the contract's format (ContractJson), which
 // keeps the schema flat without type converters.
 
-/** A spot from the catalog or from the rider's followed spots. Sectors are JSON lists of `SectorDto`. */
+/** A spot from the catalog or from the rider's followed spots. Sectors are JSON lists of `SectorDto`; [createdBy] is a user id. */
 @Entity(tableName = "spots")
 internal data class SpotEntity(
     @PrimaryKey val id: String,
@@ -17,6 +17,8 @@ internal data class SpotEntity(
     val timeZone: String,
     val rideableSectors: String,
     val dangerSectors: String,
+    val waterBearingDeg: Double,
+    val createdBy: String,
 )
 
 @Entity(tableName = "my_spots")

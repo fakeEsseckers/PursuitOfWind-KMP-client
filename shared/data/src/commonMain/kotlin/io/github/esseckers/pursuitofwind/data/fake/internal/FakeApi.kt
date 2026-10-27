@@ -29,6 +29,8 @@ internal class FakeApi(
             ApiRoute.GET_PROFILE to profile::get,
             ApiRoute.PUT_PROFILE to profile::put,
             ApiRoute.LIST_SPOT_CATALOG to spots::catalog,
+            ApiRoute.CREATE_SPOT to spots::create,
+            ApiRoute.UPDATE_SPOT to spots::update,
             ApiRoute.LIST_MY_SPOTS to spots::mySpots,
             ApiRoute.PUT_MY_SPOT to spots::follow,
             ApiRoute.DELETE_MY_SPOT to spots::unfollow,

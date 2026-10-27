@@ -20,6 +20,11 @@ public object ApiLimits {
         public const val MAX_DRIVE_MAX_MINUTES: Int = 720
     }
 
+    /** `CreateSpotRequest` and `SpotUpdate`. */
+    public object Spot {
+        public const val NAME_MAX_LENGTH: Int = 40
+    }
+
     /** `MySpot` and `MySpotUpdate`. */
     public object MySpot {
         public const val DRIVE_MAX_MINUTES: Int = 1440

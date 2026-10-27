@@ -26,7 +26,7 @@ import kotlin.coroutines.CoroutineContext
         RideEntity::class,
         SyncStateEntity::class,
     ],
-    version = 2,
+    version = 3,
 )
 @ConstructedBy(PursuitOfWindDatabaseConstructor::class)
 internal abstract class PursuitOfWindDatabase : RoomDatabase() {

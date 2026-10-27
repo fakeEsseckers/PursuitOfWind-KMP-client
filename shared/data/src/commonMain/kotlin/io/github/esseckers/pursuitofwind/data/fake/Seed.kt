@@ -46,9 +46,10 @@ public data class Seed(
         private const val SECONDS_PER_DAY = 86_400L
 
         /**
-         * Five fictional spots on the German coast and inland, and Andrei's "Weekend Crew" (invite code `WIND-4KQ7`)
-         * with one ride two days after [now]. Its members act on their own ([MemberActivity] defaults). A new user
-         * starts with no profile and no crew.
+         * Five fictional spots on the German coast and inland, added by the crew's members, and Andrei's "Weekend Crew"
+         * (invite code `WIND-4KQ7`) with one ride two days after [now]. Its members act on their own ([MemberActivity]
+         * defaults). A new user starts with no profile and no crew. The seeded spots keep sectors drawn by hand; spots
+         * riders add get theirs from the direction of their water.
          */
         public fun default(now: Instant): Seed {
             val dayAfterTomorrow = Instant.fromEpochSeconds((now.epochSeconds / SECONDS_PER_DAY + 2) * SECONDS_PER_DAY)
@@ -92,6 +93,7 @@ public data class Seed(
     }
 }
 
+/** A spot of the catalog and the weather the fake makes for it; spots riders add get one from their place too. */
 public data class SeedSpot(
     val spot: SpotDto,
     val forecast: ForecastProfile,
@@ -159,14 +161,21 @@ private fun requireUnique(
 private fun spot(
     id: String,
     name: String,
-    location: GeoPointDto,
+    place: Place,
     rideable: List<SectorDto>,
     danger: List<SectorDto> = emptyList(),
-) = SpotDto(id, name, location, "Europe/Berlin", rideable, danger)
+) = SpotDto(id, name, place.location, "Europe/Berlin", rideable, danger, place.waterBearingDeg, place.addedBy)
+
+/** Where a seeded spot is, where its water lies, and which seeded member added it. */
+private data class Place(
+    val location: GeoPointDto,
+    val waterBearingDeg: Double,
+    val addedBy: String,
+)
 
 /** How much a new model run moves the wind three days out, like a real forecast update: a few knots, a few degrees. */
-private const val LIVE_DRIFT_KN = 4.0
-private const val LIVE_DRIFT_DEG = 15.0
+internal const val LIVE_DRIFT_KN: Double = 4.0
+internal const val LIVE_DRIFT_DEG: Double = 15.0
 
 private val DEFAULT_SPOTS: List<SeedSpot> =
     listOf(
@@ -174,7 +183,7 @@ private val DEFAULT_SPOTS: List<SeedSpot> =
             spot(
                 "nordstrand-bay",
                 "Nordstrand Bay",
-                GeoPointDto(54.4936, 8.8131),
+                Place(GeoPointDto(54.4936, 8.8131), waterBearingDeg = 240.0, addedBy = "usr_andrei"),
                 listOf(SectorDto(180.0, 300.0)),
                 listOf(SectorDto(60.0, 150.0)),
             ),
@@ -195,7 +204,12 @@ private val DEFAULT_SPOTS: List<SeedSpot> =
             ),
         ),
         SeedSpot(
-            spot("salt-lagoon", "Salt Lagoon", GeoPointDto(53.0712, 8.2156), listOf(SectorDto(200.0, 340.0))),
+            spot(
+                "salt-lagoon",
+                "Salt Lagoon",
+                Place(GeoPointDto(53.0712, 8.2156), waterBearingDeg = 270.0, addedBy = "usr_mira"),
+                listOf(SectorDto(200.0, 340.0)),
+            ),
             ForecastProfile(
                 meanKn = 14.0,
                 swingKn = 5.0,
@@ -216,7 +230,7 @@ private val DEFAULT_SPOTS: List<SeedSpot> =
             spot(
                 "lake-weiss",
                 "Lake Weiss",
-                GeoPointDto(52.4123, 11.6274),
+                Place(GeoPointDto(52.4123, 11.6274), waterBearingDeg = 270.0, addedBy = "usr_jonas"),
                 listOf(SectorDto(220.0, 320.0)),
             ),
             ForecastProfile(
@@ -236,7 +250,13 @@ private val DEFAULT_SPOTS: List<SeedSpot> =
             ),
         ),
         SeedSpot(
-            spot("dune-point", "Dune Point", GeoPointDto(55.0157, 8.4352), listOf(SectorDto(230.0, 20.0)), listOf(SectorDto(90.0, 180.0))),
+            spot(
+                "dune-point",
+                "Dune Point",
+                Place(GeoPointDto(55.0157, 8.4352), waterBearingDeg = 300.0, addedBy = "usr_andrei"),
+                listOf(SectorDto(230.0, 20.0)),
+                listOf(SectorDto(90.0, 180.0)),
+            ),
             ForecastProfile(
                 meanKn = 17.0,
                 swingKn = 7.0,
@@ -257,7 +277,7 @@ private val DEFAULT_SPOTS: List<SeedSpot> =
             spot(
                 "harbor-flats",
                 "Harbor Flats",
-                GeoPointDto(54.3225, 10.1394),
+                Place(GeoPointDto(54.3225, 10.1394), waterBearingDeg = 75.0, addedBy = "usr_mira"),
                 listOf(SectorDto(30.0, 120.0)),
                 listOf(SectorDto(200.0, 290.0)),
             ),

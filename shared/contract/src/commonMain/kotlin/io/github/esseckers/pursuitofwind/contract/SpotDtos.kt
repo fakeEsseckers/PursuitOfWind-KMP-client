@@ -15,6 +15,10 @@ public data class SectorDto(
     val toDeg: Double,
 )
 
+/**
+ * A spot of the catalog. [waterBearingDeg] is the direction from the beach to open water; for a spot a rider adds or
+ * changes, the server works the sectors out from it. Only [createdBy] can change the spot.
+ */
 @Serializable
 public data class SpotDto(
     val id: String,
@@ -23,6 +27,28 @@ public data class SpotDto(
     val timeZone: String,
     val rideableSectors: List<SectorDto>,
     val dangerSectors: List<SectorDto>,
+    val waterBearingDeg: Double,
+    val createdBy: String,
+)
+
+/**
+ * `POST /v1/spots`. [timeZone] is the device's as a region id (`Europe/Berlin`) or `UTC`, a first guess the server may
+ * correct from the location.
+ */
+@Serializable
+public data class CreateSpotRequestDto(
+    val name: String,
+    val location: GeoPointDto,
+    val waterBearingDeg: Double,
+    val timeZone: String,
+)
+
+/** `PUT /v1/spots/{spotId}`, by the spot's creator only. */
+@Serializable
+public data class SpotUpdateDto(
+    val name: String,
+    val location: GeoPointDto,
+    val waterBearingDeg: Double,
 )
 
 /** `GET /v1/spots/catalog`. [nextCursor] is present when more spots follow. */

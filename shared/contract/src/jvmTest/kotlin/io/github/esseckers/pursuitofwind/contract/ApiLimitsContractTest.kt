@@ -26,6 +26,13 @@ class ApiLimitsContractTest {
     }
 
     @Test
+    fun `the name of a spot a rider adds`() {
+        listOf("CreateSpotRequest", "SpotUpdate").forEach { schema ->
+            assertEquals(ApiLimits.Spot.NAME_MAX_LENGTH.toDouble(), field(schema, "name", "maxLength"), schema)
+        }
+    }
+
+    @Test
     fun `the drive to a followed spot`() {
         listOf("MySpot", "MySpotUpdate").forEach { schema ->
             assertEquals(0.0, field(schema, "driveMinutes", "minimum"), schema)

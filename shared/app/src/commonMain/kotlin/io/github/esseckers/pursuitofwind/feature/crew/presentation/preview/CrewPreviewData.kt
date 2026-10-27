@@ -12,6 +12,7 @@ import io.github.esseckers.pursuitofwind.data.model.Person
 import io.github.esseckers.pursuitofwind.data.model.Ride
 import io.github.esseckers.pursuitofwind.data.model.RideStatus
 import io.github.esseckers.pursuitofwind.data.model.Spot
+import io.github.esseckers.pursuitofwind.engine.model.Bearing
 import io.github.esseckers.pursuitofwind.engine.model.Sector
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.crew.domain.entity.CrewDetailsEntity
@@ -174,5 +175,7 @@ internal object CrewPreviewData {
             timeZone = zone,
             rideableSectors = listOf(Sector.of(180.0, 300.0)),
             dangerSectors = emptyList(),
+            water = Bearing(240.0),
+            createdBy = "usr_andrei",
         )
 }

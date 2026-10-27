@@ -50,7 +50,17 @@ fun alex(unit: WindUnit = WindUnit.KNOTS): Profile =
 /** Nordstrand Bay, two hours' drive away, rideable with wind from 180° to 300°. */
 fun nordstrand(): MySpot =
     MySpot(
-        spot = Spot(NORDSTRAND, "Nordstrand Bay", GeoPoint(54.5, 8.8), BERLIN, listOf(Sector.of(180.0, 300.0)), emptyList()),
+        spot =
+            Spot(
+                NORDSTRAND,
+                "Nordstrand Bay",
+                GeoPoint(54.5, 8.8),
+                BERLIN,
+                listOf(Sector.of(180.0, 300.0)),
+                emptyList(),
+                Bearing(240.0),
+                "usr_andrei",
+            ),
         drive = 2.hours,
         favorite = true,
     )

@@ -5,6 +5,7 @@ import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.GeoPoint
 import io.github.esseckers.pursuitofwind.data.model.MySpot
 import io.github.esseckers.pursuitofwind.data.model.Spot
+import io.github.esseckers.pursuitofwind.engine.model.Bearing
 import io.github.esseckers.pursuitofwind.engine.model.Sector
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.RemovedSpot
@@ -69,5 +70,7 @@ internal object SpotsPreviewData {
             timeZone = TimeZone.of("Europe/Berlin"),
             rideableSectors = listOf(Sector.of(180.0, 300.0)),
             dangerSectors = emptyList(),
+            water = Bearing(240.0),
+            createdBy = "usr_andrei",
         )
 }
