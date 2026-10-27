@@ -54,6 +54,13 @@ class SpotDetailScreenTest {
     private val systemLocale = Locale.getDefault()
     private val data = SpotDetailPreviewData
 
+    /** The hour of the chart that is selected. */
+    private val selectedHour =
+        SemanticsMatcher("the selected hour") { node ->
+            node.config.getOrNull(SemanticsProperties.TestTag)?.startsWith("spot.hour.") == true &&
+                node.config.getOrNull(SemanticsProperties.Selected) == true
+        }
+
     @BeforeTest
     fun english() {
         Locale.setDefault(Locale.ENGLISH)
@@ -143,6 +150,16 @@ class SpotDetailScreenTest {
                 listOf(SpotDetailIntent.SelectDay(LocalDate(2026, 10, 25)), SpotDetailIntent.SelectHour(data.saturday8am + 4.hours)),
                 intents,
             )
+        }
+
+    @Test
+    fun `a spot opened for a later day shows its hour on the first frame`() =
+        runComposeUiTest {
+            mainClock.autoAdvance = false
+            show(data.state(selection = Selection.Day(LocalDate(2026, 10, 26))))
+
+            // Monday is two days into the chart, well past the window's width: it shows without a scroll that comes later.
+            onNode(selectedHour).assertIsDisplayed()
         }
 
     @Test
