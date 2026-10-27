@@ -50,7 +50,6 @@ import io.github.esseckers.pursuitofwind.core.resources.chart_now
 import io.github.esseckers.pursuitofwind.core.resources.chart_show_details
 import io.github.esseckers.pursuitofwind.core.ui.dayLabel
 import io.github.esseckers.pursuitofwind.core.ui.windUnitLabel
-import io.github.esseckers.pursuitofwind.data.model.WindUnit
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.ChartDayUi
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.ChartHourUi
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.WindChartUi
@@ -120,8 +119,9 @@ internal fun WindChart(
                 SelectionFrame(selected, layout, colors)
                 Row(modifier = size.selectableGroup()) {
                     val label = stringResource(Res.string.chart_show_details)
+                    val words = rememberHourWords(chart.hours, chart.unit)
                     chart.hours.forEachIndexed { i, hour ->
-                        HourCell(i, hour, chart.unit, isSelected = i == selected, onClickLabel = label, onClick = { onSelectHour(i) })
+                        HourCell(i, hour, words, isSelected = i == selected, onClickLabel = label, onClick = { onSelectHour(i) })
                     }
                 }
             }
@@ -306,12 +306,12 @@ private fun SelectionFrame(
 private fun HourCell(
     index: Int,
     hour: ChartHourUi,
-    unit: WindUnit,
+    words: HourWords,
     isSelected: Boolean,
     onClickLabel: String,
     onClick: () -> Unit,
 ) {
-    val description = hourDescription(hour, unit)
+    val description = hourDescription(hour, words)
     Box(
         modifier =
             Modifier
