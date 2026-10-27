@@ -36,7 +36,6 @@ internal data class SpotEdit(
 internal data class RemovedSpot(
     val id: SpotId,
     val name: String,
-    val verified: Boolean,
     val drive: Duration,
     val favorite: Boolean,
 )

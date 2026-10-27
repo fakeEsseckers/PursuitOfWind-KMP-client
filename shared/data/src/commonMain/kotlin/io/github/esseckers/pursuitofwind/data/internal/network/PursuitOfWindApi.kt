@@ -4,6 +4,7 @@ import io.github.esseckers.pursuitofwind.contract.ApiHeaders
 import io.github.esseckers.pursuitofwind.contract.ApiRoute
 import io.github.esseckers.pursuitofwind.contract.CreateCrewRequestDto
 import io.github.esseckers.pursuitofwind.contract.CreateRideRequestDto
+import io.github.esseckers.pursuitofwind.contract.CreateSpotRequestDto
 import io.github.esseckers.pursuitofwind.contract.CrewDto
 import io.github.esseckers.pursuitofwind.contract.CrewFeedDto
 import io.github.esseckers.pursuitofwind.contract.CrewListDto
@@ -16,8 +17,10 @@ import io.github.esseckers.pursuitofwind.contract.PushTokenRequestDto
 import io.github.esseckers.pursuitofwind.contract.RideDto
 import io.github.esseckers.pursuitofwind.contract.RideListDto
 import io.github.esseckers.pursuitofwind.contract.RiderProfileDto
+import io.github.esseckers.pursuitofwind.contract.SpotDto
 import io.github.esseckers.pursuitofwind.contract.SpotForecastDto
 import io.github.esseckers.pursuitofwind.contract.SpotPageDto
+import io.github.esseckers.pursuitofwind.contract.SpotUpdateDto
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.HttpRequestBuilder
@@ -60,6 +63,17 @@ internal class PursuitOfWindApi(
             cursor?.let { parameter("cursor", it) }
             parameter("limit", limit)
         }.ok().body()
+
+    suspend fun createSpot(
+        request: CreateSpotRequestDto,
+        key: String,
+    ): SpotDto = send(ApiRoute.CREATE_SPOT, key = key) { json(request) }.ok().body()
+
+    suspend fun updateSpot(
+        spotId: String,
+        update: SpotUpdateDto,
+        key: String,
+    ): SpotDto = send(ApiRoute.UPDATE_SPOT, spotId, key = key) { json(update) }.ok().body()
 
     suspend fun mySpots(): MySpotListDto = send(ApiRoute.LIST_MY_SPOTS).ok().body()
 

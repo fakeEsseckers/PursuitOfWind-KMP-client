@@ -194,10 +194,14 @@ internal class CrewLife(
         return choice != null
     }
 
-    /** GO windows of the next two days that leave time to plan, as the engine finds them for a typical member. */
+    /**
+     * GO windows of the next two days that leave time to plan, as the engine finds them for a typical member, at the
+     * seeded spots only: a spot a rider adds may be anywhere in the world, far from the members' meeting points.
+     */
     private fun goodWindows(at: Instant): List<SessionWindow> {
         val from = at.startOfHour()
-        return state.spots.values.sortedBy { it.spot.id }.flatMap { seedSpot ->
+        val seeded = state.spots.values.filter { it.spot.id in state.seededSpotIds }
+        return seeded.sortedBy { it.spot.id }.flatMap { seedSpot ->
             val config = MySpot(seedSpot.spot.toSpot(), MEMBER_DRIVE, favorite = true).toSpotConfig()
             // The run riders were last served, so members judge the forecast riders see.
             val run = state.forecastRuns[seedSpot.spot.id] ?: ModelRun(number = 0, at = at)

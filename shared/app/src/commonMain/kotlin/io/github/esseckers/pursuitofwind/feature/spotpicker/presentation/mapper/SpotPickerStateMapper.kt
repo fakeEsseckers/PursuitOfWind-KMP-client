@@ -87,7 +87,6 @@ internal object SpotPickerStateMapper {
         return PickSpotUi(
             id = spot.id,
             name = spot.name,
-            verified = spot.verified,
             selected = choice.selected,
             drive = choice.driveMinutes.minutes,
             canShorten = drive.canDecrease,

@@ -33,7 +33,7 @@ internal object SpotDetailStateMapper {
         if (snapshot == null || now == null) return loading
         val spot = snapshot.spot.value
         val profile = snapshot.profile.value
-        val header = spot?.let { SpotHeaderUi(it.spot.name, it.drive, it.spot.verified) }
+        val header = spot?.let { SpotHeaderUi(it.spot.name, it.drive) }
         return when {
             spot == null -> {
                 loading.copy(content = Content.Missing(Missing.SPOT))

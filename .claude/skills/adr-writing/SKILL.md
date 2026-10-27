@@ -53,7 +53,7 @@ What we do, stated so someone can check the code against it. 2–5 sentences.
 
 Written in Issue #1: 0001 KMP + Compose Multiplatform for both UIs · 0002 Module structure for AGP 9 and enforced dependency rules · 0003 Stable dependencies inside Kotlin's tested compatibility range.
 
-Written since: 0004 Decision engine as pure Kotlin for three runtimes · 0005 Fake backend at the HTTP layer and contract-first API · 0006 Room 3 as the offline cache · 0007 Koin for dependency injection · 0008 MVI presentation in feature packages · 0009 Navigation 3 for moving between screens · 0010 A live fake backend instead of a demo mode.
+Written since: 0004 Decision engine as pure Kotlin for three runtimes · 0005 Fake backend at the HTTP layer and contract-first API · 0006 Room 3 as the offline cache · 0007 Koin for dependency injection · 0008 MVI presentation in feature packages · 0009 Navigation 3 for moving between screens · 0010 A live fake backend instead of a demo mode · 0013 Riders add spots on a map.
 
 Still to write: 0011 Local notifications until the server exists · 0012 Sharing the engine and contract with a server in a separate repository.
 

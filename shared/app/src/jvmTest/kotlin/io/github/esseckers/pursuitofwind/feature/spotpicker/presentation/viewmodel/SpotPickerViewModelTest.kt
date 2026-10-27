@@ -85,7 +85,6 @@ class SpotPickerViewModelTest {
                     ready.spots().map { it.name },
                 )
                 assertEquals(listOf("nordstrand-bay"), ready.spots().filter { it.selected }.map { it.id.value })
-                assertEquals(listOf("harbor-flats", "lake-weiss"), ready.spots().filter { !it.verified }.map { it.id.value })
                 cancelAndIgnoreRemainingEvents()
             }
         }

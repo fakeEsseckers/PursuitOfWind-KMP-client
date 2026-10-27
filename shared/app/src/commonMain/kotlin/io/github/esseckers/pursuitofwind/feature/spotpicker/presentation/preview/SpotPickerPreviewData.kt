@@ -5,6 +5,7 @@ import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.GeoPoint
 import io.github.esseckers.pursuitofwind.data.model.MySpot
 import io.github.esseckers.pursuitofwind.data.model.Spot
+import io.github.esseckers.pursuitofwind.engine.model.Bearing
 import io.github.esseckers.pursuitofwind.engine.model.Sector
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.entity.SpotPickerSnapshotEntity
@@ -22,7 +23,7 @@ import kotlin.time.Instant
 internal object SpotPickerPreviewData {
     val nordstrand = spot("nordstrand-bay", "Nordstrand Bay")
     val saltLagoon = spot("salt-lagoon", "Salt Lagoon")
-    val lakeWeiss = spot("lake-weiss", "Lake Weiss", verified = false)
+    val lakeWeiss = spot("lake-weiss", "Lake Weiss")
     val dune = spot("dune-point", "Dune Point")
 
     private val fetchedAt = Instant.parse("2026-10-24T06:00:00Z")
@@ -73,7 +74,6 @@ internal object SpotPickerPreviewData {
     private fun spot(
         id: String,
         name: String,
-        verified: Boolean = true,
     ): Spot =
         Spot(
             id = SpotId(id),
@@ -82,6 +82,7 @@ internal object SpotPickerPreviewData {
             timeZone = TimeZone.of("Europe/Berlin"),
             rideableSectors = listOf(Sector.of(180.0, 300.0)),
             dangerSectors = emptyList(),
-            verified = verified,
+            water = Bearing(240.0),
+            createdBy = "usr_andrei",
         )
 }

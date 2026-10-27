@@ -50,7 +50,7 @@ class SpotDetailStateMapperTest {
         val ready = state()
 
         val content = assertIs<Content.Ready>(ready.content)
-        assertEquals(SpotHeaderUi("Nordstrand Bay", 2.hours, verified = true), ready.header)
+        assertEquals(SpotHeaderUi("Nordstrand Bay", 2.hours), ready.header)
         assertEquals(25.minutes, ready.updatedAgo)
         assertNull(ready.notice)
         assertEquals(content.chart.hours.indexOfFirst { it.start == at(SATURDAY, 13) }, content.selected.index)

@@ -119,7 +119,6 @@
     </plurals>
     <string name="drive_hours_minutes">%1$d h %2$d min drive</string>
     <string name="drive_minutes">%1$d min drive</string>
-    <string name="spot_unverified">The wind sectors of this spot haven’t been checked by a local rider yet. Verdicts may be off.</string>
     <string name="spot_missing_title">Not one of your spots</string>
     <string name="spot_missing_body">Follow this spot, with your drive time, to see its forecast.</string>
     <string name="spot_no_forecast">There’s no forecast for this spot yet. Try again in a moment.</string>
@@ -226,7 +225,6 @@
     <!-- Spot picker -->
     <string name="spots_title">Your spots</string>
     <string name="spots_intro">Pick the spots you ride and how long the drive from home is. Each of them gets an answer every day.</string>
-    <string name="spots_unverified">Wind sectors not checked yet</string>
     <string name="spots_drive">Drive from home</string>
     <string name="spots_drive_shorter">Shorter drive to %1$s</string>
     <string name="spots_drive_longer">Longer drive to %1$s</string>

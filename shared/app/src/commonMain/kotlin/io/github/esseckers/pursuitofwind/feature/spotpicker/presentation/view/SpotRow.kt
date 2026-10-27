@@ -26,7 +26,6 @@ import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.spots_drive
 import io.github.esseckers.pursuitofwind.core.resources.spots_drive_longer
 import io.github.esseckers.pursuitofwind.core.resources.spots_drive_shorter
-import io.github.esseckers.pursuitofwind.core.resources.spots_unverified
 import io.github.esseckers.pursuitofwind.core.ui.Step
 import io.github.esseckers.pursuitofwind.core.ui.durationText
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.PickSpotUi
@@ -58,17 +57,7 @@ internal fun SpotRow(
         ) {
             // The row handles the tap, so the box itself is only a picture of the state.
             Checkbox(checked = spot.selected, onCheckedChange = null, modifier = Modifier.padding(Spacing.s))
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                Text(text = spot.name, style = MaterialTheme.typography.titleMedium)
-                if (!spot.verified) {
-                    IconLine(
-                        icon = AppIcons.Info,
-                        text = stringResource(Res.string.spots_unverified),
-                        style = MaterialTheme.typography.bodySmall,
-                        iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
+            Text(text = spot.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
         }
         if (spot.selected) {
             Stepper(

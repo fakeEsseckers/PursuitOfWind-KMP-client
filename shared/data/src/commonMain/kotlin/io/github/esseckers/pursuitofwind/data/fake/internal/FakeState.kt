@@ -83,7 +83,12 @@ internal class FakeState(
      * draws of one kind (a sign-in more) never change the values of another (the next invite code).
      */
     val inviteCodes = Random(seed.randomSeed + INVITE_STREAM)
-    val spots: Map<String, SeedSpot> = seed.spots.associateBy { it.spot.id }
+
+    /** The catalog: the seeded spots, then the ones riders add. */
+    val spots: MutableMap<String, SeedSpot> = seed.spots.associateByTo(LinkedHashMap()) { it.spot.id }
+
+    /** The spots the seed brought, the only ones the seeded crew members ride to ([CrewLife]). */
+    val seededSpotIds: Set<String> = seed.spots.map { it.spot.id }.toSet()
     val users = mutableMapOf<String, User>()
     val installations = mutableMapOf<String, String>()
     val accessTokens = mutableMapOf<String, AccessGrant>()

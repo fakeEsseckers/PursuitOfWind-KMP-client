@@ -2,12 +2,15 @@ package io.github.esseckers.pursuitofwind.engine
 
 import io.github.esseckers.pursuitofwind.engine.internal.dayDecisions
 import io.github.esseckers.pursuitofwind.engine.internal.hourVerdict
+import io.github.esseckers.pursuitofwind.engine.internal.shoreSectors
 import io.github.esseckers.pursuitofwind.engine.internal.windowsAt
+import io.github.esseckers.pursuitofwind.engine.model.Bearing
 import io.github.esseckers.pursuitofwind.engine.model.DayDecision
 import io.github.esseckers.pursuitofwind.engine.model.ForecastHour
 import io.github.esseckers.pursuitofwind.engine.model.HourVerdict
 import io.github.esseckers.pursuitofwind.engine.model.RiderProfile
 import io.github.esseckers.pursuitofwind.engine.model.SessionWindow
+import io.github.esseckers.pursuitofwind.engine.model.ShoreSectors
 import io.github.esseckers.pursuitofwind.engine.model.SpotConfig
 import io.github.esseckers.pursuitofwind.engine.model.SpotForecast
 import kotlin.time.Instant
@@ -47,4 +50,11 @@ public object DecisionEngine {
         profile: RiderProfile,
         now: Instant,
     ): List<DayDecision> = dayDecisions(forecasts = forecasts, profile = profile, now = now)
+
+    /**
+     * The sectors of a spot whose open water lies towards [water], seen from the beach. Wind from within 100° of the
+     * water is rideable, wind from within 60° of the land is dangerous, and the 20° between them on either side is
+     * neither, so it counts as the wrong direction for the spot.
+     */
+    public fun sectorsFacing(water: Bearing): ShoreSectors = shoreSectors(water)
 }

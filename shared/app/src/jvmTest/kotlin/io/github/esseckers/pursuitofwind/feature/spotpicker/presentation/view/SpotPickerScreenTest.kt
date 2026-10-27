@@ -83,7 +83,7 @@ class SpotPickerScreenTest {
             onNodeWithTag("spots.toggle.nordstrand-bay").assert(hasText("Nordstrand Bay")).assert(checked(ToggleableState.On))
             onNodeWithTag("spots.drive.nordstrand-bay").assert(hasAnyDescendant(hasText("2 h")))
             onNodeWithTag("spots.toggle.dune-point").assert(checked(ToggleableState.Off))
-            onNodeWithTag("spots.toggle.lake-weiss").assert(hasText("Wind sectors not checked yet"))
+            onNodeWithTag("spots.toggle.lake-weiss").assert(hasText("Lake Weiss"))
             onNodeWithTag("spots.done").assert(hasText("Done"))
         }
 

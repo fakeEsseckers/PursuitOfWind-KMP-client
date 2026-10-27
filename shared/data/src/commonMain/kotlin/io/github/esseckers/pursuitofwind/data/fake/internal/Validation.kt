@@ -2,7 +2,9 @@ package io.github.esseckers.pursuitofwind.data.fake.internal
 
 import io.github.esseckers.pursuitofwind.contract.ApiLimits
 import io.github.esseckers.pursuitofwind.contract.CreateRideRequestDto
+import io.github.esseckers.pursuitofwind.contract.GeoPointDto
 import io.github.esseckers.pursuitofwind.contract.RiderProfileDto
+import kotlinx.datetime.TimeZone
 
 /**
  * The field limits of `api/openapi.yaml` and the cross-field rules its schema descriptions state. The real server will
@@ -14,6 +16,9 @@ internal object Validation {
     private val PROFILE_DRIVE_MINUTES = 0..ApiLimits.RiderProfile.MAX_DRIVE_MAX_MINUTES
     private val SPOT_DRIVE_MINUTES = 0..ApiLimits.MySpot.DRIVE_MAX_MINUTES
     private val SEATS = ApiLimits.Ride.SEATS_MIN..ApiLimits.Ride.SEATS_MAX
+    private val LATITUDES = -90.0..90.0
+    private val LONGITUDES = -180.0..180.0
+    private const val FULL_TURN_DEG = 360.0
 
     fun isUuid(value: String): Boolean = UUID.matches(value)
 
@@ -29,6 +34,24 @@ internal object Validation {
         value: String,
         name: String,
     ) = check422(value.isNotEmpty()) { "$name must not be empty" }
+
+    /**
+     * A spot a rider adds (`CreateSpotRequest`, with the device's [timeZone], which must be a zone this server knows) or
+     * changes (`SpotUpdate`).
+     */
+    fun spot(
+        name: String,
+        location: GeoPointDto,
+        waterBearingDeg: Double,
+        timeZone: String? = null,
+    ) {
+        requireText(name, "name", ApiLimits.Spot.NAME_MAX_LENGTH)
+        check422(location.lat in LATITUDES && location.lon in LONGITUDES) {
+            "location must have a latitude from -90 to 90 and a longitude from -180 to 180"
+        }
+        check422(waterBearingDeg >= 0.0 && waterBearingDeg < FULL_TURN_DEG) { "waterBearingDeg must be from 0 up to 360" }
+        check422(timeZone == null || isRegionZone(timeZone)) { "timeZone '$timeZone' is not an IANA time zone this server knows" }
+    }
 
     fun requireDriveMinutes(value: Int) =
         check422(value in SPOT_DRIVE_MINUTES) { "driveMinutes must be from 0 to ${SPOT_DRIVE_MINUTES.last}, was $value" }
@@ -70,13 +93,16 @@ internal object Validation {
     ) = check422(value.hasNonSpace() && ApiLimits.lengthOf(value) <= maxLength) {
         "$name must have 1 to $maxLength characters and not only spaces"
     }
-
-    /**
-     * The spec's `pattern: '\S'`. JSON Schema regexes count Unicode spaces such as U+00A0 as spaces, and so does
-     * `isWhitespace`; Kotlin's `\S` would not (networknt, on the JDK regex engine, does not either).
-     */
-    private fun String.hasNonSpace(): Boolean = any { !it.isWhitespace() }
-
-    /** `30` for 30.0, as the spec writes its limits. */
-    private fun Double.plain(): String = if (this % 1.0 == 0.0) toLong().toString() else toString()
 }
+
+/**
+ * The spec's `pattern: '\S'`. JSON Schema regexes count Unicode spaces such as U+00A0 as spaces, and so does
+ * `isWhitespace`; Kotlin's `\S` would not (networknt, on the JDK regex engine, does not either).
+ */
+private fun String.hasNonSpace(): Boolean = any { !it.isWhitespace() }
+
+/** An IANA region id this server knows (`Europe/Berlin`), or `UTC`; not a fixed offset such as `+02:00` or `GMT+1`. */
+private fun isRegionZone(id: String): Boolean = id == "UTC" || (id.contains('/') && runCatching { TimeZone.of(id) }.isSuccess)
+
+/** `30` for 30.0, as the spec writes its limits. */
+private fun Double.plain(): String = if (this % 1.0 == 0.0) toLong().toString() else toString()

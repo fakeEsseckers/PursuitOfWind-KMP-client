@@ -48,9 +48,19 @@ fun alex(unit: WindUnit = WindUnit.KNOTS): Profile =
     Profile(displayName = "Alex", rider = RiderProfile(80.0, SkillLevel.INTERMEDIATE, listOf(7.0, 9.0, 12.0)), windUnit = unit)
 
 /** Nordstrand Bay, two hours' drive away, rideable with wind from 180° to 300°. */
-fun nordstrand(verified: Boolean = true): MySpot =
+fun nordstrand(): MySpot =
     MySpot(
-        spot = Spot(NORDSTRAND, "Nordstrand Bay", GeoPoint(54.5, 8.8), BERLIN, listOf(Sector.of(180.0, 300.0)), emptyList(), verified),
+        spot =
+            Spot(
+                NORDSTRAND,
+                "Nordstrand Bay",
+                GeoPoint(54.5, 8.8),
+                BERLIN,
+                listOf(Sector.of(180.0, 300.0)),
+                emptyList(),
+                Bearing(240.0),
+                "usr_andrei",
+            ),
         drive = 2.hours,
         favorite = true,
     )

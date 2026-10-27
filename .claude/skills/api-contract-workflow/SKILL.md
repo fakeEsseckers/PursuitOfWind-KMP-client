@@ -35,7 +35,7 @@ description: Contract-first workflow for the Pursuit Of Wind API — editing api
 }
 ```
 
-Known codes (`ProblemCode`): `UNAUTHORIZED`, `NOT_FOUND`, `VALIDATION_FAILED`, `NOT_A_MEMBER`, `NOT_THE_DRIVER`, `INVITE_INVALID`, `SEATS_FULL`, `ALREADY_JOINED`, `RIDE_CANCELLED`, `FEED_RESET`, `IDEMPOTENCY_KEY_REUSED`, `RATE_LIMITED`, `SERVICE_UNAVAILABLE`, `INTERNAL`.
+Known codes (`ProblemCode`): `UNAUTHORIZED`, `NOT_FOUND`, `VALIDATION_FAILED`, `NOT_A_MEMBER`, `NOT_THE_DRIVER`, `NOT_THE_CREATOR`, `INVITE_INVALID`, `SEATS_FULL`, `ALREADY_JOINED`, `RIDE_CANCELLED`, `FEED_RESET`, `IDEMPOTENCY_KEY_REUSED`, `RATE_LIMITED`, `SERVICE_UNAVAILABLE`, `INTERNAL`.
 
 - Lists that can grow use cursor pagination: `?cursor=&limit=` and `nextCursor` in the response.
 - The feed uses `?since=<lastEventId>` and `hasMore`; event ids are opaque. `410 FEED_RESET` means: reload the crew's rides, then read the feed again without `since`.

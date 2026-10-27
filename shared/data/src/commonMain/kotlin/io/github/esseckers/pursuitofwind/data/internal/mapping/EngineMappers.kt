@@ -1,6 +1,5 @@
 package io.github.esseckers.pursuitofwind.data.internal.mapping
 
-import io.github.esseckers.pursuitofwind.contract.DataQualityDto
 import io.github.esseckers.pursuitofwind.contract.ForecastHourDto
 import io.github.esseckers.pursuitofwind.contract.ModelWindDto
 import io.github.esseckers.pursuitofwind.contract.SectorDto
@@ -32,7 +31,8 @@ internal fun SpotDto.toSpot(): Spot =
         timeZone = TimeZone.of(timeZone),
         rideableSectors = rideableSectors.map { it.toSector() },
         dangerSectors = dangerSectors.map { it.toSector() },
-        verified = dataQuality == DataQualityDto.VERIFIED,
+        water = Bearing(waterBearingDeg),
+        createdBy = createdBy,
     )
 
 internal fun ForecastHourDto.toForecastHour(): ForecastHour =

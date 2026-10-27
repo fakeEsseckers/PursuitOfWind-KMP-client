@@ -5,6 +5,7 @@ import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.Crew
 import io.github.esseckers.pursuitofwind.data.model.GeoPoint
 import io.github.esseckers.pursuitofwind.data.model.Spot
+import io.github.esseckers.pursuitofwind.engine.model.Bearing
 import io.github.esseckers.pursuitofwind.engine.model.Sector
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.rideoffer.domain.entity.RideDraftEntity
@@ -32,7 +33,16 @@ internal object RideOfferPreviewData {
         )
 
     val nordstrand =
-        Spot(SpotId("nordstrand-bay"), "Nordstrand Bay", GeoPoint(54.5, 8.8), zone, listOf(Sector.of(180.0, 300.0)), emptyList(), true)
+        Spot(
+            SpotId("nordstrand-bay"),
+            "Nordstrand Bay",
+            GeoPoint(54.5, 8.8),
+            zone,
+            listOf(Sector.of(180.0, 300.0)),
+            emptyList(),
+            Bearing(240.0),
+            "usr_andrei",
+        )
     val weekendCrew = Crew("crw_weekend", "Weekend Crew", "WIND-4KQ7", memberCount = 4, createdAt = now - 30.days)
     val nightOwls = Crew("crw_owls", "Night Owls", "WIND-7HPX", memberCount = 2, createdAt = now - 3.days)
 

@@ -88,7 +88,7 @@ class ProfileAndSpotRepositoryTest {
         }
 
     @Test
-    fun `the catalog is cached with its data quality`() =
+    fun `the catalog is cached by name`() =
         runTest {
             world {
                 val alex = device()
@@ -99,13 +99,6 @@ class ProfileAndSpotRepositoryTest {
                 assertEquals(
                     listOf("Dune Point", "Harbor Flats", "Lake Weiss", "Nordstrand Bay", "Salt Lagoon"),
                     catalog.value.map { it.name },
-                )
-                assertEquals(
-                    setOf("harbor-flats", "lake-weiss"),
-                    catalog.value
-                        .filterNot { it.verified }
-                        .map { it.id.value }
-                        .toSet(),
                 )
                 assertEquals(THURSDAY_MORNING, catalog.updatedAt)
             }

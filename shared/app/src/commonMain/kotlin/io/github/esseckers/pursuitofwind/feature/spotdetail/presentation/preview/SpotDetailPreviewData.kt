@@ -48,15 +48,24 @@ internal object SpotDetailPreviewData {
     val hours: List<ForecastHour> = (0 until 96).map { forecastHour(saturday8am + it.hours) }
 
     val ready: SpotDetailState = state()
-    val unverified: SpotDetailState = state(spot = spot(verified = false))
     val offline: SpotDetailState = state(refresh = RefreshStatus(finished = true, error = AppError.Network, startedAt = saturday8am))
     val loading: SpotDetailState = state(hours = emptyList(), refresh = RefreshStatus(refreshing = true, startedAt = saturday8am))
     val error: SpotDetailState = state(hours = emptyList(), refresh = RefreshStatus(finished = true, error = AppError.Network))
     val notFollowed: SpotDetailState = state(spot = null)
 
-    fun spot(verified: Boolean = true): MySpot =
+    fun spot(): MySpot =
         MySpot(
-            spot = Spot(spotId, "Nordstrand Bay", GeoPoint(54.5, 8.8), zone, listOf(Sector.of(180.0, 300.0)), emptyList(), verified),
+            spot =
+                Spot(
+                    spotId,
+                    "Nordstrand Bay",
+                    GeoPoint(54.5, 8.8),
+                    zone,
+                    listOf(Sector.of(180.0, 300.0)),
+                    emptyList(),
+                    Bearing(240.0),
+                    "usr_andrei",
+                ),
             drive = 2.hours,
             favorite = true,
         )

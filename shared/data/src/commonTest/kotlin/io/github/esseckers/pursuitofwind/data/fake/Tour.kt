@@ -5,8 +5,10 @@ import io.github.esseckers.pursuitofwind.contract.ApiRoute
 import io.github.esseckers.pursuitofwind.contract.AuthTokensDto
 import io.github.esseckers.pursuitofwind.contract.CreateCrewRequestDto
 import io.github.esseckers.pursuitofwind.contract.CreateRideRequestDto
+import io.github.esseckers.pursuitofwind.contract.CreateSpotRequestDto
 import io.github.esseckers.pursuitofwind.contract.CrewDto
 import io.github.esseckers.pursuitofwind.contract.CrewFeedDto
+import io.github.esseckers.pursuitofwind.contract.GeoPointDto
 import io.github.esseckers.pursuitofwind.contract.JoinCrewRequestDto
 import io.github.esseckers.pursuitofwind.contract.MySpotUpdateDto
 import io.github.esseckers.pursuitofwind.contract.PlatformDto
@@ -15,7 +17,9 @@ import io.github.esseckers.pursuitofwind.contract.RefreshTokensRequestDto
 import io.github.esseckers.pursuitofwind.contract.RideDto
 import io.github.esseckers.pursuitofwind.contract.RiderProfileDto
 import io.github.esseckers.pursuitofwind.contract.SkillLevelDto
+import io.github.esseckers.pursuitofwind.contract.SpotDto
 import io.github.esseckers.pursuitofwind.contract.SpotPageDto
+import io.github.esseckers.pursuitofwind.contract.SpotUpdateDto
 import io.github.esseckers.pursuitofwind.contract.WindUnitDto
 import kotlin.test.assertEquals
 import kotlin.time.Duration.Companion.days
@@ -30,6 +34,15 @@ val ALEX_PROFILE =
         minSessionMinutes = 120,
         maxDriveMinutes = 180,
         windUnit = WindUnitDto.KNOTS,
+    )
+
+/** A spot a rider adds on the North Sea coast, its water to the west-south-west. */
+val SANDBANK =
+    CreateSpotRequestDto(
+        name = "Sandbank North",
+        location = GeoPointDto(54.6102, 8.3569),
+        waterBearingDeg = 250.0,
+        timeZone = "Europe/Berlin",
     )
 
 fun rideRequest(seats: Int) =
@@ -61,6 +74,7 @@ private class Tour(
         signIn()
         profile()
         spots()
+        riderSpots()
         crews()
         seededRide()
         newRide()
@@ -102,6 +116,20 @@ private class Tour(
         expect(200) { get(ApiRoute.GET_SPOT_FORECAST, "nordstrand-bay", token = alex, query = mapOf("hours" to "24")) }
         expect(422) { get(ApiRoute.GET_SPOT_FORECAST, "nordstrand-bay", token = alex, query = mapOf("hours" to "500")) }
         expect(404) { call(ApiRoute.GET_SPOT_FORECAST, "atlantis", token = alex) }
+    }
+
+    /** Alex adds a spot, gets its forecast and moves it; Mira cannot change it. */
+    private suspend fun riderSpots() {
+        val added = expect(201) { send(ApiRoute.CREATE_SPOT, token = alex, value = SANDBANK) }.decode(SpotDto.serializer())
+        expect(422) { send(ApiRoute.CREATE_SPOT, token = alex, value = SANDBANK.copy(waterBearingDeg = 360.0)) }
+        expect(422) { send(ApiRoute.CREATE_SPOT, token = alex, value = SANDBANK.copy(timeZone = "Mars/Olympus")) }
+        expect(422) { send(ApiRoute.CREATE_SPOT, token = alex, value = SANDBANK.copy(timeZone = "+02:00")) }
+        expect(200) { get(ApiRoute.GET_SPOT_FORECAST, added.id, token = alex, query = mapOf("hours" to "24")) }
+        val moved = SpotUpdateDto(added.name, GeoPointDto(54.6115, 8.3548), waterBearingDeg = 235.0)
+        expect(200) { send(ApiRoute.UPDATE_SPOT, added.id, token = alex, value = moved) }
+        expect(403) { send(ApiRoute.UPDATE_SPOT, added.id, token = mira, value = moved) }
+        expect(404) { send(ApiRoute.UPDATE_SPOT, "atlantis", token = alex, value = moved) }
+        expect(422) { send(ApiRoute.UPDATE_SPOT, added.id, token = alex, value = moved.copy(name = " ")) }
     }
 
     private suspend fun crews() {

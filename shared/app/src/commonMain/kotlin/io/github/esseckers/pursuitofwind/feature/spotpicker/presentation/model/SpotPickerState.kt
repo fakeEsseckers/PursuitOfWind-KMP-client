@@ -49,7 +49,6 @@ internal data class SpotPickerState(
 internal data class PickSpotUi(
     val id: SpotId,
     val name: String,
-    val verified: Boolean,
     val selected: Boolean,
     val drive: Duration,
     val canShorten: Boolean,

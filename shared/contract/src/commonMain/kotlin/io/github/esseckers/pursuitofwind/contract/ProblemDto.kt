@@ -27,6 +27,7 @@ public object ProblemCode {
     public const val VALIDATION_FAILED: String = "VALIDATION_FAILED"
     public const val NOT_A_MEMBER: String = "NOT_A_MEMBER"
     public const val NOT_THE_DRIVER: String = "NOT_THE_DRIVER"
+    public const val NOT_THE_CREATOR: String = "NOT_THE_CREATOR"
     public const val INVITE_INVALID: String = "INVITE_INVALID"
     public const val SEATS_FULL: String = "SEATS_FULL"
     public const val ALREADY_JOINED: String = "ALREADY_JOINED"

@@ -2,7 +2,6 @@ package io.github.esseckers.pursuitofwind.data.internal.mapping
 
 import co.touchlab.kermit.Logger
 import io.github.esseckers.pursuitofwind.contract.ContractJson
-import io.github.esseckers.pursuitofwind.contract.DataQualityDto
 import io.github.esseckers.pursuitofwind.contract.ForecastHourDto
 import io.github.esseckers.pursuitofwind.contract.ModelWindDto
 import io.github.esseckers.pursuitofwind.contract.SectorDto
@@ -13,6 +12,7 @@ import io.github.esseckers.pursuitofwind.data.internal.local.SpotEntity
 import io.github.esseckers.pursuitofwind.data.model.GeoPoint
 import io.github.esseckers.pursuitofwind.data.model.MySpot
 import io.github.esseckers.pursuitofwind.data.model.Spot
+import io.github.esseckers.pursuitofwind.engine.model.Bearing
 import io.github.esseckers.pursuitofwind.engine.model.ForecastHour
 import io.github.esseckers.pursuitofwind.engine.model.ModelId
 import io.github.esseckers.pursuitofwind.engine.model.Sector
@@ -50,7 +50,8 @@ private fun SpotDto.toUncheckedEntity(): SpotEntity =
         timeZone = timeZone,
         rideableSectors = ContractJson.encodeToString(SECTORS, rideableSectors),
         dangerSectors = ContractJson.encodeToString(SECTORS, dangerSectors),
-        verified = dataQuality == DataQualityDto.VERIFIED,
+        waterBearingDeg = waterBearingDeg,
+        createdBy = createdBy,
     )
 
 internal fun SpotEntity.toSpot(): Spot =
@@ -61,7 +62,8 @@ internal fun SpotEntity.toSpot(): Spot =
         timeZone = TimeZone.of(timeZone),
         rideableSectors = sectors(rideableSectors),
         dangerSectors = sectors(dangerSectors),
-        verified = verified,
+        water = Bearing(waterBearingDeg),
+        createdBy = createdBy,
     )
 
 internal fun MySpotRow.toMySpot(): MySpot = MySpot(spot.toSpot(), driveMinutes.minutes, favorite)

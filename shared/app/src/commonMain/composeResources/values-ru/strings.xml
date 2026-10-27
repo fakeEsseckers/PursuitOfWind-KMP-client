@@ -129,7 +129,6 @@
     </plurals>
     <string name="drive_hours_minutes">%1$d ч %2$d мин в дороге</string>
     <string name="drive_minutes">%1$d мин в дороге</string>
-    <string name="spot_unverified">Сектора ветра на этом споте ещё не проверил местный райдер. Вердикты могут ошибаться.</string>
     <string name="spot_missing_title">Этого спота нет в твоих</string>
     <string name="spot_missing_body">Добавь спот в свои и укажи время дороги, чтобы видеть его прогноз.</string>
     <string name="spot_no_forecast">Прогноза для этого спота пока нет. Попробуй чуть позже.</string>
@@ -238,7 +237,6 @@
     <!-- Spot picker -->
     <string name="spots_title">Твои споты</string>
     <string name="spots_intro">Выбери споты, на которых катаешься, и укажи, сколько до них ехать от дома. По каждому будет ответ на каждый день.</string>
-    <string name="spots_unverified">Сектора ветра ещё не проверены</string>
     <string name="spots_drive">Дорога от дома</string>
     <string name="spots_drive_shorter">Меньше дороги до %1$s</string>
     <string name="spots_drive_longer">Больше дороги до %1$s</string>

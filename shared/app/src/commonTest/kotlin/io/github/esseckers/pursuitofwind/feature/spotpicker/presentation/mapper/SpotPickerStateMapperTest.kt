@@ -16,7 +16,6 @@ import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.S
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerInputs
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerState.Content
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.preview.SpotPickerPreviewData.dune
-import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.preview.SpotPickerPreviewData.lakeWeiss
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.preview.SpotPickerPreviewData.nordstrand
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.preview.SpotPickerPreviewData.saltLagoon
 import kotlin.test.Test
@@ -39,7 +38,6 @@ class SpotPickerStateMapperTest {
         assertEquals(listOf(false, false, true, false), spots.map { it.selected })
         assertEquals(2.hours, spots.single { it.selected }.drive)
         assertEquals(DriveLimits.DEFAULT_MINUTES.minutes, spots.first().drive)
-        assertFalse(spots.single { it.id == lakeWeiss.id }.verified)
         assertEquals(1, state.selectedCount)
         assertFalse(state.hasChanges)
     }
