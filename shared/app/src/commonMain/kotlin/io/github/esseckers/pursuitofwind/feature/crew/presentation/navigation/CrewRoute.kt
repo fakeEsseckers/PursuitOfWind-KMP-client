@@ -1,6 +1,5 @@
 package io.github.esseckers.pursuitofwind.feature.crew.presentation.navigation
 
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
@@ -57,7 +56,6 @@ internal fun CrewRoute(
                         snackbarHostState.showSnackbar(
                             message = getString(Res.string.crew_created, effect.crewName),
                             actionLabel = getString(Res.string.action_share_invite),
-                            duration = SnackbarDuration.Long,
                         )
                     // The new crew's code, whichever crew is on screen by the time the rider taps.
                     if (result == SnackbarResult.ActionPerformed) {

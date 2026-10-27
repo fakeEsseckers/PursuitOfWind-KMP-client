@@ -13,7 +13,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,6 +23,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import io.github.esseckers.pursuitofwind.core.designsystem.component.AppSnackbarHost
 import io.github.esseckers.pursuitofwind.core.designsystem.component.NavigationBarScrim
 import io.github.esseckers.pursuitofwind.core.designsystem.component.PrimaryButton
 import io.github.esseckers.pursuitofwind.core.designsystem.component.ScreenTopBar
@@ -78,7 +78,7 @@ internal fun ProfileScreen(
             }
         },
         // Above the keyboard, where "Profile saved" would otherwise land while a field still has focus.
-        snackbarHost = { SnackbarHost(snackbarHostState, modifier = Modifier.imePadding()) },
+        snackbarHost = { AppSnackbarHost(snackbarHostState, modifier = Modifier.imePadding()) },
         contentWindowInsets = screenInsets(),
     ) { padding ->
         // Reading the saved profile takes a moment; an empty screen is calmer than a spinner that flashes.

@@ -1,6 +1,5 @@
 package io.github.esseckers.pursuitofwind.feature.spots.presentation.navigation
 
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
@@ -55,7 +54,6 @@ internal fun SpotsRoute(
                         snackbarHostState.showSnackbar(
                             message = getString(Res.string.my_spots_removed, effect.spot.name),
                             actionLabel = getString(Res.string.action_undo),
-                            duration = SnackbarDuration.Short,
                         )
                     if (result == SnackbarResult.ActionPerformed) viewModel.onIntent(SpotsIntent.Undo(effect.spot))
                 }
