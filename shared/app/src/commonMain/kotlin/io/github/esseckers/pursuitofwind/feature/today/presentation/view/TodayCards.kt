@@ -46,8 +46,8 @@ import io.github.esseckers.pursuitofwind.core.resources.today_no_rides
 import io.github.esseckers.pursuitofwind.core.resources.today_spot_reason
 import io.github.esseckers.pursuitofwind.core.ui.DayLabel
 import io.github.esseckers.pursuitofwind.core.ui.dayLabel
+import io.github.esseckers.pursuitofwind.core.ui.dayReasonLabel
 import io.github.esseckers.pursuitofwind.core.ui.formatKiteSize
-import io.github.esseckers.pursuitofwind.core.ui.reasonLabel
 import io.github.esseckers.pursuitofwind.core.ui.rideDriverText
 import io.github.esseckers.pursuitofwind.core.ui.rideSeatsText
 import io.github.esseckers.pursuitofwind.core.ui.windRangeText
@@ -122,7 +122,8 @@ private fun GoCard(
                     text = stringResource(Res.string.today_alternative, alternative.spotName, alternative.window.toString()),
                     onClickLabel = stringResource(Res.string.open_spot, alternative.spotName),
                     onClick = { onOpenSpot(alternative.spotId) },
-                    modifier = Modifier.testTag("today.alternative.${alternative.spotId.value}"),
+                    // One spot can have several windows in a day; its tag names the window's start too.
+                    modifier = Modifier.testTag("today.alternative.${alternative.spotId.value}.${alternative.window.start}"),
                 )
             }
         }
@@ -195,13 +196,13 @@ private fun NoGoCard(
         onClickLabel = single?.let { stringResource(Res.string.open_spot, it.spotName) },
     ) {
         CardHeader(verdict = Verdict.NO_GO, label = day.label)
-        Text(text = stringResource(reasonLabel(day.reason)), style = MaterialTheme.typography.titleMedium)
+        Text(text = stringResource(dayReasonLabel(day.reason)), style = MaterialTheme.typography.titleMedium)
         // One spot's reason is the main reason; listing it again would add nothing.
         if (day.spots.size > 1) {
             Column {
                 day.spots.forEach { spot ->
                     LinkRow(
-                        text = stringResource(Res.string.today_spot_reason, spot.spotName, stringResource(reasonLabel(spot.reason))),
+                        text = stringResource(Res.string.today_spot_reason, spot.spotName, stringResource(dayReasonLabel(spot.reason))),
                         onClickLabel = stringResource(Res.string.open_spot, spot.spotName),
                         onClick = { onOpenSpot(spot.spotId) },
                         modifier = Modifier.testTag("today.spot.${day.date}.${spot.spotId.value}"),

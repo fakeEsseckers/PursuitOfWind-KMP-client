@@ -33,7 +33,7 @@ Allowed dependencies are enforced by `checkModuleGraph`, part of `./gradlew chec
 
 ## Decision engine
 
-For every forecast hour the engine combines the weather models, checks wind range for the rider's level, gusts, direction against the spot's rideable and dangerous sectors, thunderstorms, rain, cold and daylight, and picks a kite from the rider's quiver. Rideable hours become session windows with a leave-by time, a confidence from model agreement and a score; the best window across the rider's spots becomes the day's GO, otherwise a NO-GO with the main reason and the next GO day. Day boundaries follow each spot's time zone, including daylight saving changes.
+For every forecast hour the engine combines the weather models, checks wind range for the rider's level, gusts, direction against the spot's rideable and dangerous sectors, thunderstorms, rain, cold and daylight, and picks a kite from the rider's quiver. Hours outside the rider's riding hours (9:00–21:00 unless they change it) do not count. Rideable hours become session windows with a leave-by time and a confidence from model agreement; the longest window across the rider's spots becomes the day's GO, the others its alternatives, otherwise a NO-GO with the main reason and the next GO day. Day boundaries follow each spot's time zone, including daylight saving changes.
 
 The rules, thresholds and formulas are in [`docs/domain-rules.md`](docs/domain-rules.md). Each rule has a table-driven test vector; seeded property tests cover angles, sectors, kite sizing and window structure; coverage of the module is enforced at 90% ([ADR 0004](docs/adr/0004-decision-engine-as-pure-kotlin.md)).
 
@@ -101,7 +101,7 @@ The Crew tab shows one of the rider's crews, with chips to switch when there are
 
 The first screen answers "go?" for today and the next two days, across the rider's favorite spots.
 
-- **GO** names the spot, the window in the spot's local time, the wind range in the rider's unit, the kite, when to leave (or "leave now"), how much the weather models agree, and who from the crew is driving there that day with how many free seats. The next best windows follow as alternatives.
+- **GO** names the spot, the window in the spot's local time, the wind range in the rider's unit, the kite, when to leave (or "leave now"), how much the weather models agree, and who from the crew is driving there that day with how many free seats. Every other window of the day follows as an alternative, longest first.
 - **NO-GO** gives the main reason in plain words, the reason at each spot, and the next good day.
 - Every state is designed: placeholders while the first answer loads, a prompt when the profile or a favorite spot is missing, an error with retry when there is nothing cached, and cached answers with a notice when the device is offline, the forecast is getting old or the crew's rides could not be updated.
 - The screen refreshes when it opens, when it comes back after half an hour or after a failed refresh, as soon as a new favorite spot is chosen, and on pull-to-refresh. Decisions are recomputed every minute, so "leave by" stays true while the screen is open; once the time to leave has passed, the card shows only the riding time that is left.

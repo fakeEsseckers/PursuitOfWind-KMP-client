@@ -7,6 +7,7 @@ import io.github.esseckers.pursuitofwind.engine.model.ForecastHour
 import io.github.esseckers.pursuitofwind.engine.model.ModelId
 import io.github.esseckers.pursuitofwind.engine.model.ModelWind
 import io.github.esseckers.pursuitofwind.engine.model.Reason
+import io.github.esseckers.pursuitofwind.engine.model.RidingHours
 import io.github.esseckers.pursuitofwind.engine.model.SpotConfig
 import io.github.esseckers.pursuitofwind.engine.model.SpotForecast
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
@@ -45,24 +46,87 @@ class DayDecisionTest {
     ) = SpotForecast(spot, hours.flatMap { it })
 
     @Test
-    fun `G1 the best window wins and the others become alternatives`() {
-        val windowF5 = hoursFromPattern(at("2026-07-18T10:00:00"), "N G G G G N")
-        val windowF6 = hoursFromPattern(at("2026-07-18T10:00:00"), "N G G M G G N", disagreeingModels)
+    fun `G1 the longest window wins and the others become alternatives`() {
+        val fourHoursHigh = hoursFromPattern(at("2026-07-18T10:00:00"), "N G G G G N")
+        val fiveHoursMedium = hoursFromPattern(at("2026-07-18T10:00:00"), "N G G M G G N", disagreeingModels)
 
-        val decision = DecisionEngine.decideDays(listOf(forecast(spotB, windowF6), forecast(spotA, windowF5)), RIDER, now).single()
+        val decision =
+            DecisionEngine.decideDays(listOf(forecast(spotB, fiveHoursMedium), forecast(spotA, fourHoursHigh)), RIDER, now).single()
 
         val go = assertIs<DayDecision.Go>(decision)
         assertEquals(today, go.date)
-        assertEquals(spotA.id, go.spotId)
-        assertEquals(4.0, go.window.score, 1e-9)
-        assertEquals(Confidence.HIGH, go.confidence)
+        assertEquals(spotB.id, go.spotId)
+        assertEquals(Confidence.MEDIUM, go.confidence)
         assertEquals(9.0, go.recommendedKiteM2)
         assertEquals(at("2026-07-18T08:30:00"), go.leaveBy)
-        assertEquals(4.hours, go.usable)
+        assertEquals(5.hours, go.usable)
         val alternative = go.alternatives.single()
-        assertEquals(spotB.id, alternative.spotId)
-        assertEquals(Confidence.MEDIUM, alternative.confidence)
-        assertEquals(3.6125, alternative.score, 1e-9)
+        assertEquals(spotA.id, alternative.spotId)
+        assertEquals(Confidence.HIGH, alternative.confidence)
+        assertEquals(4.hours, alternative.usable)
+    }
+
+    @Test
+    fun `G6 every other window of the day is an alternative with the longest first`() {
+        // 10:00–13:00, 14:00–16:00 and 17:00–21:00 in Berlin.
+        val hours = hoursFromPattern(at("2026-07-18T08:00:00"), "G G G N G G N G G G G")
+
+        val go = assertIs<DayDecision.Go>(DecisionEngine.decideDays(listOf(forecast(spotA, hours)), RIDER, now).single())
+
+        assertEquals(at("2026-07-18T15:00:00"), go.window.start)
+        assertEquals(listOf(at("2026-07-18T08:00:00"), at("2026-07-18T12:00:00")), go.alternatives.map { it.start })
+        assertEquals(listOf(3.hours, 2.hours), go.alternatives.map { it.usable })
+    }
+
+    @Test
+    fun `G7 wind only outside the riding hours gives OUTSIDE_RIDING_HOURS`() {
+        // GO from 06:00 to 09:00 in Berlin; from 09:00 on, too light.
+        val early = hoursFromPattern(at("2026-07-18T04:00:00"), "G G G")
+        val light = hoursFromPattern(at("2026-07-18T07:00:00"), "G G G G G G") { wind(8.kn, 10.kn) }
+
+        val decision = DecisionEngine.decideDays(listOf(forecast(spotA, early, light)), RIDER, now).single()
+
+        assertEquals(
+            DayDecision.NoGo(
+                today,
+                Reason.OUTSIDE_RIDING_HOURS,
+                listOf(SpotNoGo(spotA.id, Reason.OUTSIDE_RIDING_HOURS)),
+                nextGoDay = null,
+            ),
+            decision,
+        )
+    }
+
+    @Test
+    fun `G8 a window cut short by the riding hours can be too short`() {
+        // GO from 06:00 to 10:00 in Berlin: only 09:00–10:00 is within 9–21.
+        val hours = hoursFromPattern(at("2026-07-18T04:00:00"), "G G G G")
+
+        val noGo = assertIs<DayDecision.NoGo>(DecisionEngine.decideDays(listOf(forecast(spotA, hours)), RIDER, now).single())
+
+        assertEquals(Reason.WINDOW_TOO_SHORT, noGo.primaryReason)
+    }
+
+    @Test
+    fun `G9 a day with daylight only outside the riding hours gives the reason of those hours`() {
+        val profile = RIDER.copy(ridingHours = RidingHours(fromHour = 22, toHour = 24))
+        val light = hoursFromPattern(at("2026-07-18T06:00:00"), "G G G") { wind(8.kn, 10.kn) }
+        val night = hoursFromPattern(at("2026-07-18T20:00:00"), "G G") { isDaylight = false }
+
+        val noGo = assertIs<DayDecision.NoGo>(DecisionEngine.decideDays(listOf(forecast(spotA, light, night)), profile, now).single())
+
+        assertEquals(Reason.TOO_LIGHT, noGo.primaryReason)
+    }
+
+    @Test
+    fun `G10 only the hours within the riding hours decide the reason`() {
+        // Too light from 06:00 to 09:00 in Berlin, gusty from 10:00 to 12:00.
+        val early = hoursFromPattern(at("2026-07-18T04:00:00"), "G G G") { wind(8.kn, 10.kn) }
+        val gusty = hoursFromPattern(at("2026-07-18T08:00:00"), "G G") { wind(16.kn, 31.kn) }
+
+        val noGo = assertIs<DayDecision.NoGo>(DecisionEngine.decideDays(listOf(forecast(spotA, early, gusty)), RIDER, now).single())
+
+        assertEquals(Reason.GUSTY, noGo.primaryReason)
     }
 
     @Test
@@ -211,14 +275,14 @@ class DayDecisionTest {
     }
 
     @Test
-    fun `at most two alternatives are offered`() {
+    fun `every other window is an alternative`() {
         val hours = hoursFromPattern(at("2026-07-18T10:00:00"), "N G G G G N")
         val spots = listOf("a", "b", "c", "d").map { SPOT.copy(id = SpotId(it)) }
 
         val go = assertIs<DayDecision.Go>(DecisionEngine.decideDays(spots.map { forecast(it, hours) }, RIDER, now).single())
 
         assertEquals(SpotId("a"), go.spotId)
-        assertEquals(listOf(SpotId("b"), SpotId("c")), go.alternatives.map { it.spotId })
+        assertEquals(listOf(SpotId("b"), SpotId("c"), SpotId("d")), go.alternatives.map { it.spotId })
     }
 
     @Test

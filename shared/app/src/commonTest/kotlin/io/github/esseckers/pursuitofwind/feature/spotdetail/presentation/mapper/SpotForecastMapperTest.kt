@@ -148,8 +148,8 @@ class SpotForecastMapperTest {
 
         assertEquals(windowStart, forecast.indexOf(Selection.First))
         assertEquals(windowStart, forecast.indexOf(Selection.Day(SATURDAY)))
-        // No window on Sunday: its first daylight hour.
-        assertEquals(forecast.indexAt(at(SUNDAY, 8)), forecast.indexOf(Selection.Day(SUNDAY)))
+        // No window on Sunday: its first daylight hour within the riding hours (daylight from 08:00, riding from 09:00).
+        assertEquals(forecast.indexAt(at(SUNDAY, 9)), forecast.indexOf(Selection.Day(SUNDAY)))
         assertEquals(windowStart, forecast.indexOf(Selection.Day(FRIDAY)))
         assertEquals(forecast.indexAt(at(SATURDAY, 15)), forecast.indexOf(Selection.Hour(at(SATURDAY, 15))))
         // An hour that has passed: the current hour.

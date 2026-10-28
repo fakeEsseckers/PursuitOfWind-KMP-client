@@ -29,6 +29,9 @@
     <string name="reason_cold">Cold</string>
     <string name="reason_too_far">Beyond your max drive</string>
     <string name="reason_window_too_short">Window too short after the drive</string>
+    <string name="reason_outside_riding_hours">Outside your riding hours</string>
+    <!-- A day whose wind is good only outside the rider's riding hours -->
+    <string name="reason_day_outside_riding_hours">Wind only outside your riding hours</string>
 
     <!-- Days -->
     <string name="day_today">Today</string>

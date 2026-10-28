@@ -79,7 +79,6 @@ private fun sessionWindow(
     val usableStart = if (now > leaveBy) now + spot.drive + RIG_TIME else start
     val usable = (end - usableStart).coerceAtLeast(Duration.ZERO)
     val marginalHours = hours.count { it.verdict == Verdict.MARGINAL }
-    val confidence = confidenceOf(hours)
     return SessionWindow(
         spotId = spot.id,
         start = start,
@@ -89,8 +88,7 @@ private fun sessionWindow(
         leaveBy = leaveBy,
         usableStart = usableStart,
         usable = usable,
-        confidence = confidence,
-        score = windowScore(usable, marginalHours, confidence),
+        confidence = confidenceOf(hours),
         recommendedKiteM2 = mostFrequentKite(hours),
         qualifies = usable >= profile.minSession,
     )

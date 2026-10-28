@@ -39,7 +39,7 @@ Property: for fixed weight and gust spread, `ideal` is strictly decreasing as me
 
 ## C. Hour verdicts
 
-Profile: 80 kg, INTERMEDIATE (12–28 kn, gust spread ≤ 10), quiver 7 / 9 / 12. Spot: rideable sector 180–300, danger sector 60–150. Defaults unless stated: bearing 240, daylight, precip 0, temp 15 °C, thunder LOW, three models agreeing.
+Profile: 80 kg, INTERMEDIATE (12–28 kn, gust spread ≤ 10), quiver 7 / 9 / 12, riding hours 9–21 (the default). Spot: rideable sector 180–300, danger sector 60–150, Europe/Berlin. Defaults unless stated: hour starting 13:00 local (2026-07-18T11:00Z), bearing 240, daylight, precip 0, temp 15 °C, thunder LOW, three models agreeing.
 
 | ID | Change from defaults | Verdict | Reasons (in order) | Kite |
 | --- | --- | --- | --- | --- |
@@ -56,6 +56,13 @@ Profile: 80 kg, INTERMEDIATE (12–28 kn, gust spread ≤ 10), quiver 7 / 9 / 12
 | C11 | mean 18, gust 24, temp 3 °C | MARGINAL | COLD | 9 |
 | C12 | mean 14, gust 18, personal minWind = 15 kn | NO_GO | TOO_LIGHT | 12 |
 | C13 | mean 18, gust 24, bearing 100, thunder HIGH, precip 3.0 | NO_GO | THUNDERSTORM, OFFSHORE_DANGER, RAIN | 9 |
+| C14 | mean 18, gust 24, hour starting 07:00 local | NO_GO | OUTSIDE_RIDING_HOURS | 9 |
+| C15 | mean 18, gust 24, hour starting 20:00 local (the last that starts before 21:00) | GO | — | 9 |
+| C16 | mean 18, gust 24, hour starting 21:00 local | NO_GO | OUTSIDE_RIDING_HOURS | 9 |
+| C17 | mean 18, gust 24, hour starting 07:00 local, riding hours 6–21 | GO | — | 9 |
+| C18 | mean 18, gust 24, hour starting 07:00 local, not daylight | NO_GO | DARK, OUTSIDE_RIDING_HOURS | 9 |
+| C19 | riding hours 21–9, 9–9, −1–5 or 5–25 | rejected (`IllegalArgumentException`); 0–24 is the whole day | — | — |
+| C20 | mean 18, gust 24, spot in Asia/Kolkata (UTC+5:30): hours starting 08:30, 09:30, 20:30 and 21:30 local; with riding hours 0–24 the one starting 23:30 | NO_GO OUTSIDE_RIDING_HOURS, GO, GO, NO_GO OUTSIDE_RIDING_HOURS; GO | — | 9 |
 
 Note on C4: the kite is still computed (7) even though the hour is NO_GO; the UI hides it for NO_GO hours.
 
@@ -83,7 +90,7 @@ Window 13:00–17:00 local (Europe/Berlin, summer, so 11:00Z–15:00Z) on 2026-0
 | E3 | 13:30 | 10:30 | 16:00 | 1.0 | no → WINDOW_TOO_SHORT |
 | E4 | 09:00, drive 200 min, maxDrive 180 | — | — | — | spot excluded → TOO_FAR |
 
-## F. Confidence and score
+## F. Confidence and ranking
 
 | ID | Input | Expected |
 | --- | --- | --- |
@@ -91,19 +98,25 @@ Window 13:00–17:00 local (Europe/Berlin, summer, so 11:00Z–15:00Z) on 2026-0
 | F2 | hourly spreads 5, 7, 8 kn | median 7 → LOW |
 | F3 | hourly spreads 4, 6 kn | median 5 → MEDIUM |
 | F4 | single model | UNKNOWN |
-| F5 | usable 4 h, 0 marginal, HIGH | score 4.0 |
-| F6 | usable 5 h, 1 marginal, MEDIUM | score 3.6125 (ranks below F5) |
-| F7 | two windows with equal score, drives 60 and 90 min | 60-min spot ranks first |
+| F5 | usable 4 h HIGH; usable 5 h MEDIUM with 1 marginal hour | the 5 h window ranks first: the longest wins |
+| F6 | usable 4 h each: HIGH, MEDIUM, UNKNOWN, LOW | ranked in that order |
+| F7 | equal usable time and confidence, drives 60 and 90 min | 60-min spot ranks first |
+| F8 | equal usable time, confidence and drive | the earlier start ranks first |
 
 ## G. Day decision
 
 | ID | Situation | Expected |
 | --- | --- | --- |
-| G1 | Spot A has window F5, spot B has window F6 on the same day | Go(spot A), alternatives contain spot B |
+| G1 | Spot A has a 4 h HIGH window, spot B a 5 h MEDIUM window on the same day | Go(spot B), alternatives contain spot A |
 | G2 | Only GO hours that day form a 1-hour window | NoGo(WINDOW_TOO_SHORT) |
 | G3 | No GO hours; daylight reasons: GUSTY ×5, TOO_LIGHT ×5 | NoGo(GUSTY) — tie broken by severity |
 | G4 | Every favorite spot exceeds maxDrive | NoGo(TOO_FAR) |
 | G5 | Today NoGo, day after tomorrow Go | `nextGoDay` = day after tomorrow |
+| G6 | Three qualifying windows on one day (3, 2 and 4 h) | Go(the 4 h window), alternatives the 3 h and the 2 h one, in that order |
+| G7 | GO wind only 06:00–09:00 local, riding hours 9–21 | NoGo(OUTSIDE_RIDING_HOURS) |
+| G8 | GO wind 06:00–10:00 local, riding hours 9–21, minSession 2 h | the window is 09:00–10:00, too short: NoGo(WINDOW_TOO_SHORT) |
+| G9 | riding hours 22–24, light wind (8 kn) all daylight hours | no daylight hour within the riding hours, so the reason of the daylight hours: NoGo(TOO_LIGHT) |
+| G10 | riding hours 9–21; 06:00–09:00 too light, 10:00–12:00 gusty (gust spread 15 kn) | only hours within the riding hours count: NoGo(GUSTY), not the more frequent TOO_LIGHT of the early hours |
 
 ## H. Time zones and DST (Europe/Berlin)
 

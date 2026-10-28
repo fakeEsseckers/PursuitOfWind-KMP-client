@@ -4,16 +4,19 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 
-/** How much the weather models agree on the wind inside a window. */
+/**
+ * How much the weather models agree on the wind inside a window. Between two equally long windows, the one with more
+ * [preference] ranks first: unknown agreement lies between MEDIUM and LOW.
+ */
 public enum class Confidence(
-    internal val scoreFactor: Double,
+    internal val preference: Int,
 ) {
-    HIGH(scoreFactor = 1.0),
-    MEDIUM(scoreFactor = 0.85),
-    LOW(scoreFactor = 0.6),
+    HIGH(preference = 3),
+    MEDIUM(preference = 2),
+    LOW(preference = 0),
 
     /** Only one model was available, so agreement cannot be judged. */
-    UNKNOWN(scoreFactor = 0.8),
+    UNKNOWN(preference = 1),
 }
 
 /**
@@ -24,7 +27,6 @@ public enum class Confidence(
  * @property leaveBy latest departure to arrive and rig before [start].
  * @property usableStart when riding can start: [start], or later if it is already past [leaveBy].
  * @property usable riding time from [usableStart] to [end]; never negative.
- * @property score ranking value: usable hours × quality × confidence factor (see `docs/domain-rules.md`).
  * @property recommendedKiteM2 most frequent kite of the window's hours, the smaller one on a tie.
  * @property qualifies false when [usable] is shorter than the rider's minimum session (WINDOW_TOO_SHORT).
  */
@@ -38,7 +40,6 @@ public data class SessionWindow(
     public val usableStart: Instant,
     public val usable: Duration,
     public val confidence: Confidence,
-    public val score: Double,
     public val recommendedKiteM2: Double?,
     public val qualifies: Boolean,
 ) {

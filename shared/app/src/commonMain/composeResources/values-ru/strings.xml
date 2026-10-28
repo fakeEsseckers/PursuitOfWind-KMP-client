@@ -29,6 +29,8 @@
     <string name="reason_cold">Холодно</string>
     <string name="reason_too_far">Дальше, чем ты готов ехать</string>
     <string name="reason_window_too_short">Окно слишком короткое с учётом дороги</string>
+    <string name="reason_outside_riding_hours">Вне твоих часов катания</string>
+    <string name="reason_day_outside_riding_hours">Ветер только вне твоих часов катания</string>
 
     <!-- Days -->
     <string name="day_today">Сегодня</string>

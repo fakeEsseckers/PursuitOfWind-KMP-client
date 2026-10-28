@@ -9,6 +9,7 @@ import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.entity.SpotEv
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 
@@ -40,14 +41,15 @@ internal object SpotEvaluationMapper {
     /** The first window worth riding, if any. */
     fun firstWorthRiding(evaluation: SpotEvaluationEntity): SessionWindow? = evaluation.windows.firstOrNull { it.qualifies }
 
-    /** The best window worth riding that starts on [date] at the spot, if any. */
+    /** The best window worth riding that starts on [date] at the spot, if any: ranked as the day decision ranks them. */
     fun bestWindowOn(
         evaluation: SpotEvaluationEntity,
         date: LocalDate,
-    ): SessionWindow? =
-        evaluation.windows
-            .filter { it.qualifies && it.start.toLocalDateTime(evaluation.zone).date == date }
-            .maxByOrNull { it.score }
+    ): SessionWindow? {
+        val windows = evaluation.windows.filter { it.qualifies && it.start.toLocalDateTime(evaluation.zone).date == date }
+        // One spot, one drive: the drive decides nothing here.
+        return DecisionEngine.bestFirst(windows) { Duration.ZERO }.firstOrNull()
+    }
 
     private fun shownHours(
         hours: List<ForecastHour>,

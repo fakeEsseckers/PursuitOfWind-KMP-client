@@ -9,6 +9,7 @@ import io.github.esseckers.pursuitofwind.engine.model.Reason.DARK
 import io.github.esseckers.pursuitofwind.engine.model.Reason.DIRECTION_UNRIDEABLE
 import io.github.esseckers.pursuitofwind.engine.model.Reason.GUSTY
 import io.github.esseckers.pursuitofwind.engine.model.Reason.OFFSHORE_DANGER
+import io.github.esseckers.pursuitofwind.engine.model.Reason.OUTSIDE_RIDING_HOURS
 import io.github.esseckers.pursuitofwind.engine.model.Reason.OVERPOWERED_FOR_QUIVER
 import io.github.esseckers.pursuitofwind.engine.model.Reason.RAIN
 import io.github.esseckers.pursuitofwind.engine.model.Reason.THUNDERSTORM
@@ -16,6 +17,7 @@ import io.github.esseckers.pursuitofwind.engine.model.Reason.TOO_LIGHT
 import io.github.esseckers.pursuitofwind.engine.model.Reason.TOO_STRONG
 import io.github.esseckers.pursuitofwind.engine.model.Reason.UNDERPOWERED_FOR_QUIVER
 import io.github.esseckers.pursuitofwind.engine.model.RiderProfile
+import io.github.esseckers.pursuitofwind.engine.model.RidingHours
 import io.github.esseckers.pursuitofwind.engine.model.Sector
 import io.github.esseckers.pursuitofwind.engine.model.SkillLevel
 import io.github.esseckers.pursuitofwind.engine.model.ThunderRisk
@@ -23,8 +25,11 @@ import io.github.esseckers.pursuitofwind.engine.model.Verdict
 import io.github.esseckers.pursuitofwind.engine.model.Verdict.GO
 import io.github.esseckers.pursuitofwind.engine.model.Verdict.MARGINAL
 import io.github.esseckers.pursuitofwind.engine.model.Verdict.NO_GO
+import kotlinx.datetime.TimeZone
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.time.Instant
 
 class HourRulesTest {
     private data class Vector(
@@ -80,10 +85,32 @@ class HourRulesTest {
                 reasons = listOf(THUNDERSTORM, OFFSHORE_DANGER, RAIN),
                 kite = 9.0,
             ),
+            // The default hour starts at 13:00 in Berlin (11:00Z in summer); the default riding hours are 9–21.
+            Vector("C14", hour = { start = berlin("07:00") }, verdict = NO_GO, reasons = listOf(OUTSIDE_RIDING_HOURS), kite = 9.0),
+            Vector("C15", hour = { start = berlin("20:00") }, verdict = GO, reasons = emptyList(), kite = 9.0),
+            Vector("C16", hour = { start = berlin("21:00") }, verdict = NO_GO, reasons = listOf(OUTSIDE_RIDING_HOURS), kite = 9.0),
+            Vector(
+                "C17",
+                profile = RIDER.copy(ridingHours = RidingHours(fromHour = 6, toHour = 21)),
+                hour = { start = berlin("07:00") },
+                verdict = GO,
+                reasons = emptyList(),
+                kite = 9.0,
+            ),
+            Vector(
+                "C18",
+                hour = {
+                    start = berlin("07:00")
+                    isDaylight = false
+                },
+                verdict = NO_GO,
+                reasons = listOf(DARK, OUTSIDE_RIDING_HOURS),
+                kite = 9.0,
+            ),
         )
 
     @Test
-    fun `C1 to C13 hour verdicts with reasons in severity order and kites`() {
+    fun `C1 to C18 hour verdicts with reasons in severity order and kites`() {
         vectors.forEach { vector ->
             val result = DecisionEngine.evaluateHour(forecastHour(vector.hour), vector.profile, SPOT)
 
@@ -181,6 +208,7 @@ class HourRulesTest {
                 "THUNDERSTORM",
                 "OFFSHORE_DANGER",
                 "DARK",
+                "OUTSIDE_RIDING_HOURS",
                 "TOO_STRONG",
                 "OVERPOWERED_FOR_QUIVER",
                 "GUSTY",
@@ -194,6 +222,42 @@ class HourRulesTest {
             ),
             Reason.entries.map { it.name },
         )
+    }
+
+    @Test
+    fun `C19 riding hours are whole hours of one day that start before they end`() {
+        listOf(21 to 9, 9 to 9, -1 to 5, 5 to 25).forEach { (from, to) ->
+            assertFailsWith<IllegalArgumentException>("$from–$to") { RidingHours(from, to) }
+        }
+        val wholeDay = RIDER.copy(ridingHours = RidingHours(fromHour = 0, toHour = 24))
+
+        assertEquals(GO, DecisionEngine.evaluateHour(forecastHour { start = berlin("00:00") }, wholeDay, SPOT).verdict)
+        assertEquals(GO, DecisionEngine.evaluateHour(forecastHour { start = berlin("23:00") }, wholeDay, SPOT).verdict)
+    }
+
+    @Test
+    fun `C20 in a zone half an hour off UTC an hour counts when it starts within the riding hours`() {
+        val kolkata = SPOT.copy(timeZone = TimeZone.of("Asia/Kolkata"))
+        val wholeDay = RIDER.copy(ridingHours = RidingHours(fromHour = 0, toHour = 24))
+
+        // 03:00Z is 08:30 in Kolkata; the hours that follow start at 09:30, 20:30 and 21:30.
+        fun verdictAt(
+            utc: String,
+            profile: RiderProfile = RIDER,
+        ) = DecisionEngine.evaluateHour(forecastHour { start = Instant.parse("2026-07-18T${utc}Z") }, profile, kolkata).verdict
+
+        assertEquals(listOf(NO_GO, GO, GO, NO_GO), listOf("03:00:00", "04:00:00", "15:00:00", "16:00:00").map { verdictAt(it) })
+        assertEquals(GO, verdictAt("18:00:00", wholeDay))
+    }
+
+    @Test
+    fun `riding hours follow the spot's own clock`() {
+        val lisbon = SPOT.copy(timeZone = TimeZone.of("Europe/Lisbon"))
+        // 07:00Z is 09:00 in Berlin but 08:00 in Lisbon in summer.
+        val early = forecastHour { start = Instant.parse("2026-07-18T07:00:00Z") }
+
+        assertEquals(GO, DecisionEngine.evaluateHour(early, RIDER, SPOT).verdict)
+        assertEquals(listOf(OUTSIDE_RIDING_HOURS), DecisionEngine.evaluateHour(early, RIDER, lisbon).reasons)
     }
 
     private fun reasonsFor(

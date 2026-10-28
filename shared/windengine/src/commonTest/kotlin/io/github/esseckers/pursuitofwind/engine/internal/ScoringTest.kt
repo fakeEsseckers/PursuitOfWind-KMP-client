@@ -1,11 +1,14 @@
 package io.github.esseckers.pursuitofwind.engine.internal
 
+import io.github.esseckers.pursuitofwind.engine.DecisionEngine
 import io.github.esseckers.pursuitofwind.engine.model.Confidence
 import io.github.esseckers.pursuitofwind.engine.model.SessionWindow
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
+import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
@@ -33,19 +36,25 @@ class ScoringTest {
     }
 
     @Test
-    fun `F5 and F6 window scores`() {
-        assertEquals(4.0, windowScore(4.hours, marginalHours = 0, confidence = Confidence.HIGH), 1e-9, "F5")
-        assertEquals(3.6125, windowScore(5.hours, marginalHours = 1, confidence = Confidence.MEDIUM), 1e-9, "F6")
+    fun `F5 the longest window ranks first whatever its confidence`() {
+        val fourHigh = window("a-beach", start = "2026-07-18T10:00:00Z", usable = 4.hours, confidence = Confidence.HIGH)
+        val fiveMedium =
+            window("b-bay", start = "2026-07-18T10:00:00Z", usable = 5.hours, confidence = Confidence.MEDIUM, marginalHours = 1)
+
+        assertEquals(listOf(fiveMedium, fourHigh), listOf(fourHigh, fiveMedium).sortedWith(windowRanking { 60.minutes }))
     }
 
     @Test
-    fun `quality has a floor of one tenth`() {
-        assertEquals(1.0, windowScore(10.hours, marginalHours = 9, confidence = Confidence.HIGH), 1e-9)
-        assertEquals(1.2, windowScore(2.hours, marginalHours = 0, confidence = Confidence.LOW), 1e-9)
+    fun `F6 equally long windows rank by confidence with unknown between medium and low`() {
+        val windows = Confidence.entries.map { window(it.name.lowercase(), start = "2026-07-18T10:00:00Z", confidence = it) }
+
+        val ranked = windows.shuffled(Random(7)).sortedWith(windowRanking { 60.minutes })
+
+        assertEquals(listOf(Confidence.HIGH, Confidence.MEDIUM, Confidence.UNKNOWN, Confidence.LOW), ranked.map { it.confidence })
     }
 
     @Test
-    fun `F7 equal scores rank the shorter drive first then the earlier start then the spot id`() {
+    fun `F7 and F8 equally long and sure windows rank the shorter drive then the earlier start then the spot id`() {
         val drives = mapOf(SpotId("far") to 90.minutes, SpotId("near") to 60.minutes, SpotId("also-near") to 60.minutes)
         val far = window("far", start = "2026-07-18T10:00:00Z")
         val near = window("near", start = "2026-07-18T12:00:00Z")
@@ -58,31 +67,32 @@ class ScoringTest {
     }
 
     @Test
-    fun `a higher score beats a shorter drive`() {
+    fun `a longer window beats a shorter drive`() {
         val drives = mapOf(SpotId("far") to 90.minutes, SpotId("near") to 60.minutes)
-        val far = window("far", start = "2026-07-18T10:00:00Z", score = 4.0)
-        val near = window("near", start = "2026-07-18T10:00:00Z", score = 3.6125)
+        val far = window("far", start = "2026-07-18T10:00:00Z", usable = 5.hours)
+        val near = window("near", start = "2026-07-18T10:00:00Z", usable = 4.hours)
 
-        assertEquals(listOf(far, near), listOf(near, far).sortedWith(windowRanking { drives.getValue(it) }))
+        assertEquals(listOf(far, near), DecisionEngine.bestFirst(listOf(near, far)) { drives.getValue(it) })
     }
 
     private fun window(
         spot: String,
         start: String,
-        score: Double = 4.0,
+        usable: Duration = 4.hours,
+        confidence: Confidence = Confidence.HIGH,
+        marginalHours: Int = 0,
     ): SessionWindow {
         val startInstant = Instant.parse(start)
         return SessionWindow(
             spotId = SpotId(spot),
             start = startInstant,
-            end = startInstant + 4.hours,
-            hours = 4,
-            marginalHours = 0,
+            end = startInstant + usable,
+            hours = usable.inWholeHours.toInt(),
+            marginalHours = marginalHours,
             leaveBy = startInstant - 2.hours,
             usableStart = startInstant,
-            usable = 4.hours,
-            confidence = Confidence.HIGH,
-            score = score,
+            usable = usable,
+            confidence = confidence,
             recommendedKiteM2 = 9.0,
             qualifies = true,
         )

@@ -131,6 +131,7 @@ class SpotDetailScreenTest {
             onNodeWithTag("spot.details")
                 .assert(hasText("NO-GO"))
                 .assert(hasText("• Not enough wind"))
+                .assert(hasText("• Outside your riding hours"))
                 .assert(hasText("Models: ECMWF 9 · GFS 11 · ICON", substring = true))
         }
 

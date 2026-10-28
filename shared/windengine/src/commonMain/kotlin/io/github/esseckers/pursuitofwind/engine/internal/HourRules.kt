@@ -8,6 +8,7 @@ import io.github.esseckers.pursuitofwind.engine.model.RiderProfile
 import io.github.esseckers.pursuitofwind.engine.model.SpotConfig
 import io.github.esseckers.pursuitofwind.engine.model.ThunderRisk
 import io.github.esseckers.pursuitofwind.engine.model.Verdict
+import kotlinx.datetime.toLocalDateTime
 
 /** Gust spread above the rider's tolerance by more than this is NO_GO; by less, MARGINAL. */
 private const val GUSTY_NO_GO_EXCESS_KN: Double = 3.0
@@ -33,7 +34,8 @@ internal fun hourVerdict(
     spot: SpotConfig,
 ): HourVerdict {
     val wind = consensusWind(hour.byModel)
-    val results = weatherResults(hour) + directionResults(wind, spot) + windResults(wind, profile.windRange())
+    val results =
+        weatherResults(hour) + timeResults(hour, profile, spot) + directionResults(wind, spot) + windResults(wind, profile.windRange())
     val kite = sizeKite(profile.weightKg, profile.quiverM2, wind.mean, wind.gust)
     return HourVerdict(
         start = hour.start,
@@ -50,6 +52,18 @@ private fun weatherResults(hour: ForecastHour): List<RuleResult> =
         if (!hour.isDaylight) add(RuleResult(Verdict.NO_GO, Reason.DARK))
         if (hour.precipMm > RAIN_ABOVE_MM) add(RuleResult(Verdict.MARGINAL, Reason.RAIN))
         if (hour.tempC < COLD_BELOW_C) add(RuleResult(Verdict.MARGINAL, Reason.COLD))
+    }
+
+/** An hour outside the rider's riding hours, in the spot's local time, is not a riding hour. */
+private fun timeResults(
+    hour: ForecastHour,
+    profile: RiderProfile,
+    spot: SpotConfig,
+): List<RuleResult> =
+    if (hour.start.toLocalDateTime(spot.timeZone) in profile.ridingHours) {
+        emptyList()
+    } else {
+        listOf(RuleResult(Verdict.NO_GO, Reason.OUTSIDE_RIDING_HOURS))
     }
 
 /** A dangerous direction wins over an unrideable one: the hour reports only OFFSHORE_DANGER. */

@@ -9,6 +9,7 @@ import io.github.esseckers.pursuitofwind.data.model.Profile
 import io.github.esseckers.pursuitofwind.engine.localHourLabel
 import io.github.esseckers.pursuitofwind.engine.model.ForecastHour
 import io.github.esseckers.pursuitofwind.engine.model.HourVerdict
+import io.github.esseckers.pursuitofwind.engine.model.Reason
 import io.github.esseckers.pursuitofwind.engine.model.SessionWindow
 import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.entity.SpotEvaluationEntity
 import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.mapper.SpotEvaluationMapper
@@ -163,11 +164,17 @@ internal class SpotForecastMapper(
 
     private fun firstWindowHour(): Int? = SpotEvaluationMapper.firstWorthRiding(evaluation)?.let(::firstHourOf)
 
-    /** The best window worth riding on [date], or that day's first daylight hour, or its first hour. */
-    private fun dayHour(date: LocalDate): Int? =
-        SpotEvaluationMapper.bestWindowOn(evaluation, date)?.let(::firstHourOf)
-            ?: dates.indices.firstOrNull { dates[it] == date && forecast[it].isDaylight }
-            ?: dates.indexOf(date).takeIf { it >= 0 }
+    /**
+     * The best window worth riding on [date]; else that day's first daylight hour within the riding hours, its first
+     * daylight hour, or its first hour.
+     */
+    private fun dayHour(date: LocalDate): Int? {
+        val day = dates.indices.filter { dates[it] == date }
+        return SpotEvaluationMapper.bestWindowOn(evaluation, date)?.let(::firstHourOf)
+            ?: day.firstOrNull { verdicts[it].reasons.none { reason -> reason == Reason.DARK || reason == Reason.OUTSIDE_RIDING_HOURS } }
+            ?: day.firstOrNull { forecast[it].isDaylight }
+            ?: day.firstOrNull()
+    }
 }
 
 /** The lowest and highest model mean wind of the hour, in m/s; null with one model. */

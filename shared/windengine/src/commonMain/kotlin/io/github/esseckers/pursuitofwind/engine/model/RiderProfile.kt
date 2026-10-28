@@ -19,6 +19,7 @@ public enum class SkillLevel {
  * @property maxWind personal upper wind limit; replaces the level default when set.
  * @property minSession shortest session worth the drive, counted after arrival and rigging.
  * @property maxDrive spots with a longer drive are never suggested.
+ * @property ridingHours when the rider rides, in the spot's local time; hours outside them are not riding hours.
  */
 public data class RiderProfile(
     public val weightKg: Double,
@@ -28,6 +29,7 @@ public data class RiderProfile(
     public val maxWind: WindSpeed? = null,
     public val minSession: Duration = DEFAULT_MIN_SESSION,
     public val maxDrive: Duration = DEFAULT_MAX_DRIVE,
+    public val ridingHours: RidingHours = RidingHours.DEFAULT,
 ) {
     init {
         require(weightKg.isFinite() && weightKg > 0.0) { "Weight must be a positive number of kg, was $weightKg" }

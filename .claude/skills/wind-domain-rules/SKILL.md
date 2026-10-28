@@ -23,16 +23,16 @@ The decision engine (`:shared:windengine`, package `io.github.esseckers.pursuito
 | `Bearing(degrees)` | direction the wind blows **from**, normalized to [0, 360) |
 | `Sector(from, to)` / `Sector.of(fromDeg, toDeg)` | clockwise arc, inclusive on both ends, may wrap past 0°; `from == to` is invalid |
 | `SkillLevel` | BEGINNER, INTERMEDIATE, ADVANCED |
-| `RiderProfile` | weightKg, level, quiverM2, optional `minWind` / `maxWind` (`WindSpeed`), `minSession` (2 h), `maxDrive` (3 h) as `Duration` |
+| `RiderProfile` | weightKg, level, quiverM2, optional `minWind` / `maxWind` (`WindSpeed`), `minSession` (2 h), `maxDrive` (3 h) as `Duration`, `ridingHours` (`RidingHours(fromHour, toHour)`, 9–21) |
 | `SpotConfig` | `SpotId`, name, IANA `timeZone`, rideableSectors (non-empty), dangerSectors, `drive: Duration` |
 | `ShoreSectors` | rideable and danger `Sector` of a spot on a shore, from the direction of its water (`sectorsFacing`) |
 | `ForecastHour` | start `Instant`, `byModel: Map<ModelId, ModelWind(mean, gust, bearing)>`, precipMm, tempC, `ThunderRisk`, isDaylight |
 | `HourVerdict` | start, verdict, reasons (sorted by severity), `recommendedKiteM2` or null, consensus `HourWind` (mean, gust, bearing, modelSpread) |
-| `SessionWindow` | spotId, start, end, hours, marginalHours, leaveBy, usableStart, `usable: Duration`, confidence, score, recommendedKiteM2, `qualifies`; asked with `isReachable`, `mustLeaveNow(now)`, `hasRidingIn(hourStart)` |
+| `SessionWindow` | spotId, start, end, hours, marginalHours, leaveBy, usableStart, `usable: Duration`, confidence, recommendedKiteM2, `qualifies`; asked with `isReachable`, `mustLeaveNow(now)`, `hasRidingIn(hourStart)` |
 | `SpotForecast` | spot + its forecast hours; input of `decideDays` |
 | `DayDecision` | `Go(date, window, alternatives)` or `NoGo(date, primaryReason, details: List<SpotNoGo>, nextGoDay)` |
 
-Entry points: `DecisionEngine.evaluateHour`, `DecisionEngine.findWindows`, `DecisionEngine.decideDays`, `DecisionEngine.sectorsFacing`, plus `localHourLabel(start, zone)` for chart labels.
+Entry points: `DecisionEngine.evaluateHour`, `DecisionEngine.findWindows`, `DecisionEngine.decideDays`, `DecisionEngine.bestFirst`, `DecisionEngine.sectorsFacing`, plus `localHourLabel(start, zone)` for chart labels.
 
 ## Rules
 
@@ -59,6 +59,7 @@ Personal `minWind` / `maxWind`, when set, replace the level defaults. Gust sprea
 | Thunder | thunderRisk == HIGH | NO_GO THUNDERSTORM |
 | Danger direction | bearing inside any dangerSector | NO_GO OFFSHORE_DANGER |
 | Darkness | hour starts before sunrise or ends later than sunset − 30 min (`isDaylight == false`) | NO_GO DARK |
+| Riding hours | hour does not start within `ridingHours` in the spot's local time (from ≤ start < to) | NO_GO OUTSIDE_RIDING_HOURS |
 | Too strong | mean > max | NO_GO TOO_STRONG |
 | Gusty | spread − tolerance in (0, 3] kn | MARGINAL GUSTY |
 | Gusty | spread − tolerance > 3 kn | NO_GO GUSTY |
@@ -70,7 +71,7 @@ Personal `minWind` / `maxWind`, when set, replace the level defaults. Gust sprea
 
 Hour verdict = worst result (NO_GO > MARGINAL > GO). `reasons` = every non-GO reason, sorted by severity.
 
-**Severity order (most severe first):** THUNDERSTORM, OFFSHORE_DANGER, DARK, TOO_STRONG, OVERPOWERED_FOR_QUIVER, GUSTY, DIRECTION_UNRIDEABLE, TOO_LIGHT, UNDERPOWERED_FOR_QUIVER, RAIN, COLD. Decision-level reasons TOO_FAR and WINDOW_TOO_SHORT never appear on an hour.
+**Severity order (most severe first):** THUNDERSTORM, OFFSHORE_DANGER, DARK, OUTSIDE_RIDING_HOURS, TOO_STRONG, OVERPOWERED_FOR_QUIVER, GUSTY, DIRECTION_UNRIDEABLE, TOO_LIGHT, UNDERPOWERED_FOR_QUIVER, RAIN, COLD. Decision-level reasons TOO_FAR and WINDOW_TOO_SHORT never appear on an hour.
 
 ### 4. Kite sizing (heuristic, not safety advice)
 
@@ -95,17 +96,16 @@ candidates  = quiver sizes within [0.8 × idealM2, 1.15 × idealM2]
 - The window kite is the most frequent hour kite; tie → smaller.
 - Spots with `drive > maxDrive` produce no windows and report TOO_FAR.
 
-### 6. Confidence and score
+### 6. Confidence and ranking
 
 - Window confidence from the **median** of hourly model spreads inside the window (even count → mean of the two middle values): ≤ 3 kn HIGH, ≤ 6 kn MEDIUM, otherwise LOW. Hours with one model have no spread; no spread at all → UNKNOWN.
-- `score = usableHours × quality × confidenceFactor`, `quality = 1.0 − 0.15 × marginalHours` (floored at 0.1), `confidenceFactor`: HIGH 1.0, MEDIUM 0.85, LOW 0.6, UNKNOWN 0.8.
-- Ranking: higher score first; tie → shorter drive; tie → earlier start; tie → spot id ascending.
+- Ranking (`DecisionEngine.bestFirst`): longer `usable` first; tie → higher confidence (HIGH, MEDIUM, UNKNOWN, LOW); tie → shorter drive; tie → earlier start; tie → spot id ascending.
 
 ### 7. Day decision
 
 - Days are calendar dates in the **spot's time zone**. Hours are assigned to a day by their start instant converted to that zone. Dates before today (spot zone) are skipped.
-- `Go`: best qualifying window across favorite spots for that day, with recommended kite (most frequent hour recommendation in the window; tie → smaller), leaveBy, confidence and up to 2 alternative windows.
-- `NoGo.primaryReason`: if all favorite spots are TOO_FAR → TOO_FAR. If any GO hour existed that day but no window qualified → WINDOW_TOO_SHORT. Otherwise the most frequent reason across daylight hours (hours without DARK) of reachable spots, counting every reason of an hour; tie → more severe; no daylight hour → DARK.
+- `Go`: best qualifying window across favorite spots for that day, with recommended kite (most frequent hour recommendation in the window; tie → smaller), leaveBy, confidence, and every other qualifying window of the day as alternatives, best first.
+- `NoGo.primaryReason`: if all favorite spots are TOO_FAR → TOO_FAR. If any GO hour existed that day but no window qualified → WINDOW_TOO_SHORT. If an hour's only reason is OUTSIDE_RIDING_HOURS → OUTSIDE_RIDING_HOURS. Otherwise the most frequent reason across daylight hours within the riding hours (hours without DARK or OUTSIDE_RIDING_HOURS) of reachable spots, counting every reason of an hour; tie → more severe; no daylight hour within the riding hours → the same over all daylight hours, not counting OUTSIDE_RIDING_HOURS; no daylight hour → DARK.
 - `NoGo.details`: one `SpotNoGo` per spot, same rule per spot.
 - `nextGoDay`: earliest later date within the forecast horizon that has a `Go`.
 
@@ -131,6 +131,7 @@ candidates  = quiver sizes within [0.8 × idealM2, 1.15 × idealM2]
 | OVERPOWERED_FOR_QUIVER | Your kites are too big |
 | TOO_FAR | Beyond your max drive |
 | WINDOW_TOO_SHORT | Window too short after the drive |
+| OUTSIDE_RIDING_HOURS | Outside your riding hours (day: wind only outside your riding hours) |
 
 Always show the disclaimer: the app supports a decision; it does not replace judging conditions on the spot and is not safety advice.
 

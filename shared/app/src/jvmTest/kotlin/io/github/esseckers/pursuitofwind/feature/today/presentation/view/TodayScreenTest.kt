@@ -31,9 +31,11 @@ import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.PursuitOfWindTheme
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Sizes
+import io.github.esseckers.pursuitofwind.engine.model.Reason
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.today.at
 import io.github.esseckers.pursuitofwind.feature.today.day
+import io.github.esseckers.pursuitofwind.feature.today.presentation.model.SpotReasonUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayIntent
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState
 import io.github.esseckers.pursuitofwind.feature.today.presentation.preview.TodayPreviewData
@@ -97,7 +99,7 @@ class TodayScreenTest {
                 .assert(hasText("Andrei drives, leaves at 08:30"))
                 .assert(hasText("2 seats free"))
             // The alternative is a button of its own, so screen readers reach it after the card.
-            onNodeWithTag("today.alternative.lake-weiss").assert(hasText("Also good: Lake Weiss, 14:00–17:00"))
+            onNodeWithTag("today.alternative.lake-weiss.14:00").assert(hasText("Also good: Lake Weiss, 14:00–17:00"))
         }
 
     @Test
@@ -107,7 +109,7 @@ class TodayScreenTest {
             scrollTo("today.day.2026-10-24")
 
             onNodeWithTag("today.day.2026-10-24").assert(hasClickAction()).performClick()
-            onNodeWithTag("today.alternative.lake-weiss").performClick()
+            onNodeWithTag("today.alternative.lake-weiss.14:00").performClick()
 
             assertEquals(
                 listOf<TodayIntent>(
@@ -162,6 +164,25 @@ class TodayScreenTest {
                 .assert(hasText("Next good day: Saturday"))
             onNodeWithTag("today.spot.2026-10-22.lake-weiss").assert(hasText("Lake Weiss: Too gusty"))
             onNodeWithTag("today.spot.2026-10-22.nordstrand-bay").assert(hasText("Nordstrand Bay: Offshore wind — dangerous here"))
+        }
+
+    @Test
+    fun `a day whose wind is good only outside the riding hours says so`() =
+        runComposeUiTest {
+            val outside =
+                TodayPreviewData.tooShortTomorrow.copy(
+                    reason = Reason.OUTSIDE_RIDING_HOURS,
+                    spots =
+                        listOf(
+                            SpotReasonUi(SpotId("lake-weiss"), "Lake Weiss", Reason.TOO_LIGHT),
+                            SpotReasonUi(SpotId("nordstrand-bay"), "Nordstrand Bay", Reason.OUTSIDE_RIDING_HOURS),
+                        ),
+                )
+            show(TodayPreviewData.ready.copy(content = TodayState.Content.Ready(listOf(outside))))
+
+            onNodeWithTag("today.day.2026-10-23").assert(hasText("Wind only outside your riding hours"))
+            onNodeWithTag("today.spot.2026-10-23.nordstrand-bay").assert(hasText("Nordstrand Bay: Wind only outside your riding hours"))
+            onNodeWithTag("today.spot.2026-10-23.lake-weiss").assert(hasText("Lake Weiss: Not enough wind"))
         }
 
     @Test

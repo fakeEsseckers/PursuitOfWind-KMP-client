@@ -18,7 +18,7 @@ public data class SpotForecast(
 public sealed interface DayDecision {
     public val date: LocalDate
 
-    /** Go: [window] is the best qualifying window of the day; [alternatives] are the next two at most. */
+    /** Go: [window] is the best qualifying window of the day; [alternatives] are all the others, best first. */
     public data class Go(
         override val date: LocalDate,
         public val window: SessionWindow,

@@ -27,7 +27,6 @@ class SessionWindowTest {
             usableStart = usableStart,
             usable = (end - usableStart).coerceAtLeast(Duration.ZERO),
             confidence = Confidence.HIGH,
-            score = 4.0,
             recommendedKiteM2 = 9.0,
             qualifies = true,
         )
