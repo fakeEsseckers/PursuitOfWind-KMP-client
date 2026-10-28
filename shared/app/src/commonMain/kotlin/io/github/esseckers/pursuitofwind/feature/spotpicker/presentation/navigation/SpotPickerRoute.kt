@@ -10,11 +10,15 @@ import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.view.Sp
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.viewmodel.SpotPickerViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
-/** Connects [SpotPickerScreen] to its [SpotPickerViewModel]; [onFinished] runs once the choices are saved. No layout here. */
+/**
+ * Connects [SpotPickerScreen] to its [SpotPickerViewModel]; [onFinished] runs once the choices are saved, [onOpenMap]
+ * when the rider goes to add a spot on the map. No layout here.
+ */
 @Composable
 internal fun SpotPickerRoute(
     onFinished: () -> Unit,
     onBack: () -> Unit,
+    onOpenMap: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SpotPickerViewModel = koinViewModel(),
 ) {
@@ -24,5 +28,5 @@ internal fun SpotPickerRoute(
             SpotPickerEffect.Finished -> onFinished()
         }
     }
-    SpotPickerScreen(state = state, onIntent = viewModel::onIntent, onBack = onBack, modifier = modifier)
+    SpotPickerScreen(state = state, onIntent = viewModel::onIntent, onBack = onBack, onOpenMap = onOpenMap, modifier = modifier)
 }

@@ -52,7 +52,7 @@ class SpotsViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val clock = ControllableClock(at(SATURDAY, 8))
     private val spotSaves = HeldRequests { it.method == HttpMethod.Put && it.url.encodedPath.startsWith("/v1/me/spots/") }
-    private val koin: Koin = testGraph(clock, module { single<HttpClientEngine> { spotSaves.engine(get()) } }).koin
+    private val koin: Koin = testGraph(clock, module { single<HttpClientEngine> { spotSaves.engine(get<FakePursuitOfWindServer>()) } }).koin
     private val server get() = koin.get<FakePursuitOfWindServer>()
     private val spots get() = koin.get<SpotRepository>()
     private val viewModels = ViewModelStore()

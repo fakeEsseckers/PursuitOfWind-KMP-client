@@ -4,6 +4,7 @@ import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
 import io.github.esseckers.pursuitofwind.core.refresh.RefreshStatus
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.error_network
+import io.github.esseckers.pursuitofwind.core.ui.DEFAULT_SPOT_DRIVE_MINUTES
 import io.github.esseckers.pursuitofwind.core.ui.SPOT_DRIVE_STEPS
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Cached
@@ -11,7 +12,6 @@ import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.entity.SpotCh
 import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.entity.SpotPickerSnapshotEntity
 import io.github.esseckers.pursuitofwind.feature.spotpicker.following
 import io.github.esseckers.pursuitofwind.feature.spotpicker.inputs
-import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.DriveLimits
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotChoice
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerInputs
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerState.Content
@@ -37,7 +37,7 @@ class SpotPickerStateMapperTest {
         assertEquals(listOf("Dune Point", "Lake Weiss", "Nordstrand Bay", "Salt Lagoon"), spots.map { it.name })
         assertEquals(listOf(false, false, true, false), spots.map { it.selected })
         assertEquals(2.hours, spots.single { it.selected }.drive)
-        assertEquals(DriveLimits.DEFAULT_MINUTES.minutes, spots.first().drive)
+        assertEquals(DEFAULT_SPOT_DRIVE_MINUTES.minutes, spots.first().drive)
         assertEquals(1, state.selectedCount)
         assertFalse(state.hasChanges)
     }

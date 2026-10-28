@@ -17,8 +17,8 @@ import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 
 /**
- * States of the spot picker for previews and UI tests: a catalog of four spots, one of them not checked by a local
- * rider yet, with Nordstrand Bay followed as a favorite at 2 h. Built by the real reducer.
+ * States of the spot picker for previews and UI tests: a catalog of four spots, with Nordstrand Bay followed as a
+ * favorite at 2 h. Built by the real reducer.
  */
 internal object SpotPickerPreviewData {
     val nordstrand = spot("nordstrand-bay", "Nordstrand Bay")

@@ -36,5 +36,8 @@ internal data class StepperUi(
     val canIncrease: Boolean,
 )
 
-/** How the drive to a spot changes, on the Spots tab and in the picker: by a quarter hour, up to a day trip. */
+/** How the drive to a spot changes, on the Spots tab, in the picker and on the map: by a quarter hour, up to a day trip. */
 internal val SPOT_DRIVE_STEPS = StepRange(min = 0, max = 720, step = 15)
+
+/** The drive a spot starts with when the rider follows it, until they change it. */
+internal const val DEFAULT_SPOT_DRIVE_MINUTES = 60

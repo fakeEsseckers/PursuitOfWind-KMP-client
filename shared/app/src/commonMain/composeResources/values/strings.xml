@@ -231,7 +231,9 @@
     <string name="spots_loading">Loading the spots</string>
     <string name="spots_error_title">Couldn’t load the spots</string>
     <string name="spots_empty_title">No spots yet</string>
-    <string name="spots_empty_body">There are no spots to pick from. Try again later.</string>
+    <string name="spots_empty_body">Nobody has added a spot yet. Add yours on the map.</string>
+    <string name="spots_not_listed">Your spot is not here? Add it on the map.</string>
+    <string name="spots_open_map">Add a spot</string>
     <string name="banner_spots_offline">No connection. Showing the saved list of spots.</string>
     <string name="banner_spots_failed">Couldn’t update the list of spots.</string>
 
@@ -328,5 +330,33 @@
     <string name="offer_failed">Couldn’t offer the ride.</string>
     <string name="offer_no_crew_title">No crew yet</string>
     <string name="offer_no_crew_body">Create a crew or join one on the Crew tab to offer rides.</string>
+    <!-- The map of spots -->
+    <string name="spot_map_title">Spots on the map</string>
+    <string name="spot_map_title_edit">Change the spot</string>
+    <string name="spot_map_loading">Loading the spots…</string>
+    <string name="spot_map_offline">The map did not load. Check your connection.</string>
+    <string name="spot_map_description">Map of spots</string>
+    <string name="spot_map_select">Select %1$s</string>
+    <string name="spot_map_hint">Long-press the beach where you launch to add a spot, or tap a spot to add it to yours.</string>
+    <string name="spot_map_tap_water">Now tap the water next to the pin, where you go in. That tells the app which winds are safe to ride here.</string>
+    <string name="spot_map_legend_ride">Wind from the green side: you can ride</string>
+    <string name="spot_map_legend_danger">Wind from the red side blows off the shore: dangerous</string>
     <string name="spot_map_water_label">water</string>
+    <string name="spot_map_move_pin">Long-press to move the pin, tap the water to turn the arrow.</string>
+    <string name="spot_map_name">Name</string>
+    <string name="spot_map_nearby">%1$s is %2$d m from here. Is it the same spot?</string>
+    <string name="spot_map_use_nearby">Yes, it’s %1$s</string>
+    <string name="spot_map_new_here">No, a new spot here</string>
+    <string name="spot_map_followed">In your spots</string>
+    <string name="spot_map_follow">Add to my spots</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="spot_map_edit">Change</string>
+    <string name="water_n">Water to the north</string>
+    <string name="water_ne">Water to the northeast</string>
+    <string name="water_e">Water to the east</string>
+    <string name="water_se">Water to the southeast</string>
+    <string name="water_s">Water to the south</string>
+    <string name="water_sw">Water to the southwest</string>
+    <string name="water_w">Water to the west</string>
+    <string name="water_nw">Water to the northwest</string>
 </resources>

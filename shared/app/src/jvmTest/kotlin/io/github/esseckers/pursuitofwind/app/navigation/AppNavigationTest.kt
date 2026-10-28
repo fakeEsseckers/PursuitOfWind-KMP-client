@@ -14,6 +14,7 @@ import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasAnyAncestor
@@ -42,8 +43,10 @@ import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import io.github.esseckers.pursuitofwind.app.language.AppLocale
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.PursuitOfWindTheme
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Spacing
+import io.github.esseckers.pursuitofwind.core.map.SpotMap
 import io.github.esseckers.pursuitofwind.core.platform.ShareLauncher
 import io.github.esseckers.pursuitofwind.data.fake.ControllableClock
+import io.github.esseckers.pursuitofwind.data.model.GeoPoint
 import io.github.esseckers.pursuitofwind.data.repository.CrewRepository
 import io.github.esseckers.pursuitofwind.data.repository.ProfileRepository
 import io.github.esseckers.pursuitofwind.data.repository.SpotRepository
@@ -54,11 +57,13 @@ import io.github.esseckers.pursuitofwind.feature.spotdetail.alex
 import io.github.esseckers.pursuitofwind.feature.spotdetail.at
 import io.github.esseckers.pursuitofwind.testing.RecordingAppLocale
 import io.github.esseckers.pursuitofwind.testing.RecordingShareLauncher
+import io.github.esseckers.pursuitofwind.testing.ScriptedSpotMap
 import io.github.esseckers.pursuitofwind.testing.releaseMainDispatcher
 import io.github.esseckers.pursuitofwind.testing.testGraph
 import io.github.esseckers.pursuitofwind.testing.value
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.setMain
 import org.koin.compose.KoinIsolatedContext
@@ -244,6 +249,48 @@ class AppNavigationTest {
             waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("spot.ready")).fetchSemanticsNodes().isNotEmpty() }
             onNodeWithContentDescription("Back").performClick()
             waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("myspots.list")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("tab.spots").assertIsSelected()
+        }
+
+    @Test
+    fun `on a phone a spot added on the map from the picker comes back chosen and shows on the Spots tab`() =
+        runSkikoComposeUiTest(size = Size(PHONE_WIDTH, PHONE_HEIGHT)) {
+            showApp()
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("today.header")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("tab.spots").performClick()
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("myspots.add")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("myspots.add").performClick()
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("spots.map")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("spots.map").performClick()
+
+            val map = graph.koin.get<SpotMap>() as ScriptedSpotMap
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("map")).fetchSemanticsNodes().isNotEmpty() }
+            runOnIdle { map.longPress(GeoPoint(54.40, 8.60)) }
+            runOnIdle { map.tap(GeoPoint(54.40, 8.597)) }
+            onNodeWithTag("spotmap.name").performScrollTo().performTextInput("Sand Spit")
+            onNodeWithTag("spotmap.save").performScrollTo().performClick()
+
+            // Back in the picker once the spot is added and followed, with the new spot chosen.
+            waitUntil(timeoutMillis = TIMEOUT_MS) {
+                onAllNodes(hasTestTag("spotmap.name")).fetchSemanticsNodes().isEmpty() &&
+                    onAllNodes(hasTestTag("spots.list")).fetchSemanticsNodes().isNotEmpty()
+            }
+            val added =
+                runBlocking {
+                    graph.koin
+                        .get<SpotRepository>()
+                        .mySpots
+                        .first()
+                        .value
+                        .single { it.spot.name == "Sand Spit" }
+                }
+            val toggle = "spots.toggle.${added.spot.id.value}"
+            onNodeWithTag("spots.list").performScrollToNode(hasTestTag(toggle))
+            onNodeWithTag(toggle).assertIsOn()
+            onNodeWithTag("spots.done").performClick()
+
+            val card = "myspots.card.${added.spot.id.value}"
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag(card)).fetchSemanticsNodes().isNotEmpty() }
             onNodeWithTag("tab.spots").assertIsSelected()
         }
 

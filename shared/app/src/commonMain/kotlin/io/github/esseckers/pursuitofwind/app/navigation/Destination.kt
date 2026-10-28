@@ -25,6 +25,15 @@ internal sealed interface Destination : NavKey {
     @Serializable
     data object PickSpots : Destination
 
+    /**
+     * The map of spots: add a spot by pointing at its beach and water, or follow one; opened from the spot picker. With
+     * [editing], it changes that spot, which the rider added.
+     */
+    @Serializable
+    data class SpotMap(
+        val editing: String? = null,
+    ) : Destination
+
     /** Tab: the answer for today and the next days. The root of the app once the rider is set up. */
     @Serializable
     data object Today : Destination
@@ -88,6 +97,7 @@ internal val navigationConfiguration: SavedStateConfiguration =
                     subclass(Destination.Welcome::class, Destination.Welcome.serializer())
                     subclass(Destination.SetUpProfile::class, Destination.SetUpProfile.serializer())
                     subclass(Destination.PickSpots::class, Destination.PickSpots.serializer())
+                    subclass(Destination.SpotMap::class, Destination.SpotMap.serializer())
                     subclass(Destination.Today::class, Destination.Today.serializer())
                     subclass(Destination.Spots::class, Destination.Spots.serializer())
                     subclass(Destination.Crew::class, Destination.Crew.serializer())

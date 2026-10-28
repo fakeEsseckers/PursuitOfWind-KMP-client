@@ -47,7 +47,8 @@ class DestinationSavedStateTest {
                     Destination.SpotDetail("nordstrand-bay", LocalDate(2026, 10, 24)),
                     Destination.SpotDetail("salt-lagoon"),
                 ),
-                NavBackStack<NavKey>(Destination.Welcome, Destination.SetUpProfile, Destination.PickSpots),
+                NavBackStack<NavKey>(Destination.Welcome, Destination.SetUpProfile, Destination.PickSpots, Destination.SpotMap()),
+                NavBackStack<NavKey>(Destination.Today, Destination.Spots, Destination.SpotMap(editing = "spt_0001")),
                 NavBackStack<NavKey>(Destination.Today, Destination.Profile),
             )
 

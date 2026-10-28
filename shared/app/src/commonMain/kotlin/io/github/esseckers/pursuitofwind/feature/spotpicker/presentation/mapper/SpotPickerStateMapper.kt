@@ -1,12 +1,12 @@
 package io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.mapper
 
 import io.github.esseckers.pursuitofwind.core.refresh.RefreshNoticeMapper
+import io.github.esseckers.pursuitofwind.core.ui.DEFAULT_SPOT_DRIVE_MINUTES
 import io.github.esseckers.pursuitofwind.core.ui.SPOT_DRIVE_STEPS
 import io.github.esseckers.pursuitofwind.core.ui.message
 import io.github.esseckers.pursuitofwind.data.model.Spot
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.entity.SpotChangeEntity
-import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.DriveLimits
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.PickSpotUi
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotChoice
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerInputs
@@ -54,7 +54,7 @@ internal object SpotPickerStateMapper {
         return if (mine != null) {
             SpotChoice(selected = mine.favorite, driveMinutes = mine.drive.inWholeMinutes.toInt())
         } else {
-            SpotChoice(selected = false, driveMinutes = DriveLimits.DEFAULT_MINUTES)
+            SpotChoice(selected = false, driveMinutes = DEFAULT_SPOT_DRIVE_MINUTES)
         }
     }
 

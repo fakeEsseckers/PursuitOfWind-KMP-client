@@ -54,6 +54,8 @@ internal object AppIcons {
             "M14.5 9.5a2.5 2.5 0 1 1-5 0a2.5 2.5 0 1 1 5 0",
         )
 
+    val Map: ImageVector = icon("Map", "M9 4.5L3.5 6.5v13L9 17.5l6 2l5.5-2v-13L15 6.5Z", "M9 4.5v13", "M15 6.5v13")
+
     // Back and forward point the other way in right-to-left languages.
     val Back: ImageVector = icon("Back", "M20 12H4", "M10 6l-6 6l6 6", autoMirror = true)
     val Forward: ImageVector = icon("Forward", "M9.5 5.5l6.5 6.5l-6.5 6.5", autoMirror = true)

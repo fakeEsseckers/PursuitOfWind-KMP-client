@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,6 +33,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import io.github.esseckers.pursuitofwind.core.designsystem.component.ActionButton
 import io.github.esseckers.pursuitofwind.core.designsystem.component.BarIconButton
+import io.github.esseckers.pursuitofwind.core.designsystem.component.IconLine
 import io.github.esseckers.pursuitofwind.core.designsystem.component.MessageState
 import io.github.esseckers.pursuitofwind.core.designsystem.component.PrimaryButton
 import io.github.esseckers.pursuitofwind.core.designsystem.component.RefreshNoticeBanner
@@ -55,6 +57,8 @@ import io.github.esseckers.pursuitofwind.core.resources.spots_empty_title
 import io.github.esseckers.pursuitofwind.core.resources.spots_error_title
 import io.github.esseckers.pursuitofwind.core.resources.spots_intro
 import io.github.esseckers.pursuitofwind.core.resources.spots_loading
+import io.github.esseckers.pursuitofwind.core.resources.spots_not_listed
+import io.github.esseckers.pursuitofwind.core.resources.spots_open_map
 import io.github.esseckers.pursuitofwind.core.resources.spots_title
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.PickSpotUi
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerIntent
@@ -65,13 +69,15 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * The spot catalog to choose favorites from, each with its drive from home. Stateless; `SpotPickerRoute` connects it
- * to its ViewModel. "Done" stays at the bottom, so it is in reach however long the list is.
+ * to its ViewModel. "Done" stays at the bottom, so it is in reach however long the list is. A spot that is not in the
+ * catalog yet is added on the map ([onOpenMap]).
  */
 @Composable
 internal fun SpotPickerScreen(
     state: SpotPickerState,
     onIntent: (SpotPickerIntent) -> Unit,
     onBack: () -> Unit,
+    onOpenMap: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val refresh = { onIntent(SpotPickerIntent.Refresh) }
@@ -98,9 +104,9 @@ internal fun SpotPickerScreen(
         Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
             when (val content = state.content) {
                 Content.Loading -> LoadingSpots()
-                Content.Empty -> NoSpots()
+                Content.Empty -> NoSpots(onOpenMap)
                 is Content.Error -> SpotsError(content.message, refresh)
-                is Content.Ready -> SpotList(content.spots, state.notice, onIntent)
+                is Content.Ready -> SpotList(content.spots, state.notice, onIntent, onOpenMap)
             }
         }
     }
@@ -111,6 +117,7 @@ private fun SpotList(
     spots: List<PickSpotUi>,
     notice: RefreshNotice?,
     onIntent: (SpotPickerIntent) -> Unit,
+    onOpenMap: () -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier.widthIn(max = Sizes.contentMaxWidth).fillMaxSize().testTag("spots.list"),
@@ -122,9 +129,9 @@ private fun SpotList(
                 text = stringResource(Res.string.spots_intro),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = Spacing.s),
             )
         }
+        item(key = "map") { AddOnMap(onOpenMap) }
         notice?.let {
             item(key = "notice") {
                 RefreshNoticeBanner(
@@ -144,6 +151,28 @@ private fun SpotList(
                 onDrive = { step -> onIntent(SpotPickerIntent.ChangeDrive(spot.id, step)) },
             )
         }
+    }
+}
+
+/** A spot that is not in the list is added on the map. */
+@Composable
+private fun AddOnMap(onOpenMap: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(bottom = Spacing.s),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.s),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        IconLine(
+            icon = AppIcons.Map,
+            text = stringResource(Res.string.spots_not_listed),
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.weight(1f),
+        )
+        ActionButton(
+            text = stringResource(Res.string.spots_open_map),
+            onClick = onOpenMap,
+            modifier = Modifier.testTag("spots.map"),
+        )
     }
 }
 
@@ -200,12 +229,19 @@ private fun LoadingSpots() {
 }
 
 @Composable
-private fun NoSpots() {
+private fun NoSpots(onOpenMap: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).testTag("spots.empty")) {
         MessageState(
             icon = AppIcons.Pin,
             title = stringResource(Res.string.spots_empty_title),
             body = stringResource(Res.string.spots_empty_body),
+            action = {
+                ActionButton(
+                    text = stringResource(Res.string.spots_open_map),
+                    onClick = onOpenMap,
+                    modifier = Modifier.testTag("spots.emptyMap"),
+                )
+            },
         )
     }
 }

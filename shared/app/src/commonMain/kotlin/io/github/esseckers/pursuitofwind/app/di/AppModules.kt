@@ -6,6 +6,7 @@ import io.github.esseckers.pursuitofwind.feature.crew.di.crewModule
 import io.github.esseckers.pursuitofwind.feature.profile.di.profileModule
 import io.github.esseckers.pursuitofwind.feature.rideoffer.di.rideOfferModule
 import io.github.esseckers.pursuitofwind.feature.spotdetail.di.spotDetailModule
+import io.github.esseckers.pursuitofwind.feature.spotmap.di.spotMapModule
 import io.github.esseckers.pursuitofwind.feature.spotpicker.di.spotPickerModule
 import io.github.esseckers.pursuitofwind.feature.spots.di.spotsModule
 import io.github.esseckers.pursuitofwind.feature.today.di.todayModule
@@ -32,6 +33,7 @@ internal fun appModules(
         spotDetailModule,
         profileModule,
         spotPickerModule,
+        spotMapModule,
         spotsModule,
         crewModule,
         rideOfferModule,
