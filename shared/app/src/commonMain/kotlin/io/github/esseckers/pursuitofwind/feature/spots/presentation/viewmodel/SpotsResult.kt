@@ -9,8 +9,10 @@ import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotEd
 
 /** What happened, as the reducer sees it. */
 internal sealed interface SpotsResult {
+    /** The cached spots, and the signed-in [riderId] to tell the spots they added. */
     data class DataChanged(
         val cached: Cached<List<MySpot>>,
+        val riderId: String?,
     ) : SpotsResult
 
     data object RefreshStarted : SpotsResult

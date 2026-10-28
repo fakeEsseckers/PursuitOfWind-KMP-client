@@ -13,6 +13,11 @@ internal sealed interface SpotsEffect {
     /** Navigate to the spot picker. */
     data object AddSpots : SpotsEffect
 
+    /** Navigate to the map to change [spotId]. */
+    data class ChangeOnMap(
+        val spotId: SpotId,
+    ) : SpotsEffect
+
     /** [spot] is no longer followed; offer to undo. */
     data class Removed(
         val spot: RemovedSpot,

@@ -21,7 +21,7 @@ internal object SpotsStateMapper {
         val listed =
             cached.value
                 .filter { it.spot.id !in inputs.removing }
-                .map { spotUi(it, inputs.edits[it.spot.id], restoring = it.spot.id in inputs.restoring) }
+                .map { spotUi(it, inputs.edits[it.spot.id], restoring = it.spot.id in inputs.restoring, riderId = inputs.riderId) }
         // A spot coming back after "Undo" shows at once, in its place by name, until the cache holds it.
         val returning =
             inputs.restoring.values
@@ -47,6 +47,7 @@ internal object SpotsStateMapper {
         spot: MySpot,
         edit: SpotEdit?,
         restoring: Boolean,
+        riderId: String?,
     ): MySpotUi {
         val shown = edit ?: SpotEdit.of(spot)
         val drive = SPOT_DRIVE_STEPS.stepper(shown.driveMinutes)
@@ -59,6 +60,7 @@ internal object SpotsStateMapper {
             canLengthen = drive.canIncrease,
             saving = edit != null,
             restoring = restoring,
+            mine = riderId != null && spot.spot.createdBy == riderId,
         )
     }
 
@@ -73,5 +75,7 @@ internal object SpotsStateMapper {
             canLengthen = false,
             saving = false,
             restoring = true,
+            // It cannot change until it is followed again.
+            mine = false,
         )
 }

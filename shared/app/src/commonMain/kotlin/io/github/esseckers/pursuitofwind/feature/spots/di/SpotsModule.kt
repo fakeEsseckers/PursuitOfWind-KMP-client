@@ -13,6 +13,6 @@ import org.koin.dsl.module
  */
 internal val spotsModule: Module =
     module {
-        single<SpotsRepository> { SpotsRepositoryImpl(get()) }
+        single<SpotsRepository> { SpotsRepositoryImpl(get(), get()) }
         viewModel { SpotsViewModel(repository = get()) }
     }

@@ -62,6 +62,7 @@ import io.github.esseckers.pursuitofwind.feature.profile.presentation.navigation
 import io.github.esseckers.pursuitofwind.feature.rideoffer.domain.entity.RideDraftEntity
 import io.github.esseckers.pursuitofwind.feature.rideoffer.presentation.navigation.RideOfferRoute
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.navigation.SpotDetailRoute
+import io.github.esseckers.pursuitofwind.feature.spotmap.presentation.navigation.SpotMapRoute
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.navigation.SpotPickerRoute
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.navigation.SpotsRoute
 import io.github.esseckers.pursuitofwind.feature.today.presentation.navigation.TodayRoute
@@ -138,7 +139,10 @@ private fun entries(navigator: Navigator): (NavKey) -> NavEntry<NavKey> =
         screensOnTop(navigator)
     }
 
-/** Welcome, the rider's profile and the spot picker, which Today and the Spots tab open too. */
+/**
+ * Welcome, the rider's profile and the spot picker, which Today and the Spots tab open too, and the map the picker opens
+ * to add a spot that is not in the catalog.
+ */
 private fun EntryProviderScope<NavKey>.onboarding(navigator: Navigator) {
     entry<Destination.Welcome> { WelcomeScreen(onGetStarted = { navigator.open(Destination.SetUpProfile) }) }
     entry<Destination.SetUpProfile> { key ->
@@ -149,7 +153,15 @@ private fun EntryProviderScope<NavKey>.onboarding(navigator: Navigator) {
         )
     }
     entry<Destination.PickSpots> { key ->
-        SpotPickerRoute(onFinished = navigator::finishPicking, onBack = { navigator.back(from = key) })
+        SpotPickerRoute(
+            onFinished = navigator::finishPicking,
+            onBack = { navigator.back(from = key) },
+            onOpenMap = { navigator.open(Destination.SpotMap()) },
+        )
+    }
+    entry<Destination.SpotMap> { key ->
+        val leave = { navigator.back(from = key) }
+        SpotMapRoute(editing = key.editing?.let(::SpotId), onFinished = leave, onBack = leave)
     }
 }
 
@@ -180,6 +192,7 @@ private fun EntryProviderScope<NavKey>.tabs(navigator: Navigator) {
                 SpotsRoute(
                     onOpenSpot = { spotId -> navigator.openBesideList(Destination.SpotDetail(spotId.value, besideList = true)) },
                     onAddSpots = { navigator.open(Destination.PickSpots) },
+                    onChangeOnMap = { spotId -> navigator.open(Destination.SpotMap(editing = spotId.value)) },
                 )
             }
         }

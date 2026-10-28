@@ -10,7 +10,7 @@ import kotlin.time.Duration
  * What [SpotsState] is computed from: the cached spots (null until they arrive), how the refresh is going, the
  * rider's [edits] shown on top of the cache, the spots [saving] with a save running, the spots [removing] that are
  * hidden while they are being removed, and the spots [restoring] after "Undo", shown again at once as they were until
- * they are followed again.
+ * they are followed again. [riderId] tells the spots the rider added.
  */
 internal data class SpotsInputs(
     val cached: Cached<List<MySpot>>? = null,
@@ -19,6 +19,7 @@ internal data class SpotsInputs(
     val saving: Set<SpotId> = emptySet(),
     val removing: Set<SpotId> = emptySet(),
     val restoring: Map<SpotId, RemovedSpot> = emptyMap(),
+    val riderId: String? = null,
 )
 
 /** A followed spot's drive in minutes and favorite flag, as the rider set them. */

@@ -162,6 +162,7 @@ private fun SpotList(
                 onDrive = { step -> onIntent(SpotsIntent.ChangeDrive(spot.id, step)) },
                 onOpen = { onIntent(SpotsIntent.OpenSpot(spot.id)) },
                 onRemove = { onIntent(SpotsIntent.Remove(spot.id)) },
+                onChangeOnMap = { onIntent(SpotsIntent.ChangeOnMap(spot.id)) },
             )
         }
     }

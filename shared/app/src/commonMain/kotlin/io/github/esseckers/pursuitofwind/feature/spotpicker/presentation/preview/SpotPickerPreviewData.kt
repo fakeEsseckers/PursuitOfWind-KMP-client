@@ -17,14 +17,14 @@ import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 
 /**
- * States of the spot picker for previews and UI tests: a catalog of four spots, one of them not checked by a local
- * rider yet, with Nordstrand Bay followed as a favorite at 2 h. Built by the real reducer.
+ * States of the spot picker for previews and UI tests: a catalog of four spots, added from Nordstrand Bay (the first)
+ * to Dune Point (the latest), with Nordstrand Bay followed as a favorite at 2 h. Built by the real reducer.
  */
 internal object SpotPickerPreviewData {
-    val nordstrand = spot("nordstrand-bay", "Nordstrand Bay")
-    val saltLagoon = spot("salt-lagoon", "Salt Lagoon")
-    val lakeWeiss = spot("lake-weiss", "Lake Weiss")
-    val dune = spot("dune-point", "Dune Point")
+    val nordstrand = spot("nordstrand-bay", "Nordstrand Bay", added = "2026-04-11T09:20:00Z")
+    val saltLagoon = spot("salt-lagoon", "Salt Lagoon", added = "2026-05-03T16:45:00Z")
+    val lakeWeiss = spot("lake-weiss", "Lake Weiss", added = "2026-05-24T11:10:00Z")
+    val dune = spot("dune-point", "Dune Point", added = "2026-06-14T08:30:00Z")
 
     private val fetchedAt = Instant.parse("2026-10-24T06:00:00Z")
     private val catalog = listOf(dune, lakeWeiss, nordstrand, saltLagoon)
@@ -74,6 +74,7 @@ internal object SpotPickerPreviewData {
     private fun spot(
         id: String,
         name: String,
+        added: String,
     ): Spot =
         Spot(
             id = SpotId(id),
@@ -84,5 +85,6 @@ internal object SpotPickerPreviewData {
             dangerSectors = emptyList(),
             water = Bearing(240.0),
             createdBy = "usr_andrei",
+            createdAt = Instant.parse(added),
         )
 }

@@ -7,12 +7,15 @@ import io.github.esseckers.pursuitofwind.data.model.Outcome
 import io.github.esseckers.pursuitofwind.data.model.errorOrNull
 import io.github.esseckers.pursuitofwind.data.model.outcomeOf
 import io.github.esseckers.pursuitofwind.data.model.valueOrNull
+import io.github.esseckers.pursuitofwind.data.repository.AccountRepository
 import io.github.esseckers.pursuitofwind.data.repository.SpotRepository
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.spots.domain.entity.SpotSettingsEntity
+import io.github.esseckers.pursuitofwind.feature.spots.domain.entity.SpotsSnapshotEntity
 import io.github.esseckers.pursuitofwind.feature.spots.domain.repository.SpotsRepository
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -24,11 +27,12 @@ import kotlinx.coroutines.withContext
  */
 internal class SpotsRepositoryImpl(
     private val shared: SpotRepository,
+    account: AccountRepository,
 ) : SpotsRepository {
     /** One write at a time, in the order asked for: the lock is fair, and a write takes it before it suspends. */
     private val writes = Mutex()
 
-    override val spots: Flow<Cached<List<MySpot>>> = shared.mySpots
+    override val snapshot: Flow<SpotsSnapshotEntity> = combine(shared.mySpots, account.userId, ::SpotsSnapshotEntity)
 
     override suspend fun refresh(): AppError? = shared.refreshMySpots().errorOrNull()
 

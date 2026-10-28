@@ -52,6 +52,7 @@ private fun SpotDto.toUncheckedEntity(): SpotEntity =
         dangerSectors = ContractJson.encodeToString(SECTORS, dangerSectors),
         waterBearingDeg = waterBearingDeg,
         createdBy = createdBy,
+        createdAtMillis = createdAt.toEpochMilliseconds(),
     )
 
 internal fun SpotEntity.toSpot(): Spot =
@@ -64,6 +65,7 @@ internal fun SpotEntity.toSpot(): Spot =
         dangerSectors = sectors(dangerSectors),
         water = Bearing(waterBearingDeg),
         createdBy = createdBy,
+        createdAt = Instant.fromEpochMilliseconds(createdAtMillis),
     )
 
 internal fun MySpotRow.toMySpot(): MySpot = MySpot(spot.toSpot(), driveMinutes.minutes, favorite)

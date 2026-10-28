@@ -13,7 +13,7 @@ private fun SpotPickerPreview(
     state: SpotPickerState,
     darkTheme: Boolean = false,
 ) {
-    PursuitOfWindTheme(darkTheme = darkTheme) { SpotPickerScreen(state = state, onIntent = {}, onBack = {}) }
+    PursuitOfWindTheme(darkTheme = darkTheme) { SpotPickerScreen(state = state, onIntent = {}, onBack = {}, onOpenMap = {}) }
 }
 
 @Preview

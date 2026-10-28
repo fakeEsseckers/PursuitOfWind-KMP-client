@@ -55,6 +55,7 @@ internal class SpotRoutes(
                 dangerSectors = emptyList(),
                 waterBearingDeg = request.waterBearingDeg,
                 createdBy = call.userId,
+                createdAt = call.now,
             ).facing(request.waterBearingDeg)
         state.spots[spot.id] = SeedSpot(spot, PlaceForecasts.profile(spot.location, forecastSeed))
         return json(SpotDto.serializer(), spot, HttpStatusCode.Created)

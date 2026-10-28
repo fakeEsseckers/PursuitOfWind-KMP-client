@@ -25,13 +25,15 @@ import org.jetbrains.compose.resources.getString
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
- * Connects [SpotsScreen] to its [SpotsViewModel]. [onOpenSpot] navigates to a spot's forecast and [onAddSpots] to the
- * spot picker; removals and failed saves become snackbars, a removal with "Undo". No layout here.
+ * Connects [SpotsScreen] to its [SpotsViewModel]. [onOpenSpot] navigates to a spot's forecast, [onAddSpots] to the
+ * spot picker and [onChangeOnMap] to the map to change a spot the rider added; removals and failed saves become
+ * snackbars, a removal with "Undo". No layout here.
  */
 @Composable
 internal fun SpotsRoute(
     onOpenSpot: (SpotId) -> Unit,
     onAddSpots: () -> Unit,
+    onChangeOnMap: (SpotId) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SpotsViewModel = koinViewModel(),
 ) {
@@ -46,6 +48,10 @@ internal fun SpotsRoute(
 
             SpotsEffect.AddSpots -> {
                 onAddSpots()
+            }
+
+            is SpotsEffect.ChangeOnMap -> {
+                onChangeOnMap(effect.spotId)
             }
 
             is SpotsEffect.Removed -> {
@@ -69,7 +75,7 @@ internal fun SpotsRoute(
         state = state,
         onIntent = { intent ->
             // A second tap while the screen is already leaving would wait in the ViewModel and navigate again after back.
-            val navigates = intent is SpotsIntent.OpenSpot || intent == SpotsIntent.AddSpots
+            val navigates = intent is SpotsIntent.OpenSpot || intent is SpotsIntent.ChangeOnMap || intent == SpotsIntent.AddSpots
             if (!navigates || lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) viewModel.onIntent(intent)
         },
         snackbarHostState = snackbarHostState,

@@ -1,5 +1,6 @@
 package io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model
 
+import io.github.esseckers.pursuitofwind.core.ui.Compass
 import io.github.esseckers.pursuitofwind.core.ui.DayLabel
 import io.github.esseckers.pursuitofwind.core.ui.TimeRange
 import io.github.esseckers.pursuitofwind.data.model.WindUnit
@@ -139,27 +140,3 @@ internal data class ModelWindUi(
     val model: String,
     val mean: Int,
 )
-
-/** The eight main compass points the wind comes from. */
-internal enum class Compass {
-    N,
-    NE,
-    E,
-    SE,
-    S,
-    SW,
-    W,
-    NW,
-    ;
-
-    companion object {
-        private const val SECTOR_DEG = 45.0
-        private const val FULL_CIRCLE_DEG = 360.0
-
-        /** The compass point nearest to [bearingDeg]; each covers 45° around its direction. */
-        fun of(bearingDeg: Double): Compass {
-            val normalized = ((bearingDeg % FULL_CIRCLE_DEG) + FULL_CIRCLE_DEG) % FULL_CIRCLE_DEG
-            return entries[((normalized + SECTOR_DEG / 2) / SECTOR_DEG).toInt() % entries.size]
-        }
-    }
-}

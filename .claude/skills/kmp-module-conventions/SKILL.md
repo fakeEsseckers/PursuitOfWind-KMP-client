@@ -41,6 +41,7 @@ Allowed dependency direction: `contract` and `windengine` are independent leaves
    - `SecureTokenStore` — Keystore AES-GCM + DataStore on Android, Keychain on iOS
    - `ShareLauncher` — the system share sheet for an invitation (`:shared:app` `core/platform`, bound in `startPursuitOfWind` and `MainViewController`)
    - `AppLocale` — the app's language for resources (`:shared:app` `app/language`, bound in the same places; `RecordingAppLocale` in tests)
+   - `SpotMap` — the map of spots (`:shared:app` `core/map`). `MapLibreSpotMap` draws it from common code and is bound in the same places; MapLibre's JVM artifact cannot run in JVM tests, so `testGraph` binds a `ScriptedSpotMap`
    - `PushTokenRegistrar` — no-op in this phase
 2. **expect/actual only for small factories**: Room database builder, Ktor engine, DataStore path, platform name. No `expect class` with logic.
 3. Never put Android or iOS types in `commonMain` signatures.

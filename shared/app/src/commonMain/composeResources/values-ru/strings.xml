@@ -243,7 +243,9 @@
     <string name="spots_loading">Загружаем споты</string>
     <string name="spots_error_title">Не удалось загрузить споты</string>
     <string name="spots_empty_title">Спотов пока нет</string>
-    <string name="spots_empty_body">Выбирать пока не из чего. Попробуй позже.</string>
+    <string name="spots_empty_body">Спотов пока никто не добавил. Добавь свой на карте.</string>
+    <string name="spots_not_listed">Твоего спота нет в списке? Добавь его на карте.</string>
+    <string name="spots_open_map">Добавить спот</string>
     <string name="banner_spots_offline">Нет сети. Показан сохранённый список спотов.</string>
     <string name="banner_spots_failed">Не удалось обновить список спотов.</string>
 
@@ -253,9 +255,11 @@
     <string name="my_spots_favorite">Избранный</string>
     <string name="my_spots_favorite_hint">Ответ на «Сегодня» каждый день</string>
     <string name="my_spots_forecast">Прогноз по часам</string>
-    <string name="action_remove">Убрать</string>
-    <string name="my_spots_remove">Убрать %1$s</string>
-    <string name="my_spots_removed">%1$s убран</string>
+    <string name="my_spots_change">Изменить на карте</string>
+    <string name="my_spots_change_label">Изменить %1$s на карте</string>
+    <string name="action_remove">Удалить</string>
+    <string name="my_spots_remove">Удалить %1$s</string>
+    <string name="my_spots_removed">%1$s удалён</string>
     <string name="action_undo">Отменить</string>
     <string name="action_add_spots">Добавить споты</string>
     <string name="my_spots_saving">Сохраняем…</string>
@@ -342,4 +346,33 @@
     <string name="offer_failed">Не удалось предложить поездку.</string>
     <string name="offer_no_crew_title">Компании пока нет</string>
     <string name="offer_no_crew_body">Создай компанию или вступи в неё на вкладке «Компания», чтобы предлагать поездки.</string>
+    <!-- Карта спотов -->
+    <string name="spot_map_title">Споты на карте</string>
+    <string name="spot_map_title_edit">Изменить спот</string>
+    <string name="spot_map_loading">Загружаем споты…</string>
+    <string name="spot_map_offline">Карта не загрузилась. Проверь интернет.</string>
+    <string name="spot_map_description">Карта спотов</string>
+    <string name="spot_map_select">Выбрать %1$s</string>
+    <string name="spot_map_hint">Долгим нажатием отметь пляж, откуда стартуешь, чтобы добавить спот, или нажми на спот, чтобы добавить его к своим.</string>
+    <string name="spot_map_tap_water">Теперь нажми на воду рядом с точкой — туда, где заходишь в воду. Так приложение поймёт, при каком ветре здесь можно кататься.</string>
+    <string name="spot_map_legend_ride">Ветер с зелёной стороны — можно кататься</string>
+    <string name="spot_map_legend_danger">Ветер с красной стороны дует с берега — опасно</string>
+    <string name="spot_map_water_label">вода</string>
+    <string name="spot_map_move_pin">Долгое нажатие переносит точку, нажатие на воду поворачивает стрелку.</string>
+    <string name="spot_map_name">Название</string>
+    <string name="spot_map_nearby">До спота «%1$s» %2$d м. Это он?</string>
+    <string name="spot_map_use_nearby">Да, это «%1$s»</string>
+    <string name="spot_map_new_here">Нет, новый спот здесь</string>
+    <string name="spot_map_followed">Уже в твоих спотах</string>
+    <string name="spot_map_follow">Добавить к моим</string>
+    <string name="action_cancel">Отмена</string>
+    <string name="spot_map_edit">Изменить</string>
+    <string name="water_n">Вода на севере</string>
+    <string name="water_ne">Вода на северо-востоке</string>
+    <string name="water_e">Вода на востоке</string>
+    <string name="water_se">Вода на юго-востоке</string>
+    <string name="water_s">Вода на юге</string>
+    <string name="water_sw">Вода на юго-западе</string>
+    <string name="water_w">Вода на западе</string>
+    <string name="water_nw">Вода на северо-западе</string>
 </resources>

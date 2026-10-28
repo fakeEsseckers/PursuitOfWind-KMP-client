@@ -42,6 +42,7 @@ import kotlin.test.assertTrue
 class SpotPickerScreenTest {
     private val intents = mutableListOf<SpotPickerIntent>()
     private var backs = 0
+    private var maps = 0
     private val systemLocale = Locale.getDefault()
 
     @BeforeTest
@@ -62,7 +63,7 @@ class SpotPickerScreenTest {
             CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale)) {
                 PursuitOfWindTheme(
                     darkTheme = false,
-                ) { SpotPickerScreen(state = state, onIntent = { intents += it }, onBack = { backs++ }) }
+                ) { SpotPickerScreen(state = state, onIntent = { intents += it }, onBack = { backs++ }, onOpenMap = { maps++ }) }
             }
         }
     }
@@ -150,6 +151,20 @@ class SpotPickerScreenTest {
 
             onNodeWithTag("spots.empty").assert(hasAnyDescendant(hasText("No spots yet")))
             onNodeWithTag("spots.done").assert(hasText("Skip for now"))
+            onNodeWithTag("spots.emptyMap").assert(hasText("Add a spot")).performClick()
+
+            assertEquals(1, maps)
+        }
+
+    @Test
+    fun `a spot that is not listed is added on the map`() =
+        runComposeUiTest {
+            show(SpotPickerPreviewData.chosen)
+
+            onNodeWithTag("spots.map").assert(hasText("Add a spot")).performClick()
+
+            assertEquals(1, maps)
+            assertEquals(emptyList(), intents)
         }
 
     @Test

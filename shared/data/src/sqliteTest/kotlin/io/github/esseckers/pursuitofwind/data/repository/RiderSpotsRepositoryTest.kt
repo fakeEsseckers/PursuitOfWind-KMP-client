@@ -51,6 +51,7 @@ class RiderSpotsRepositoryTest {
                 assertEquals(added, seen)
                 assertEquals(added, cached)
                 assertEquals(alex.account.userId.value, added.createdBy)
+                assertEquals(clock.now(), added.createdAt)
                 assertEquals(Bearing(WEST_SOUTH_WEST), added.water)
                 assertEquals(
                     DecisionEngine.sectorsFacing(added.water),
@@ -66,11 +67,13 @@ class RiderSpotsRepositoryTest {
                 val alex = device()
                 val jonas = device()
                 val added = alex.addSandbank()
+                clock.advanceBy(3.minutes)
 
                 val moved = alex.spots.changeSpot(added.id, "Sandbank South", GeoPoint(54.6, 8.35), Bearing(SOUTH_WEST)).value()
                 val refused = jonas.spots.changeSpot(added.id, "Mine now", added.location, added.water)
 
                 assertEquals("Sandbank South", moved.name)
+                assertEquals(added.createdAt, moved.createdAt)
                 assertEquals(DecisionEngine.sectorsFacing(Bearing(SOUTH_WEST)).rideable, moved.rideableSectors.single())
                 assertEquals(AppError.Rejected(403, ProblemCode.NOT_THE_CREATOR), refused.errorOrNull())
             }

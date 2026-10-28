@@ -22,7 +22,7 @@ import kotlin.time.Duration.Companion.seconds
 /**
  * Sits between the app and the fake server and passes every request on. It counts the requests [matching], and a test
  * can [hold] the next one until it calls [release], to act while that request is in flight. Bind [engine] in the test
- * graph in place of the server's own engine.
+ * graph in place of the server's own engine; to watch two kinds of request, put one in front of the other's engine.
  */
 internal class HeldRequests(
     private val matching: (HttpRequestData) -> Boolean,
@@ -52,8 +52,11 @@ internal class HeldRequests(
         held = null
     }
 
-    fun engine(server: FakePursuitOfWindServer): HttpClientEngine {
-        val upstream = HttpClient(server.engine) { expectSuccess = false }
+    fun engine(server: FakePursuitOfWindServer): HttpClientEngine = engine(server.engine)
+
+    /** Passes requests on to [next]: the server's engine, or another [HeldRequests]' one. */
+    fun engine(next: HttpClientEngine): HttpClientEngine {
+        val upstream = HttpClient(next) { expectSuccess = false }
         return MockEngine { request ->
             if (matching(request)) {
                 count.incrementAndGet()

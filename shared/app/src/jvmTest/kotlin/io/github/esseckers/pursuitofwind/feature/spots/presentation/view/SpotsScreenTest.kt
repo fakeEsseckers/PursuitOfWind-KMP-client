@@ -1,9 +1,14 @@
 package io.github.esseckers.pursuitofwind.feature.spots.presentation.view
 
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -55,6 +60,9 @@ class SpotsScreenTest {
     fun restoreLocale() {
         Locale.setDefault(systemLocale)
     }
+
+    private fun clickLabel(label: String) =
+        SemanticsMatcher("click label is '$label'") { it.config.getOrNull(SemanticsActions.OnClick)?.label == label }
 
     private fun ComposeUiTest.show(
         state: SpotsState,
@@ -116,13 +124,43 @@ class SpotsScreenTest {
         }
 
     @Test
+    fun `only a spot the rider added can be changed on the map`() =
+        runComposeUiTest {
+            show(SpotsPreviewData.ready)
+
+            scrollTo("myspots.card.lake-weiss")
+            onNodeWithTag("myspots.change.lake-weiss")
+                .assert(hasText("Change on the map"))
+                .assert(clickLabel("Change Lake Weiss on the map"))
+                .performClick()
+            scrollTo("myspots.card.nordstrand-bay")
+            onNodeWithTag("myspots.change.nordstrand-bay").assertDoesNotExist()
+
+            assertEquals(listOf<SpotsIntent>(SpotsIntent.ChangeOnMap(SpotId("lake-weiss"))), intents)
+        }
+
+    @Test
     fun `a change on its way says so`() =
         runComposeUiTest {
             show(SpotsPreviewData.saving)
 
             scrollTo("myspots.card.salt-lagoon")
-            onNodeWithTag("myspots.saving.salt-lagoon").assert(hasText("Saving…"))
+            onNodeWithTag("myspots.saving.salt-lagoon").assert(hasContentDescription("Saving…"))
             onNodeWithTag("myspots.favorite.salt-lagoon").assert(switch(on = true))
+        }
+
+    @Test
+    fun `a card keeps its height while its change is saved`() =
+        runComposeUiTest {
+            var state by mutableStateOf(SpotsPreviewData.ready)
+            setContent { PursuitOfWindTheme(darkTheme = false) { SpotsScreen(state = state, onIntent = {}) } }
+            scrollTo("myspots.card.salt-lagoon")
+            val idle = onNodeWithTag("myspots.card.salt-lagoon").fetchSemanticsNode().size.height
+
+            state = SpotsPreviewData.saving
+
+            onNodeWithTag("myspots.saving.salt-lagoon").assertExists()
+            assertEquals(idle, onNodeWithTag("myspots.card.salt-lagoon").fetchSemanticsNode().size.height)
         }
 
     @Test
@@ -131,7 +169,7 @@ class SpotsScreenTest {
             show(SpotsPreviewData.restoring)
 
             scrollTo("myspots.card.nordstrand-bay")
-            onNodeWithTag("myspots.saving.nordstrand-bay").assert(hasText("Restoring…"))
+            onNodeWithTag("myspots.saving.nordstrand-bay").assert(hasContentDescription("Restoring…"))
             onNodeWithContentDescription("Longer drive to Nordstrand Bay").assertIsNotEnabled()
             onNodeWithContentDescription("Shorter drive to Nordstrand Bay").assertIsNotEnabled()
         }
@@ -195,7 +233,7 @@ class SpotsScreenTest {
             onNode(isHeading() and hasText("Споты")).assertIsDisplayed()
             scrollTo("myspots.card.nordstrand-bay")
             onNodeWithTag("myspots.favorite.nordstrand-bay").assert(hasText("Избранный"))
-            onNodeWithContentDescription("Убрать Nordstrand Bay").assertExists()
+            onNodeWithContentDescription("Удалить Nordstrand Bay").assertExists()
             onNodeWithTag("myspots.add").assert(hasText("Добавить споты"))
         }
 

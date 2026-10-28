@@ -15,7 +15,7 @@ A spot's sectors decide its verdicts: the same wind is GO on one shore and dange
 - **Sectors come from the water** (`DecisionEngine.sectorsFacing`, rule 8 in `docs/domain-rules.md`): rideable within 100° of the water, dangerous within 60° of the land, neither in between. The server works them out, so the client and the future server cannot disagree.
 - **One catalog for everyone.** A spot a rider adds is in every rider's catalog at once; the app puts the crew's spots first, then the nearest. There is no checked or unchecked spot any more: `dataQuality` and the "not checked" badges are gone.
 - **Weather for any place.** The fake backend makes a forecast profile from a spot's place (`PlaceForecasts`); the real server will ask a weather service for the spot's coordinates.
-- **The map** (next pull request): MapLibre Compose with OpenFreeMap tiles, one map in common code for Android and iOS, no API key. The rider's coarse location, asked for only when they tap "my location", centres the map and suggests a drive time.
+- **The map**: MapLibre Compose with OpenFreeMap tiles, one map in common code for Android and iOS, no API key. The rider's coarse location, asked for only when they tap "my location", centres the map and suggests a drive time.
 
 ## Alternatives considered
 
@@ -30,6 +30,7 @@ A spot's sectors decide its verdicts: the same wind is GO on one shore and dange
 - Positive: any rider anywhere can use the app on their own spots on the first day; testers do not wait for a catalog.
 - Positive: one rule, in the engine, turns a spot into sectors on every platform and on the server.
 - Negative: sectors from one direction are rough for lagoons, spits and bays with water on several sides, and a wrong arrow gives wrong verdicts. The disclaimer stays; turning the arrow fixes a spot.
-- Negative: a public catalog collects duplicates and junk. The map (next pull request) offers an existing spot when a pin lands within a kilometre of one; reporting and hiding spots waits for the real server.
+- Negative: a public catalog collects duplicates and junk. The map offers an existing spot when a pin lands within a kilometre of one; reporting and hiding spots waits for the real server.
+- Negative: placing a spot needs to see the map. Screen readers hear the map and can pick its spots, but cannot drop a pin or point at the water.
 - Negative: MapLibre Compose is before 1.0 and its iOS support is in beta, so its version is pinned and upgrades need its upgrade notes.
 - Revisit when: the catalog grows past what the app can load at once (then the server searches and sorts by distance), or riders ask for spots with water on several sides.

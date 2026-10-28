@@ -12,6 +12,7 @@ import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.Remove
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotEdit
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsInputs
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.SpotsState.Content
+import io.github.esseckers.pursuitofwind.feature.spots.presentation.preview.SpotsPreviewData.RIDER
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.preview.SpotsPreviewData.lakeWeiss
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.preview.SpotsPreviewData.nordstrand
 import io.github.esseckers.pursuitofwind.feature.spots.presentation.preview.SpotsPreviewData.saltLagoon
@@ -42,6 +43,15 @@ class SpotsStateMapperTest {
         assertEquals(listOf(true, true, false), spots.map { it.favorite })
         assertEquals(listOf(45.minutes, 2.hours, 160.minutes), spots.map { it.drive })
         assertTrue(spots.none { it.saving })
+    }
+
+    @Test
+    fun `the spots the rider added are theirs to change`() {
+        val signedIn = inputs(lakeWeiss, nordstrand, saltLagoon).copy(riderId = RIDER).spots()
+        val signedOut = inputs(lakeWeiss, nordstrand, saltLagoon).spots()
+
+        assertEquals(listOf(true, false, false), signedIn.map { it.mine })
+        assertTrue(signedOut.none { it.mine })
     }
 
     @Test

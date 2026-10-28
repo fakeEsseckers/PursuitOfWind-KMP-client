@@ -38,6 +38,7 @@ internal data class SpotsState(
 /**
  * A followed spot as the tab shows it. [saving] is true while a change the rider made has not reached the cache yet,
  * [restoring] while the spot comes back after "Undo"; [drive] changes in steps while [canShorten] or [canLengthen].
+ * [mine] when the rider added it, so they can change it on the map.
  */
 internal data class MySpotUi(
     val id: SpotId,
@@ -48,4 +49,5 @@ internal data class MySpotUi(
     val canLengthen: Boolean,
     val saving: Boolean,
     val restoring: Boolean,
+    val mine: Boolean,
 )

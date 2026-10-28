@@ -1,5 +1,6 @@
 package io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.mapper
 
+import io.github.esseckers.pursuitofwind.core.ui.Compass
 import io.github.esseckers.pursuitofwind.core.ui.DayLabel
 import io.github.esseckers.pursuitofwind.core.ui.TimeRange
 import io.github.esseckers.pursuitofwind.data.model.WindUnit
@@ -20,7 +21,6 @@ import io.github.esseckers.pursuitofwind.feature.spotdetail.domain.mapper.SpotEv
 import io.github.esseckers.pursuitofwind.feature.spotdetail.forecast
 import io.github.esseckers.pursuitofwind.feature.spotdetail.nordstrand
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.ChartWindowUi
-import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.Compass
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.ModelWindUi
 import io.github.esseckers.pursuitofwind.feature.spotdetail.presentation.model.Selection
 import io.github.esseckers.pursuitofwind.feature.spotdetail.saturdayOn

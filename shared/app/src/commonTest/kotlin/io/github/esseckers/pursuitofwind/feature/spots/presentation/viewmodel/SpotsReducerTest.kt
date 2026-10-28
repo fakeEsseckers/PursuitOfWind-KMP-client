@@ -22,7 +22,7 @@ class SpotsReducerTest {
 
     private val loaded = reduce(data(nordstrand, saltLagoon), SpotsResult.RefreshFinished(null))
 
-    private fun data(vararg spots: MySpot) = SpotsResult.DataChanged(Cached(spots.toList(), fetchedAt))
+    private fun data(vararg spots: MySpot) = SpotsResult.DataChanged(Cached(spots.toList(), fetchedAt), riderId = null)
 
     private fun reduce(
         vararg results: SpotsResult,

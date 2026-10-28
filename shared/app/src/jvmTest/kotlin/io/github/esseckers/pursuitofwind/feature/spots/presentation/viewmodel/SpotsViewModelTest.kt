@@ -12,7 +12,9 @@ import io.github.esseckers.pursuitofwind.core.ui.Step
 import io.github.esseckers.pursuitofwind.data.fake.ControllableClock
 import io.github.esseckers.pursuitofwind.data.fake.FakePursuitOfWindServer
 import io.github.esseckers.pursuitofwind.data.fake.NetworkMode
+import io.github.esseckers.pursuitofwind.data.model.GeoPoint
 import io.github.esseckers.pursuitofwind.data.repository.SpotRepository
+import io.github.esseckers.pursuitofwind.engine.model.Bearing
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.spotdetail.NORDSTRAND
 import io.github.esseckers.pursuitofwind.feature.spotdetail.SATURDAY
@@ -35,6 +37,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.datetime.TimeZone
 import org.koin.core.Koin
 import org.koin.dsl.module
 import kotlin.test.AfterTest
@@ -52,7 +55,7 @@ class SpotsViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val clock = ControllableClock(at(SATURDAY, 8))
     private val spotSaves = HeldRequests { it.method == HttpMethod.Put && it.url.encodedPath.startsWith("/v1/me/spots/") }
-    private val koin: Koin = testGraph(clock, module { single<HttpClientEngine> { spotSaves.engine(get()) } }).koin
+    private val koin: Koin = testGraph(clock, module { single<HttpClientEngine> { spotSaves.engine(get<FakePursuitOfWindServer>()) } }).koin
     private val server get() = koin.get<FakePursuitOfWindServer>()
     private val spots get() = koin.get<SpotRepository>()
     private val viewModels = ViewModelStore()
@@ -98,6 +101,22 @@ class SpotsViewModelTest {
 
                 assertEquals(listOf("Nordstrand Bay", "Salt Lagoon"), ready.spots().map { it.name })
                 assertEquals(listOf(true, false), ready.spots().map { it.favorite })
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `a spot the rider added is theirs to change and the others are not`() =
+        runTest(dispatcher) {
+            following()
+            val mine = spots.addSpot("Sand Spit", GeoPoint(54.40, 8.60), Bearing(270.0), TimeZone.of("Europe/Berlin")).value()
+            spots.follow(mine.id, 1.hours, favorite = true).value()
+
+            viewModel().state.test(timeout = TURBINE_TIMEOUT) {
+                val ready = awaitState { state -> state.spots().any { it.mine } && !state.isRefreshing }
+
+                assertEquals(listOf("Sand Spit"), ready.spots().filter { it.mine }.map { it.name })
+                assertEquals(3, ready.spots().size)
                 cancelAndIgnoreRemainingEvents()
             }
         }
@@ -332,15 +351,17 @@ class SpotsViewModelTest {
         }
 
     @Test
-    fun `opening a spot and adding spots ask the app to navigate`() =
+    fun `opening a spot, adding spots and changing one on the map ask the app to navigate`() =
         runTest(dispatcher) {
             val viewModel = viewModel()
             viewModel.onIntent(SpotsIntent.OpenSpot(NORDSTRAND))
             viewModel.onIntent(SpotsIntent.AddSpots)
+            viewModel.onIntent(SpotsIntent.ChangeOnMap(saltLagoon))
 
             viewModel.effects.test(timeout = TURBINE_TIMEOUT) {
                 assertEquals(SpotsEffect.OpenSpot(NORDSTRAND), awaitItem())
                 assertEquals(SpotsEffect.AddSpots, awaitItem())
+                assertEquals(SpotsEffect.ChangeOnMap(saltLagoon), awaitItem())
                 expectNoEvents()
             }
         }

@@ -42,6 +42,7 @@ internal object RideOfferPreviewData {
             emptyList(),
             Bearing(240.0),
             "usr_andrei",
+            Instant.parse("2026-04-11T09:20:00Z"),
         )
     val weekendCrew = Crew("crw_weekend", "Weekend Crew", "WIND-4KQ7", memberCount = 4, createdAt = now - 30.days)
     val nightOwls = Crew("crw_owls", "Night Owls", "WIND-7HPX", memberCount = 2, createdAt = now - 3.days)

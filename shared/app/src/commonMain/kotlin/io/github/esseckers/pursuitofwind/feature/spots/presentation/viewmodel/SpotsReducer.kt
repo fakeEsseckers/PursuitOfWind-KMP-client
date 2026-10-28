@@ -20,7 +20,7 @@ internal object SpotsReducer : Reducer<SpotsState, SpotsResult> {
         val next =
             when (result) {
                 is SpotsResult.DataChanged -> {
-                    inputs.copy(cached = result.cached)
+                    inputs.copy(cached = result.cached, riderId = result.riderId)
                 }
 
                 SpotsResult.RefreshStarted -> {

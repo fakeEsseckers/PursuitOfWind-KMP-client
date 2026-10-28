@@ -65,6 +65,7 @@ internal object SpotDetailPreviewData {
                     emptyList(),
                     Bearing(240.0),
                     "usr_andrei",
+                    Instant.parse("2026-04-11T09:20:00Z"),
                 ),
             drive = 2.hours,
             favorite = true,

@@ -36,4 +36,9 @@ internal sealed interface SpotsIntent {
 
     /** Choose more spots from the catalog. */
     data object AddSpots : SpotsIntent
+
+    /** Rename, move or turn [spotId], which the rider added, on the map. */
+    data class ChangeOnMap(
+        val spotId: SpotId,
+    ) : SpotsIntent
 }

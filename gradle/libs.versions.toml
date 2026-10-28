@@ -1,7 +1,8 @@
 # Versions verified against Maven Central, Google Maven and the Gradle Plugin Portal on 2026-10-18;
-# the data-layer additions (KSP, Room 3, DataStore, Ktor auth) on 2026-10-22; the adaptive layouts on 2026-10-26.
+# the data-layer additions (KSP, Room 3, DataStore, Ktor auth) on 2026-10-22; the adaptive layouts on 2026-10-26;
+# MapLibre Compose on 2026-10-28.
 # Policy (docs/adr/0003-dependency-version-policy.md): latest stable releases that sit inside
-# Kotlin's officially tested compatibility range. No alpha, beta or RC artifacts.
+# Kotlin's officially tested compatibility range. No alpha, beta or RC artifacts, apart from the exceptions listed there.
 
 [versions]
 # Toolchain
@@ -41,6 +42,9 @@ kotlinx-datetime = "0.8.0"
 ktor = "3.6.0"
 koin = "4.2.2"
 kermit = "2.2.0"
+# The map of spots (ADR 0013). Before 1.0, and its iOS support is in beta: an exception to the stable-only rule,
+# recorded in ADR 0003. Every artifact of it takes the same version.
+maplibre-compose = "0.20.0"
 
 # Testing and quality
 turbine = "1.2.1"
@@ -106,6 +110,8 @@ koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
 koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koin" }
 koin-test = { module = "io.insert-koin:koin-test", version.ref = "koin" }
 kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
+maplibre-compose = { module = "org.maplibre.compose:maplibre-compose", version.ref = "maplibre-compose" }
+maplibre-compose-runtime-opengl-android = { module = "org.maplibre.compose:maplibre-compose-runtime-opengl-android", version.ref = "maplibre-compose" }
 
 # Testing
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
