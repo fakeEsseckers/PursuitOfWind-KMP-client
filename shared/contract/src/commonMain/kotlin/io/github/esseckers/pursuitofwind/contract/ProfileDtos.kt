@@ -18,7 +18,10 @@ public enum class WindUnitDto {
     BEAUFORT,
 }
 
-/** `GET` / `PUT /v1/me/profile`. Wind limits in m/s; absent limits mean "use the level default". */
+/**
+ * `GET` / `PUT /v1/me/profile`. Wind limits in m/s; absent limits mean "use the level default". Riding hours are whole
+ * hours in each spot's local time; absent ones mean 9 to 21.
+ */
 @Serializable
 public data class RiderProfileDto(
     val displayName: String,
@@ -29,5 +32,7 @@ public data class RiderProfileDto(
     val maxWindMps: Double? = null,
     val minSessionMinutes: Int,
     val maxDriveMinutes: Int,
+    val ridingFromHour: Int = ApiLimits.RiderProfile.RIDING_FROM_HOUR_DEFAULT,
+    val ridingToHour: Int = ApiLimits.RiderProfile.RIDING_TO_HOUR_DEFAULT,
     val windUnit: WindUnitDto,
 )

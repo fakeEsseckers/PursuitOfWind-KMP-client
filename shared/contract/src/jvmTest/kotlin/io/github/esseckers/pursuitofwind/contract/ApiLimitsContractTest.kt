@@ -23,6 +23,12 @@ class ApiLimitsContractTest {
         assertEquals(ApiLimits.RiderProfile.MIN_SESSION_MAX_MINUTES.toDouble(), field("RiderProfile", "minSessionMinutes", "maximum"))
         assertEquals(0.0, field("RiderProfile", "maxDriveMinutes", "minimum"))
         assertEquals(ApiLimits.RiderProfile.MAX_DRIVE_MAX_MINUTES.toDouble(), field("RiderProfile", "maxDriveMinutes", "maximum"))
+        assertEquals(0.0, field("RiderProfile", "ridingFromHour", "minimum"))
+        assertEquals(ApiLimits.RiderProfile.RIDING_FROM_HOUR_MAX.toDouble(), field("RiderProfile", "ridingFromHour", "maximum"))
+        assertEquals(ApiLimits.RiderProfile.RIDING_FROM_HOUR_DEFAULT.toDouble(), field("RiderProfile", "ridingFromHour", "default"))
+        assertEquals(ApiLimits.RiderProfile.RIDING_TO_HOUR_MIN.toDouble(), field("RiderProfile", "ridingToHour", "minimum"))
+        assertEquals(ApiLimits.RiderProfile.RIDING_TO_HOUR_MAX.toDouble(), field("RiderProfile", "ridingToHour", "maximum"))
+        assertEquals(ApiLimits.RiderProfile.RIDING_TO_HOUR_DEFAULT.toDouble(), field("RiderProfile", "ridingToHour", "default"))
     }
 
     @Test

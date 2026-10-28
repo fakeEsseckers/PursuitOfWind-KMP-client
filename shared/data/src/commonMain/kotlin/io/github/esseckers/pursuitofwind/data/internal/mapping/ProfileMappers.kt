@@ -3,6 +3,7 @@ package io.github.esseckers.pursuitofwind.data.internal.mapping
 import io.github.esseckers.pursuitofwind.contract.RiderProfileDto
 import io.github.esseckers.pursuitofwind.data.model.Profile
 import io.github.esseckers.pursuitofwind.engine.model.RiderProfile
+import io.github.esseckers.pursuitofwind.engine.model.RidingHours
 import io.github.esseckers.pursuitofwind.engine.model.WindSpeed
 import kotlin.time.Duration.Companion.minutes
 
@@ -20,6 +21,7 @@ internal fun RiderProfileDto.toProfile(): Profile =
                 maxWind = maxWindMps?.let(::WindSpeed),
                 minSession = minSessionMinutes.minutes,
                 maxDrive = maxDriveMinutes.minutes,
+                ridingHours = RidingHours(fromHour = ridingFromHour, toHour = ridingToHour),
             ),
         windUnit = windUnit.toModel(),
     )
@@ -34,5 +36,7 @@ internal fun Profile.toDto(): RiderProfileDto =
         maxWindMps = rider.maxWind?.metersPerSecond,
         minSessionMinutes = rider.minSession.inWholeMinutes.toInt(),
         maxDriveMinutes = rider.maxDrive.inWholeMinutes.toInt(),
+        ridingFromHour = rider.ridingHours.fromHour,
+        ridingToHour = rider.ridingHours.toHour,
         windUnit = windUnit.toDto(),
     )

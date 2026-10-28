@@ -1016,8 +1016,10 @@ components:
     RiderProfile:
       type: object
       description: |
-        When both are set, `minWindMps` must be below `maxWindMps`; otherwise the request fails with
-        `422 VALIDATION_FAILED`.
+        When both are set, `minWindMps` must be below `maxWindMps`, and `ridingFromHour` must be below
+        `ridingToHour`; otherwise the request fails with `422 VALIDATION_FAILED`. `PUT` replaces the whole profile: a
+        field left out takes its default, so riding hours left out become 9 to 21, and an end left out is 21 even
+        when the start sent is later.
       required: [displayName, weightKg, level, quiverM2, minSessionMinutes, maxDriveMinutes, windUnit]
       properties:
         displayName:
@@ -1057,6 +1059,22 @@ components:
           type: integer
           minimum: 0
           maximum: 720
+        ridingFromHour:
+          type: integer
+          minimum: 0
+          maximum: 23
+          default: 9
+          description: |
+            The hour riding hours start, in each spot's local time: the first hour that counts starts then.
+            Absent means 9; the server always returns it.
+        ridingToHour:
+          type: integer
+          minimum: 1
+          maximum: 24
+          default: 21
+          description: |
+            The hour riding hours end, in each spot's local time (24 is midnight): the last hour that counts ends
+            then. Absent means 21; the server always returns it.
         windUnit:
           $ref: '#/components/schemas/WindUnit'
       examples:
@@ -1066,6 +1084,8 @@ components:
           quiverM2: [7, 9, 12]
           minSessionMinutes: 120
           maxDriveMinutes: 180
+          ridingFromHour: 9
+          ridingToHour: 21
           windUnit: KNOTS
         - displayName: Mira
           weightKg: 62.5
@@ -1075,6 +1095,8 @@ components:
           maxWindMps: 17.5
           minSessionMinutes: 90
           maxDriveMinutes: 240
+          ridingFromHour: 7
+          ridingToHour: 22
           windUnit: METERS_PER_SECOND
 
     GeoPoint:

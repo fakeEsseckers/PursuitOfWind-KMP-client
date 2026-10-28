@@ -95,6 +95,7 @@ private class Tour(
     private suspend fun profile() {
         expect(404) { call(ApiRoute.GET_PROFILE, token = alex) }
         expect(422) { send(ApiRoute.PUT_PROFILE, token = alex, value = ALEX_PROFILE.copy(weightKg = 20.0)) }
+        expect(422) { send(ApiRoute.PUT_PROFILE, token = alex, value = ALEX_PROFILE.copy(ridingFromHour = 21, ridingToHour = 9)) }
         expect(200) { send(ApiRoute.PUT_PROFILE, token = alex, value = ALEX_PROFILE) }
         expect(200) { call(ApiRoute.GET_PROFILE, token = alex) }
         expect(204) { send(ApiRoute.PUT_PUSH_TOKEN, token = alex, value = PushTokenRequestDto(PlatformDto.IOS, "tok")) }

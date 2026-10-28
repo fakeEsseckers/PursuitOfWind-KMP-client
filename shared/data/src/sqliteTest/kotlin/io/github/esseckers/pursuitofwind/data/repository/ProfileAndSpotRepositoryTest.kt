@@ -8,6 +8,7 @@ import io.github.esseckers.pursuitofwind.data.model.Cached
 import io.github.esseckers.pursuitofwind.data.model.errorOrNull
 import io.github.esseckers.pursuitofwind.data.network.fakeServer
 import io.github.esseckers.pursuitofwind.data.network.forwardingEngine
+import io.github.esseckers.pursuitofwind.engine.model.RidingHours
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -40,6 +41,27 @@ class ProfileAndSpotRepositoryTest {
                     alex.profiles.profile
                         .first()
                         .value,
+                )
+            }
+        }
+
+    @Test
+    fun `riding hours are saved and come back from the server`() =
+        runTest {
+            world {
+                val alex = device()
+                val early = ALEX.copy(rider = ALEX.rider.copy(ridingHours = RidingHours(fromHour = 6, toHour = 14)))
+
+                alex.profiles.save(early).value()
+                alex.profiles.refresh().value()
+
+                assertEquals(
+                    RidingHours(fromHour = 6, toHour = 14),
+                    alex.profiles.profile
+                        .first()
+                        .value
+                        ?.rider
+                        ?.ridingHours,
                 )
             }
         }
