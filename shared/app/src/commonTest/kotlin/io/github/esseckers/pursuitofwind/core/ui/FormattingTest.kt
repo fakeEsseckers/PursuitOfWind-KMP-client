@@ -25,6 +25,11 @@ class FormattingTest {
     }
 
     @Test
+    fun `an hour of the day reads from midnight to the midnight that ends the day`() {
+        assertEquals(listOf("00:00", "09:00", "21:00", "24:00"), listOf(0, 9, 21, 24).map(::hourOfDay))
+    }
+
+    @Test
     fun `kite sizes drop a needless fraction`() {
         assertEquals("9", formatKiteSize(9.0))
         assertEquals("10.5", formatKiteSize(10.5))

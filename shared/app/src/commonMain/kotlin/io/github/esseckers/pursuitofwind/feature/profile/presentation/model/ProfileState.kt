@@ -13,6 +13,7 @@ import org.jetbrains.compose.resources.StringResource
  *   profile, wind limits converted to a new unit). Text fields keep their own cursor and start over from the form when
  *   it changes.
  * @property minSession the minimum session stepper, in minutes; [maxDrive] likewise for the longest drive.
+ * @property ridingFrom the stepper of the hour riding starts; [ridingTo] of the hour it ends.
  * @property errors what to fix, shown once the rider has tried to save.
  * @property validProfile the form as a profile, ready to save; null while a field needs fixing.
  * @property hasChanges whether the form differs from the saved profile (always true before there is one).
@@ -27,6 +28,8 @@ internal data class ProfileState(
     val kites: List<KiteChoice> = emptyList(),
     val minSession: StepperUi = ProfileLimits.MIN_SESSION_STEPS.stepper(form.minSessionMinutes),
     val maxDrive: StepperUi = ProfileLimits.MAX_DRIVE_STEPS.stepper(form.maxDriveMinutes),
+    val ridingFrom: StepperUi = ProfileLimits.ridingFromSteps(form.ridingToHour).stepper(form.ridingFromHour),
+    val ridingTo: StepperUi = ProfileLimits.ridingToSteps(form.ridingFromHour).stepper(form.ridingToHour),
     val errors: Map<ProfileField, ProfileError> = emptyMap(),
     val validProfile: Profile? = null,
     val hasChanges: Boolean = true,

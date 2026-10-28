@@ -218,6 +218,12 @@
     <string name="language_english">English</string>
     <string name="language_russian">Русский</string>
     <string name="profile_more">Дополнительно</string>
+    <string name="profile_riding_from">Катаю с</string>
+    <string name="profile_riding_from_earlier">Начинать катание раньше</string>
+    <string name="profile_riding_from_later">Начинать катание позже</string>
+    <string name="profile_riding_to">Катаю до</string>
+    <string name="profile_riding_to_earlier">Заканчивать катание раньше</string>
+    <string name="profile_riding_to_later">Заканчивать катание позже</string>
     <string name="profile_min_session">Самая короткая сессия, ради которой стоит ехать</string>
     <string name="profile_min_session_shorter">Короче</string>
     <string name="profile_min_session_longer">Дольше</string>

@@ -205,6 +205,21 @@ class ProfileScreenTest {
         }
 
     @Test
+    fun `riding hours read as times and their steppers send which way they move`() =
+        runComposeUiTest {
+            show(ProfilePreviewData.saved)
+
+            onNodeWithTag("profile.more").performScrollTo().performClick()
+            onNodeWithTag("profile.ridingFrom").performScrollTo().assert(hasAnyDescendant(hasText("Ride from")))
+            onNodeWithTag("profile.ridingFrom").assert(hasAnyDescendant(hasText("09:00")))
+            onNodeWithTag("profile.ridingTo").assert(hasAnyDescendant(hasText("Ride until"))).assert(hasAnyDescendant(hasText("21:00")))
+            onNodeWithContentDescription("Start riding later").performScrollTo().performClick()
+            onNodeWithContentDescription("Finish riding earlier").performScrollTo().performClick()
+
+            assertEquals(listOf(ProfileEdit.RidingFrom(Step.UP), ProfileEdit.RidingTo(Step.DOWN)), edits())
+        }
+
+    @Test
     fun `a stepper at the limit of the server cannot go further`() =
         runComposeUiTest {
             show(ProfilePreviewData.saved.copy(maxDrive = ProfileLimits.MAX_DRIVE_STEPS.stepper(0)))

@@ -6,6 +6,7 @@ import io.github.esseckers.pursuitofwind.core.ui.StepRange
 import io.github.esseckers.pursuitofwind.data.model.Profile
 import io.github.esseckers.pursuitofwind.data.model.WindUnit
 import io.github.esseckers.pursuitofwind.engine.model.RiderProfile
+import io.github.esseckers.pursuitofwind.engine.model.RidingHours
 import io.github.esseckers.pursuitofwind.engine.model.SkillLevel
 import io.github.esseckers.pursuitofwind.engine.model.WindSpeed
 
@@ -15,6 +16,8 @@ import io.github.esseckers.pursuitofwind.engine.model.WindSpeed
  *
  * @property minWind the personal lower wind limit as typed, in the form's limit unit (`limitUnit`); empty means the
  *   level's default. [maxWind] likewise.
+ * @property ridingFromHour the hour riding starts, 0 to 23; [ridingToHour] the hour it ends, up to 24. The steppers keep
+ *   the start before the end.
  * @property minWindSpeed the exact speed [minWind] was written from (the saved profile, or a conversion to another
  *   unit); null once the rider types. Checking and converting use it, so switching units back and forth or saving an
  *   untouched limit never rounds it. [maxWindSpeed] likewise.
@@ -27,6 +30,8 @@ internal data class ProfileForm(
     val kitesM2: Set<Double> = emptySet(),
     val minSessionMinutes: Int = ProfileLimits.DEFAULT_MIN_SESSION_MINUTES,
     val maxDriveMinutes: Int = ProfileLimits.DEFAULT_MAX_DRIVE_MINUTES,
+    val ridingFromHour: Int = RidingHours.DEFAULT.fromHour,
+    val ridingToHour: Int = RidingHours.DEFAULT.toHour,
     val minWind: String = "",
     val maxWind: String = "",
     val minWindSpeed: WindSpeed? = null,
@@ -65,6 +70,16 @@ internal sealed interface ProfileEdit {
 
     /** The longest drive the rider takes, one step [step]. */
     data class MaxDrive(
+        val step: Step,
+    ) : ProfileEdit
+
+    /** The hour riding starts, an hour [step]; it stays before the end. */
+    data class RidingFrom(
+        val step: Step,
+    ) : ProfileEdit
+
+    /** The hour riding ends, an hour [step]; it stays after the start. */
+    data class RidingTo(
         val step: Step,
     ) : ProfileEdit
 
@@ -126,4 +141,10 @@ internal object ProfileLimits {
 
     /** Common kite sizes, offered as chips; sizes the rider already owns are added to them. */
     val KITE_SIZES_M2: List<Double> = listOf(5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 17.0)
+
+    /** The hours riding can start, by the hour: from midnight to an hour before it ends at [toHour]. */
+    fun ridingFromSteps(toHour: Int): StepRange = StepRange(min = 0, max = toHour - 1, step = 1)
+
+    /** The hours riding can end, by the hour: from an hour after it starts at [fromHour] to midnight. */
+    fun ridingToSteps(fromHour: Int): StepRange = StepRange(min = fromHour + 1, max = ApiLimits.RiderProfile.RIDING_TO_HOUR_MAX, step = 1)
 }

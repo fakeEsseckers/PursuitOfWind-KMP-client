@@ -73,6 +73,8 @@ internal object ProfileReducer : Reducer<ProfileState, ProfileResult> {
             kites = ProfileFormMapper.kiteChoices(form).takeUnless { it == kites } ?: kites,
             minSession = ProfileLimits.MIN_SESSION_STEPS.stepper(form.minSessionMinutes),
             maxDrive = ProfileLimits.MAX_DRIVE_STEPS.stepper(form.maxDriveMinutes),
+            ridingFrom = ProfileLimits.ridingFromSteps(form.ridingToHour).stepper(form.ridingFromHour),
+            ridingTo = ProfileLimits.ridingToSteps(form.ridingFromHour).stepper(form.ridingToHour),
             errors = if (inputs.submitted) (check as? ProfileCheck.Invalid)?.errors.orEmpty() else emptyMap(),
             validProfile = valid,
             // The same profile typed differently (`62,5` for 62.5 kg) is no change.

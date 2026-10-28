@@ -56,6 +56,12 @@ import io.github.esseckers.pursuitofwind.core.resources.profile_min_session_shor
 import io.github.esseckers.pursuitofwind.core.resources.profile_min_wind
 import io.github.esseckers.pursuitofwind.core.resources.profile_more
 import io.github.esseckers.pursuitofwind.core.resources.profile_name
+import io.github.esseckers.pursuitofwind.core.resources.profile_riding_from
+import io.github.esseckers.pursuitofwind.core.resources.profile_riding_from_earlier
+import io.github.esseckers.pursuitofwind.core.resources.profile_riding_from_later
+import io.github.esseckers.pursuitofwind.core.resources.profile_riding_to
+import io.github.esseckers.pursuitofwind.core.resources.profile_riding_to_earlier
+import io.github.esseckers.pursuitofwind.core.resources.profile_riding_to_later
 import io.github.esseckers.pursuitofwind.core.resources.profile_unit
 import io.github.esseckers.pursuitofwind.core.resources.profile_weight
 import io.github.esseckers.pursuitofwind.core.resources.profile_wind_range
@@ -67,6 +73,7 @@ import io.github.esseckers.pursuitofwind.core.ui.Step
 import io.github.esseckers.pursuitofwind.core.ui.StepperUi
 import io.github.esseckers.pursuitofwind.core.ui.durationText
 import io.github.esseckers.pursuitofwind.core.ui.formatKiteSize
+import io.github.esseckers.pursuitofwind.core.ui.hourOfDay
 import io.github.esseckers.pursuitofwind.core.ui.windUnitLabel
 import io.github.esseckers.pursuitofwind.data.model.AppLanguage
 import io.github.esseckers.pursuitofwind.data.model.WindUnit
@@ -198,10 +205,12 @@ internal fun LanguageChoice(
     }
 }
 
-/** Session, drive and personal wind limits: folded away, because the defaults suit most riders. */
+/** Riding hours, session, drive and personal wind limits: folded away, because the defaults suit most riders. */
 @Composable
 internal fun MoreSettings(
     form: ProfileForm,
+    ridingFrom: StepperUi,
+    ridingTo: StepperUi,
     minSession: StepperUi,
     maxDrive: StepperUi,
     version: Int,
@@ -217,6 +226,28 @@ internal fun MoreSettings(
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.m)) {
         MoreSettingsHeader(expanded = expanded, onToggle = { expanded = !expanded })
         if (expanded) {
+            Stepper(
+                label = stringResource(Res.string.profile_riding_from),
+                value = hourOfDay(ridingFrom.value),
+                decreaseLabel = stringResource(Res.string.profile_riding_from_earlier),
+                increaseLabel = stringResource(Res.string.profile_riding_from_later),
+                onDecrease = { onEdit(ProfileEdit.RidingFrom(Step.DOWN)) },
+                onIncrease = { onEdit(ProfileEdit.RidingFrom(Step.UP)) },
+                canDecrease = ridingFrom.canDecrease,
+                canIncrease = ridingFrom.canIncrease,
+                modifier = Modifier.testTag("profile.ridingFrom"),
+            )
+            Stepper(
+                label = stringResource(Res.string.profile_riding_to),
+                value = hourOfDay(ridingTo.value),
+                decreaseLabel = stringResource(Res.string.profile_riding_to_earlier),
+                increaseLabel = stringResource(Res.string.profile_riding_to_later),
+                onDecrease = { onEdit(ProfileEdit.RidingTo(Step.DOWN)) },
+                onIncrease = { onEdit(ProfileEdit.RidingTo(Step.UP)) },
+                canDecrease = ridingTo.canDecrease,
+                canIncrease = ridingTo.canIncrease,
+                modifier = Modifier.testTag("profile.ridingTo"),
+            )
             Stepper(
                 label = stringResource(Res.string.profile_min_session),
                 value = durationText(minSession.value.minutes),

@@ -3,15 +3,17 @@ package io.github.esseckers.pursuitofwind.feature.profile
 import io.github.esseckers.pursuitofwind.data.model.Profile
 import io.github.esseckers.pursuitofwind.data.model.WindUnit
 import io.github.esseckers.pursuitofwind.engine.model.RiderProfile
+import io.github.esseckers.pursuitofwind.engine.model.RidingHours
 import io.github.esseckers.pursuitofwind.engine.model.SkillLevel
 import io.github.esseckers.pursuitofwind.engine.model.WindSpeed
 import kotlin.time.Duration.Companion.minutes
 
-/** Alex as saved: 80 kg, intermediate, kites 7 / 9 / 12 m², knots, the default session and drive. */
+/** Alex as saved: 80 kg, intermediate, kites 7 / 9 / 12 m², knots, the default session, drive and riding hours. */
 fun savedAlex(
     unit: WindUnit = WindUnit.KNOTS,
     minWind: WindSpeed? = null,
     maxWind: WindSpeed? = null,
+    ridingHours: RidingHours = RidingHours.DEFAULT,
 ): Profile =
     Profile(
         displayName = "Alex",
@@ -24,6 +26,7 @@ fun savedAlex(
                 maxWind = maxWind,
                 minSession = 120.minutes,
                 maxDrive = 180.minutes,
+                ridingHours = ridingHours,
             ),
         windUnit = unit,
     )
