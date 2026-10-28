@@ -150,6 +150,7 @@ open iosApp/iosApp.xcodeproj            # then Run on an iOS simulator
 | [0009](docs/adr/0009-navigation-3.md) | Navigation 3 for moving between screens |
 | [0010](docs/adr/0010-live-fake-backend-instead-of-demo-mode.md) | A live fake backend instead of a demo mode |
 | [0013](docs/adr/0013-riders-add-spots-on-a-map.md) | Riders add spots on a map |
+| [0014](docs/adr/0014-riding-hours-and-the-longest-window-first.md) | Riding hours, and the longest window first |
 
 ## Roadmap
 
