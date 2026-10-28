@@ -328,4 +328,5 @@
     <string name="offer_failed">Couldn’t offer the ride.</string>
     <string name="offer_no_crew_title">No crew yet</string>
     <string name="offer_no_crew_body">Create a crew or join one on the Crew tab to offer rides.</string>
+    <string name="spot_map_water_label">water</string>
 </resources>

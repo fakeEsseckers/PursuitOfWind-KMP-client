@@ -51,6 +51,7 @@ kotlin {
             implementation(libs.kotlinx.serialization.core)
             implementation(libs.koin.compose.viewmodel)
             implementation(libs.kermit)
+            implementation(libs.maplibre.compose)
         }
         commonTest.dependencies {
             implementation(libs.kotlinx.coroutines.test)

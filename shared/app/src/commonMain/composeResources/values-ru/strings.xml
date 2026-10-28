@@ -342,4 +342,5 @@
     <string name="offer_failed">Не удалось предложить поездку.</string>
     <string name="offer_no_crew_title">Компании пока нет</string>
     <string name="offer_no_crew_body">Создай компанию или вступи в неё на вкладке «Компания», чтобы предлагать поездки.</string>
+    <string name="spot_map_water_label">вода</string>
 </resources>

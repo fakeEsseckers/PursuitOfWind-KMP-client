@@ -55,4 +55,6 @@ dependencies {
     implementation(projects.shared.app)
     implementation(libs.androidx.activity.compose)
     implementation(libs.compose.runtime)
+    // The map's native engine, drawn with OpenGL ES: it runs on every device the app supports (minSdk 26).
+    runtimeOnly(libs.maplibre.compose.runtime.opengl.android)
 }

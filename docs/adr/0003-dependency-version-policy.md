@@ -14,6 +14,10 @@ The Kotlin Multiplatform toolchain moves fast and its parts are released indepen
 - All versions live in `gradle/libs.versions.toml`, with the verification date at the top. Verify against the repositories, not memory, when upgrading.
 - Upgrade Kotlin, AGP and Gradle together, in a dedicated pull request, when the compatibility table covers the new combination.
 
+## Exceptions
+
+- **MapLibre Compose 0.20.0** (2026-10-28). The map riders add spots on ([0013](0013-riders-add-spots-on-a-map.md)) is MapLibre's own Compose Multiplatform library, which has no stable release yet; its iOS support is in beta. The version is pinned, and an upgrade reads its release notes first. Its JVM artifact is built for Java 25 and draws with the GPU, so JVM tests bind a scripted map instead (`ScriptedSpotMap`).
+
 ## Alternatives considered
 
 - Always the newest version of everything — AGP 9.4.1 and Gradle 9.8.1 would work in most cases, but failures outside the tested range are hard to diagnose and cost days.
