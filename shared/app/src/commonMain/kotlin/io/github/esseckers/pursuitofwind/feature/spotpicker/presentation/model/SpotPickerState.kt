@@ -10,7 +10,7 @@ import kotlin.time.Duration
  * The MVI state of the spot picker: the catalog with the rider's choices on top.
  *
  * @property notice why the list may not be current, shown above it.
- * @property changes what "Done" saves, in catalog order: every spot whose choice differs from how it is followed.
+ * @property changes what "Done" saves, in the order of the list: every spot whose choice differs from how it is followed.
  * @property saveError why the last save failed; cleared when the next one starts.
  * @property inputs what the reducer computes the rest from. The view does not read it.
  */
@@ -38,7 +38,7 @@ internal data class SpotPickerState(
             val message: StringResource,
         ) : Content
 
-        /** The catalog by name. */
+        /** The catalog, the spots added last first. */
         data class Ready(
             val spots: List<PickSpotUi>,
         ) : Content

@@ -6,10 +6,12 @@ import io.github.esseckers.pursuitofwind.engine.model.SpotConfig
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import kotlinx.datetime.TimeZone
 import kotlin.time.Duration
+import kotlin.time.Instant
 
 /**
  * A spot from the catalog, which riders fill by adding spots. [water] is the direction from the beach to open water;
- * the sectors of a spot a rider added come from it. Only the user [createdBy] can change the spot.
+ * the sectors of a spot a rider added come from it. Only the user [createdBy] can change the spot; [createdAt] is when
+ * it was added.
  */
 public data class Spot(
     val id: SpotId,
@@ -20,6 +22,7 @@ public data class Spot(
     val dangerSectors: List<Sector>,
     val water: Bearing,
     val createdBy: String,
+    val createdAt: Instant,
 )
 
 public data class GeoPoint(

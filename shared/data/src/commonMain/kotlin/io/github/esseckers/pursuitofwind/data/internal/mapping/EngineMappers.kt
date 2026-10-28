@@ -33,6 +33,7 @@ internal fun SpotDto.toSpot(): Spot =
         dangerSectors = dangerSectors.map { it.toSector() },
         water = Bearing(waterBearingDeg),
         createdBy = createdBy,
+        createdAt = createdAt,
     )
 
 internal fun ForecastHourDto.toForecastHour(): ForecastHour =

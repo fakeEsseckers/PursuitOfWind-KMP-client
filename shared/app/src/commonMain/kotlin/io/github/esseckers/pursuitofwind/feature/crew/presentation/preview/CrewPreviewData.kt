@@ -177,5 +177,6 @@ internal object CrewPreviewData {
             dangerSectors = emptyList(),
             water = Bearing(240.0),
             createdBy = "usr_andrei",
+            createdAt = Instant.parse("2026-04-11T09:20:00Z"),
         )
 }

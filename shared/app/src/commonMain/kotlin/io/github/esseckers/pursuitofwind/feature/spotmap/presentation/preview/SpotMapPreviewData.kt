@@ -113,6 +113,7 @@ internal object SpotMapPreviewData {
             dangerSectors = listOf(sectors.danger),
             water = Bearing(water),
             createdBy = createdBy,
+            createdAt = Instant.parse("2026-04-11T09:20:00Z"),
         )
     }
 }

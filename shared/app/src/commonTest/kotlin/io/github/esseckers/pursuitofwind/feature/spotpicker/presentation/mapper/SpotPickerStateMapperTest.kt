@@ -8,6 +8,7 @@ import io.github.esseckers.pursuitofwind.core.ui.DEFAULT_SPOT_DRIVE_MINUTES
 import io.github.esseckers.pursuitofwind.core.ui.SPOT_DRIVE_STEPS
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Cached
+import io.github.esseckers.pursuitofwind.feature.spotpicker.FETCHED_AT
 import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.entity.SpotChangeEntity
 import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.entity.SpotPickerSnapshotEntity
 import io.github.esseckers.pursuitofwind.feature.spotpicker.following
@@ -30,12 +31,12 @@ class SpotPickerStateMapperTest {
     private val empty = SpotPickerSnapshotEntity(Cached(emptyList(), null), emptyList())
 
     @Test
-    fun `the catalog shows by name with the followed spots chosen at their drive`() {
+    fun `the catalog shows the spots added last first with the followed spots chosen at their drive`() {
         val state = SpotPickerStateMapper.map(inputs(following(nordstrand, 2.hours)))
         val spots = (state.content as Content.Ready).spots
 
-        assertEquals(listOf("Dune Point", "Lake Weiss", "Nordstrand Bay", "Salt Lagoon"), spots.map { it.name })
-        assertEquals(listOf(false, false, true, false), spots.map { it.selected })
+        assertEquals(listOf("Dune Point", "Lake Weiss", "Salt Lagoon", "Nordstrand Bay"), spots.map { it.name })
+        assertEquals(listOf(false, false, false, true), spots.map { it.selected })
         assertEquals(2.hours, spots.single { it.selected }.drive)
         assertEquals(DEFAULT_SPOT_DRIVE_MINUTES.minutes, spots.first().drive)
         assertEquals(1, state.selectedCount)
@@ -97,7 +98,7 @@ class SpotPickerStateMapperTest {
     }
 
     @Test
-    fun `changes come in catalog order whatever order they were made in`() {
+    fun `changes come in the order of the list whatever order they were made in`() {
         val chosen =
             inputs(following(nordstrand, 2.hours)).copy(
                 choices =
@@ -108,7 +109,16 @@ class SpotPickerStateMapperTest {
                     ),
             )
 
-        assertEquals(listOf(dune.id, nordstrand.id, saltLagoon.id), SpotPickerStateMapper.map(chosen).changes.map { it.spotId })
+        assertEquals(listOf(dune.id, saltLagoon.id, nordstrand.id), SpotPickerStateMapper.map(chosen).changes.map { it.spotId })
+    }
+
+    @Test
+    fun `spots added at the same moment go by name`() {
+        val added = nordstrand.createdAt
+        val twins = listOf(saltLagoon.copy(createdAt = added), dune.copy(createdAt = added), nordstrand)
+        val state = SpotPickerStateMapper.map(SpotPickerInputs(snapshot = SpotPickerSnapshotEntity(Cached(twins, FETCHED_AT), emptyList())))
+
+        assertEquals(listOf("Dune Point", "Nordstrand Bay", "Salt Lagoon"), (state.content as Content.Ready).spots.map { it.name })
     }
 
     @Test

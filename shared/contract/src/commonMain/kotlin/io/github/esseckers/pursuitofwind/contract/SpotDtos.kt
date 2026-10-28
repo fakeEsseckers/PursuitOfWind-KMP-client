@@ -1,6 +1,7 @@
 package io.github.esseckers.pursuitofwind.contract
 
 import kotlinx.serialization.Serializable
+import kotlin.time.Instant
 
 @Serializable
 public data class GeoPointDto(
@@ -17,7 +18,8 @@ public data class SectorDto(
 
 /**
  * A spot of the catalog. [waterBearingDeg] is the direction from the beach to open water; for a spot a rider adds or
- * changes, the server works the sectors out from it. Only [createdBy] can change the spot.
+ * changes, the server works the sectors out from it. Only [createdBy] can change the spot; [createdAt] is when it was
+ * added, and stays when it changes.
  */
 @Serializable
 public data class SpotDto(
@@ -29,6 +31,7 @@ public data class SpotDto(
     val dangerSectors: List<SectorDto>,
     val waterBearingDeg: Double,
     val createdBy: String,
+    val createdAt: Instant,
 )
 
 /**

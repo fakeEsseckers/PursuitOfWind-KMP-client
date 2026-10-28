@@ -1113,7 +1113,7 @@ components:
     Spot:
       type: object
       description: A spot of the catalog. Riders add spots themselves; every rider sees every spot.
-      required: [id, name, location, timeZone, rideableSectors, dangerSectors, waterBearingDeg, createdBy]
+      required: [id, name, location, timeZone, rideableSectors, dangerSectors, waterBearingDeg, createdBy, createdAt]
       properties:
         id:
           type: string
@@ -1148,6 +1148,10 @@ components:
           type: string
           minLength: 1
           description: Id of the user who added the spot; only they can change it.
+        createdAt:
+          type: string
+          format: date-time
+          description: When the spot was added to the catalog; changing the spot keeps it.
       examples:
         - id: nordstrand-bay
           name: Nordstrand Bay
@@ -1163,6 +1167,7 @@ components:
               toDeg: 150
           waterBearingDeg: 240
           createdBy: usr_andrei
+          createdAt: '2026-06-14T08:30:00Z'
 
     CreateSpotRequest:
       type: object
@@ -1245,6 +1250,7 @@ components:
               dangerSectors: []
               waterBearingDeg: 270
               createdBy: usr_jonas
+              createdAt: '2026-07-02T17:05:00Z'
           nextCursor: c_lake-weiss
 
     MySpotUpdate:
@@ -1289,6 +1295,7 @@ components:
             dangerSectors: []
             waterBearingDeg: 270
             createdBy: usr_mira
+            createdAt: '2026-08-21T12:40:00Z'
           driveMinutes: 160
           favorite: true
 

@@ -73,7 +73,7 @@ class SpotPickerViewModelTest {
     private suspend fun mySpots(): List<MySpot> = spots.mySpots.first().value
 
     @Test
-    fun `opening fetches the whole catalog with the followed spots chosen`() =
+    fun `opening fetches the whole catalog, the spots added last first, with the followed spots chosen`() =
         runTest(dispatcher) {
             spots.follow(NORDSTRAND, 2.hours, favorite = true).value()
 
@@ -81,7 +81,7 @@ class SpotPickerViewModelTest {
                 val ready = awaitReady()
 
                 assertEquals(
-                    listOf("Dune Point", "Harbor Flats", "Lake Weiss", "Nordstrand Bay", "Salt Lagoon"),
+                    listOf("Harbor Flats", "Dune Point", "Lake Weiss", "Salt Lagoon", "Nordstrand Bay"),
                     ready.spots().map { it.name },
                 )
                 assertEquals(listOf("nordstrand-bay"), ready.spots().filter { it.selected }.map { it.id.value })

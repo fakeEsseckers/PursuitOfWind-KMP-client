@@ -75,5 +75,6 @@ internal object SpotsPreviewData {
             dangerSectors = emptyList(),
             water = Bearing(240.0),
             createdBy = createdBy,
+            createdAt = Instant.parse("2026-04-11T09:20:00Z"),
         )
 }
