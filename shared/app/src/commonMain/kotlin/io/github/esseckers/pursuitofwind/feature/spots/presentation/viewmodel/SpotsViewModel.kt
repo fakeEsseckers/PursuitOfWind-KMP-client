@@ -68,12 +68,16 @@ internal class SpotsViewModel(
             SpotsIntent.AddSpots -> {
                 postEffect(SpotsEffect.AddSpots)
             }
+
+            is SpotsIntent.ChangeOnMap -> {
+                postEffect(SpotsEffect.ChangeOnMap(intent.spotId))
+            }
         }
     }
 
     override fun bind(): Flow<SpotsResult> =
-        repository.spots
-            .map<_, SpotsResult> { SpotsResult.DataChanged(it) }
+        repository.snapshot
+            .map<_, SpotsResult> { SpotsResult.DataChanged(it.spots, it.riderId) }
             .onStart { if (!currentState.inputs.refresh.finished) refresh() }
 
     /** One refresh at a time; a second pull while one runs does nothing. */

@@ -27,7 +27,7 @@ internal sealed interface Destination : NavKey {
 
     /**
      * The map of spots: add a spot by pointing at its beach and water, or follow one; opened from the spot picker. With
-     * [editing], it changes that spot, which the rider added.
+     * [editing], it changes that spot, which the rider added; opened so from the Spots tab.
      */
     @Serializable
     data class SpotMap(

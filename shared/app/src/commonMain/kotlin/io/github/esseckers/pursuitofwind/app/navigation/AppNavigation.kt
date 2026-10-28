@@ -192,6 +192,7 @@ private fun EntryProviderScope<NavKey>.tabs(navigator: Navigator) {
                 SpotsRoute(
                     onOpenSpot = { spotId -> navigator.openBesideList(Destination.SpotDetail(spotId.value, besideList = true)) },
                     onAddSpots = { navigator.open(Destination.PickSpots) },
+                    onChangeOnMap = { spotId -> navigator.open(Destination.SpotMap(editing = spotId.value)) },
                 )
             }
         }

@@ -255,6 +255,8 @@
     <string name="my_spots_favorite">Избранный</string>
     <string name="my_spots_favorite_hint">Ответ на «Сегодня» каждый день</string>
     <string name="my_spots_forecast">Прогноз по часам</string>
+    <string name="my_spots_change">Изменить на карте</string>
+    <string name="my_spots_change_label">Изменить %1$s на карте</string>
     <string name="action_remove">Убрать</string>
     <string name="my_spots_remove">Убрать %1$s</string>
     <string name="my_spots_removed">%1$s убран</string>

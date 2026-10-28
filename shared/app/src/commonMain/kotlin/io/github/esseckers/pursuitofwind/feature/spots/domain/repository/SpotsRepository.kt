@@ -6,6 +6,7 @@ import io.github.esseckers.pursuitofwind.data.model.MySpot
 import io.github.esseckers.pursuitofwind.data.model.Outcome
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.spots.domain.entity.SpotSettingsEntity
+import io.github.esseckers.pursuitofwind.feature.spots.domain.entity.SpotsSnapshotEntity
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -16,8 +17,8 @@ import kotlinx.coroutines.flow.Flow
  * its caller is cancelled, so a change the rider made is not lost when they leave the tab.
  */
 internal interface SpotsRepository {
-    /** The followed spots, by name, as cached; emits again whenever they change. */
-    val spots: Flow<Cached<List<MySpot>>>
+    /** The followed spots, by name, as cached, and the signed-in rider; emits again whenever either changes. */
+    val snapshot: Flow<SpotsSnapshotEntity>
 
     /** Fetches the followed spots from the server. */
     suspend fun refresh(): AppError?

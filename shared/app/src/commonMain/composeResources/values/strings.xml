@@ -243,6 +243,8 @@
     <string name="my_spots_favorite">Favorite</string>
     <string name="my_spots_favorite_hint">An answer on Today every day</string>
     <string name="my_spots_forecast">Hourly forecast</string>
+    <string name="my_spots_change">Change on the map</string>
+    <string name="my_spots_change_label">Change %1$s on the map</string>
     <string name="action_remove">Remove</string>
     <string name="my_spots_remove">Remove %1$s</string>
     <string name="my_spots_removed">%1$s removed</string>

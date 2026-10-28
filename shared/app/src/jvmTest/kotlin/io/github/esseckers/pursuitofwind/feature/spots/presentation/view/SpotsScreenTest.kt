@@ -3,7 +3,9 @@ package io.github.esseckers.pursuitofwind.feature.spots.presentation.view
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -55,6 +57,9 @@ class SpotsScreenTest {
     fun restoreLocale() {
         Locale.setDefault(systemLocale)
     }
+
+    private fun clickLabel(label: String) =
+        SemanticsMatcher("click label is '$label'") { it.config.getOrNull(SemanticsActions.OnClick)?.label == label }
 
     private fun ComposeUiTest.show(
         state: SpotsState,
@@ -113,6 +118,22 @@ class SpotsScreenTest {
                 ),
                 intents,
             )
+        }
+
+    @Test
+    fun `only a spot the rider added can be changed on the map`() =
+        runComposeUiTest {
+            show(SpotsPreviewData.ready)
+
+            scrollTo("myspots.card.lake-weiss")
+            onNodeWithTag("myspots.change.lake-weiss")
+                .assert(hasText("Change on the map"))
+                .assert(clickLabel("Change Lake Weiss on the map"))
+                .performClick()
+            scrollTo("myspots.card.nordstrand-bay")
+            onNodeWithTag("myspots.change.nordstrand-bay").assertDoesNotExist()
+
+            assertEquals(listOf<SpotsIntent>(SpotsIntent.ChangeOnMap(SpotId("lake-weiss"))), intents)
         }
 
     @Test

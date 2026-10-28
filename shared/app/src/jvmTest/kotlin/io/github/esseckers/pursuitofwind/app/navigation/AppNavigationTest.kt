@@ -18,6 +18,7 @@ import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
@@ -50,6 +51,7 @@ import io.github.esseckers.pursuitofwind.data.model.GeoPoint
 import io.github.esseckers.pursuitofwind.data.repository.CrewRepository
 import io.github.esseckers.pursuitofwind.data.repository.ProfileRepository
 import io.github.esseckers.pursuitofwind.data.repository.SpotRepository
+import io.github.esseckers.pursuitofwind.engine.model.Bearing
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.spotdetail.NORDSTRAND
 import io.github.esseckers.pursuitofwind.feature.spotdetail.SATURDAY
@@ -66,6 +68,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.setMain
+import kotlinx.datetime.TimeZone
 import org.koin.compose.KoinIsolatedContext
 import java.util.Locale
 import kotlin.test.AfterTest
@@ -291,6 +294,36 @@ class AppNavigationTest {
 
             val card = "myspots.card.${added.spot.id.value}"
             waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag(card)).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("tab.spots").assertIsSelected()
+        }
+
+    @Test
+    fun `on a phone a spot the rider added is changed on the map from the Spots tab`() =
+        runSkikoComposeUiTest(size = Size(PHONE_WIDTH, PHONE_HEIGHT)) {
+            val mine =
+                runBlocking {
+                    val spots = graph.koin.get<SpotRepository>()
+                    val added = spots.addSpot("Sand Spit", GeoPoint(54.40, 8.60), Bearing(270.0), TimeZone.of("Europe/Berlin")).value()
+                    spots.follow(added.id, 1.hours, favorite = true).value()
+                    added.id.value
+                }
+            showApp()
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("today.header")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("tab.spots").performClick()
+            val change = "myspots.change.$mine"
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag(change)).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("myspots.list").performScrollToNode(hasTestTag(change))
+            onNodeWithTag(change).performClick()
+
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("spotmap.name")).fetchSemanticsNodes().isNotEmpty() }
+            onNode(isHeading() and hasText("Change the spot")).assertIsDisplayed()
+            onNodeWithTag("spotmap.name").performScrollTo().performTextClearance()
+            onNodeWithTag("spotmap.name").performTextInput("North Spit")
+            onNodeWithTag("spotmap.save").performScrollTo().performClick()
+
+            waitUntil(timeoutMillis = TIMEOUT_MS) {
+                onAllNodes(hasTestTag("myspots.card.$mine") and hasAnyDescendant(hasText("North Spit"))).fetchSemanticsNodes().isNotEmpty()
+            }
             onNodeWithTag("tab.spots").assertIsSelected()
         }
 

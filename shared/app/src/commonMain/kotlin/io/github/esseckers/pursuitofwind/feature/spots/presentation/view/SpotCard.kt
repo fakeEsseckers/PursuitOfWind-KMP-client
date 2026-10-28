@@ -28,6 +28,8 @@ import io.github.esseckers.pursuitofwind.core.designsystem.theme.Sizes
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Spacing
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.action_remove
+import io.github.esseckers.pursuitofwind.core.resources.my_spots_change
+import io.github.esseckers.pursuitofwind.core.resources.my_spots_change_label
 import io.github.esseckers.pursuitofwind.core.resources.my_spots_favorite
 import io.github.esseckers.pursuitofwind.core.resources.my_spots_favorite_hint
 import io.github.esseckers.pursuitofwind.core.resources.my_spots_forecast
@@ -44,9 +46,9 @@ import io.github.esseckers.pursuitofwind.feature.spots.presentation.model.MySpot
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * One followed spot: its name as a heading, whether its sectors are checked, a favorite switch, the drive from home,
- * and links to its forecast and to remove it. Each control is its own node for screen readers, named after the spot
- * where it would otherwise be ambiguous.
+ * One followed spot: its name as a heading, a favorite switch, the drive from home, a link to change it on the map when
+ * the rider added it, and links to its forecast and to remove it. Each control is its own node for screen readers, named
+ * after the spot where it would otherwise be ambiguous.
  */
 @Composable
 internal fun SpotCard(
@@ -55,6 +57,7 @@ internal fun SpotCard(
     onDrive: (Step) -> Unit,
     onOpen: () -> Unit,
     onRemove: () -> Unit,
+    onChangeOnMap: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     OutlinedCard(modifier = modifier.fillMaxWidth().testTag("myspots.card.${spot.id.value}")) {
@@ -81,6 +84,14 @@ internal fun SpotCard(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.testTag("myspots.saving.${spot.id.value}"),
+                )
+            }
+            if (spot.mine) {
+                LinkRow(
+                    text = stringResource(Res.string.my_spots_change),
+                    onClickLabel = stringResource(Res.string.my_spots_change_label, spot.name),
+                    onClick = onChangeOnMap,
+                    modifier = Modifier.testTag("myspots.change.${spot.id.value}"),
                 )
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
