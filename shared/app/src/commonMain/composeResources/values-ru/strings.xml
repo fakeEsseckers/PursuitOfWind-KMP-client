@@ -257,9 +257,9 @@
     <string name="my_spots_forecast">Прогноз по часам</string>
     <string name="my_spots_change">Изменить на карте</string>
     <string name="my_spots_change_label">Изменить %1$s на карте</string>
-    <string name="action_remove">Убрать</string>
-    <string name="my_spots_remove">Убрать %1$s</string>
-    <string name="my_spots_removed">%1$s убран</string>
+    <string name="action_remove">Удалить</string>
+    <string name="my_spots_remove">Удалить %1$s</string>
+    <string name="my_spots_removed">%1$s удалён</string>
     <string name="action_undo">Отменить</string>
     <string name="action_add_spots">Добавить споты</string>
     <string name="my_spots_saving">Сохраняем…</string>

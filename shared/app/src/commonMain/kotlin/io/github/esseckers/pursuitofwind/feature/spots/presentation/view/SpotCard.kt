@@ -6,7 +6,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Switch
@@ -19,6 +21,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
 import io.github.esseckers.pursuitofwind.core.designsystem.component.ActionButton
 import io.github.esseckers.pursuitofwind.core.designsystem.component.IconLine
 import io.github.esseckers.pursuitofwind.core.designsystem.component.LinkRow
@@ -65,7 +68,7 @@ internal fun SpotCard(
             modifier = Modifier.padding(start = Spacing.m, end = Spacing.s, top = Spacing.m, bottom = Spacing.xs),
             verticalArrangement = Arrangement.spacedBy(Spacing.s),
         ) {
-            Text(text = spot.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
+            Header(spot)
             FavoriteRow(favorite = spot.favorite, onToggle = onToggleFavorite, tag = "myspots.favorite.${spot.id.value}")
             Stepper(
                 label = stringResource(Res.string.spots_drive),
@@ -78,14 +81,6 @@ internal fun SpotCard(
                 canIncrease = spot.canLengthen,
                 modifier = Modifier.testTag("myspots.drive.${spot.id.value}"),
             )
-            if (spot.restoring || spot.saving) {
-                Text(
-                    text = stringResource(if (spot.restoring) Res.string.my_spots_restoring else Res.string.my_spots_saving),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.testTag("myspots.saving.${spot.id.value}"),
-                )
-            }
             if (spot.mine) {
                 LinkRow(
                     text = stringResource(Res.string.my_spots_change),
@@ -108,6 +103,33 @@ internal fun SpotCard(
                     modifier = Modifier.semantics { contentDescription = removeLabel }.testTag("myspots.remove.${spot.id.value}"),
                 )
             }
+        }
+    }
+}
+
+/**
+ * The spot's name, and a small spinner beside it while a change is saved or the spot comes back after "Undo". The
+ * spinner takes no room of its own, so the card keeps its height when a save starts and ends.
+ */
+@Composable
+private fun Header(spot: MySpotUi) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.s)) {
+        Text(
+            text = spot.name,
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.weight(1f).semantics { heading() },
+        )
+        if (spot.restoring || spot.saving) {
+            val status = stringResource(if (spot.restoring) Res.string.my_spots_restoring else Res.string.my_spots_saving)
+            CircularProgressIndicator(
+                strokeWidth = SPINNER_STROKE,
+                modifier =
+                    Modifier
+                        .padding(end = Spacing.s)
+                        .size(SPINNER_SIZE)
+                        .semantics { contentDescription = status }
+                        .testTag("myspots.saving.${spot.id.value}"),
+            )
         }
     }
 }
@@ -141,3 +163,7 @@ private fun FavoriteRow(
         Switch(checked = favorite, onCheckedChange = null, modifier = Modifier.padding(end = Spacing.s))
     }
 }
+
+/** As small as the name's line, so the spinner fits beside it without making the card taller. */
+private val SPINNER_SIZE = 16.dp
+private val SPINNER_STROKE = 2.dp
