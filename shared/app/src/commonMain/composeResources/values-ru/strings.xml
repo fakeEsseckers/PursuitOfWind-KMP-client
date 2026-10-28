@@ -2,9 +2,9 @@
     <string name="app_name">Pursuit Of Wind</string>
 
     <!-- Verdicts and confidence (design system) -->
-    <string name="verdict_go">ДА</string>
+    <string name="verdict_go">ПОГНАЛИ</string>
     <string name="verdict_marginal">НА ГРАНИ</string>
-    <string name="verdict_no_go">НЕТ</string>
+    <string name="verdict_no_go">НЕ СТОИТ</string>
     <string name="confidence_high">Уверенность высокая</string>
     <string name="confidence_medium">Уверенность средняя</string>
     <string name="confidence_low">Уверенность низкая</string>

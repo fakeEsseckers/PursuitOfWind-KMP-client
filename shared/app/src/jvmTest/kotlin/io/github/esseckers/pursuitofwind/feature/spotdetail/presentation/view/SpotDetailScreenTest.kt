@@ -247,7 +247,7 @@ class SpotDetailScreenTest {
             show(data.ready)
 
             onNode(isHeading() and hasText("Nordstrand Bay")).assert(hasText("2 часа в дороге · Обновлено 25 минут назад"))
-            onNodeWithTag("spot.hour.5").assert(hasContentDescription("Сегодня 13:00: 20 уз, порывы 25 уз, ветер западный, ДА"))
+            onNodeWithTag("spot.hour.5").assert(hasContentDescription("Сегодня 13:00: 20 уз, порывы 25 уз, ветер западный, ПОГНАЛИ"))
             onNodeWithTag("spot.details").assert(hasText("Ветер юго-западный", substring = true))
         }
 
