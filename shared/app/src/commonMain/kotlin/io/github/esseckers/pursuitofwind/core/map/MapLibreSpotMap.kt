@@ -80,6 +80,7 @@ internal class MapLibreSpotMap : SpotMap {
                 ) {
                     SpotLayers(currentMap, colors, currentOnSpot)
                 }
+            FitOnce(state, map.start.fit)
             val loadState = state.style.loadState
             LaunchedEffect(loadState) {
                 when (loadState) {

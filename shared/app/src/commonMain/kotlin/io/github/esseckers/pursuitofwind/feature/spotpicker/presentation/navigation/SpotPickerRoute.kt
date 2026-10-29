@@ -5,9 +5,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.esseckers.pursuitofwind.core.CollectEffects
+import io.github.esseckers.pursuitofwind.core.map.SpotMap
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerEffect
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.view.SpotPickerScreen
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.viewmodel.SpotPickerViewModel
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -21,6 +23,7 @@ internal fun SpotPickerRoute(
     onOpenMap: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SpotPickerViewModel = koinViewModel(),
+    map: SpotMap = koinInject(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     CollectEffects(viewModel.effects) { effect ->
@@ -28,5 +31,5 @@ internal fun SpotPickerRoute(
             SpotPickerEffect.Finished -> onFinished()
         }
     }
-    SpotPickerScreen(state = state, onIntent = viewModel::onIntent, onBack = onBack, onOpenMap = onOpenMap, modifier = modifier)
+    SpotPickerScreen(state = state, map = map, onIntent = viewModel::onIntent, onBack = onBack, onOpenMap = onOpenMap, modifier = modifier)
 }

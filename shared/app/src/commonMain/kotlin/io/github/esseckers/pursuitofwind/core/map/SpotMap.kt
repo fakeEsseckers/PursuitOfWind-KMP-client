@@ -16,8 +16,8 @@ internal interface SpotMap {
      * [onSpot] instead, unless a spot is being placed ([SpotMapUi.pin]): then every tap is a tap on the map. [covered]
      * is the part of the map the screen draws over, kept clear for the map's own credits and controls. [onBaseMap] says
      * whether the base map (streets, water, names) loaded; without a connection it does not, and nothing shows. The map
-     * opens at [SpotMapUi.start] and then belongs to the rider: later states do not move it, but a new
-     * [SpotMapUi.attempt] starts it over.
+     * opens at [SpotMapUi.start], fitting [MapCameraUi.fit] once it knows its size, and then belongs to the rider: later
+     * states do not move it, but a new [SpotMapUi.attempt] starts it over.
      */
     @Composable
     fun Show(

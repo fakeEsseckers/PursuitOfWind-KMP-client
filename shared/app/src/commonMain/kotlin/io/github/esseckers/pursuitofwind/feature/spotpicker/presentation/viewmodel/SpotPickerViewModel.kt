@@ -23,10 +23,42 @@ internal class SpotPickerViewModel(
 ) : MviViewModel<SpotPickerState, SpotPickerIntent, SpotPickerResult, SpotPickerEffect>(SpotPickerState(), SpotPickerReducer) {
     override fun onIntent(intent: SpotPickerIntent) {
         when (intent) {
-            is SpotPickerIntent.Toggle -> dispatchResult(SpotPickerResult.Toggled(intent.spotId))
-            is SpotPickerIntent.ChangeDrive -> dispatchResult(SpotPickerResult.DriveChanged(intent.spotId, intent.step))
-            SpotPickerIntent.Refresh -> refresh()
-            SpotPickerIntent.Done -> done()
+            is SpotPickerIntent.Toggle -> {
+                dispatchResult(SpotPickerResult.Toggled(intent.spotId))
+            }
+
+            is SpotPickerIntent.ChangeDrive -> {
+                dispatchResult(SpotPickerResult.DriveChanged(intent.spotId, intent.step))
+            }
+
+            SpotPickerIntent.Refresh -> {
+                dispatchResult(SpotPickerResult.MapChange.BaseMapRetried)
+                refresh()
+            }
+
+            SpotPickerIntent.Done -> {
+                done()
+            }
+
+            is SpotPickerIntent.Show -> {
+                dispatchResult(SpotPickerResult.MapChange.ViewChosen(intent.view))
+            }
+
+            is SpotPickerIntent.PickOnMap -> {
+                dispatchResult(SpotPickerResult.MapChange.Picked(intent.spotId))
+            }
+
+            SpotPickerIntent.TapMap -> {
+                dispatchResult(SpotPickerResult.MapChange.Picked(null))
+            }
+
+            is SpotPickerIntent.BaseMap -> {
+                dispatchResult(SpotPickerResult.MapChange.BaseMapLoaded(intent.loaded))
+            }
+
+            SpotPickerIntent.RetryBaseMap -> {
+                dispatchResult(SpotPickerResult.MapChange.BaseMapRetried)
+            }
         }
     }
 

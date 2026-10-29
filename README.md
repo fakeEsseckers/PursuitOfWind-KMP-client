@@ -71,7 +71,7 @@ Choices and trade-offs: [ADR 0006](docs/adr/0006-room-3-as-the-offline-cache.md)
 A new rider starts at a welcome screen that says what the app answers, then sets it up in two steps:
 
 - **About you:** name, weight, level, the kites they own (chips, up to ten) and the unit for wind. "More settings" holds the riding hours (9:00 to 21:00 unless the rider changes them), the shortest session worth the drive, the longest drive and a personal wind range; the defaults suit most riders. Fields are checked against the limits in the API contract, and errors appear under their fields once the rider tries to continue.
-- **Your spots:** the spot catalog, each spot with a checkbox and, once chosen, the drive from home in 15-minute steps. Spots whose wind sectors no local rider has checked yet say so. "Done" follows the chosen spots as favorites; with nothing chosen, the button reads "Skip for now".
+- **Your spots:** the spot catalog, each spot with a checkbox and, once chosen, the drive from home in 15-minute steps. "List | Map" shows the same catalog on a map, opened where every spot is in sight, the chosen ones standing out; a tap on a spot brings up its row under the map, as in the list. "Done" follows the chosen spots as favorites; with nothing chosen, the button reads "Skip for now".
 
 The app speaks English and Russian. It follows the phone, and the profile has a language choice (each language by its own name) that applies at once and stays on the device. Strings come from Compose Multiplatform resources, which read the platform's locale, so a new language composes the screens again; the back stack and every screen's ViewModel live above that, and the rider stays where they were, with what they typed.
 

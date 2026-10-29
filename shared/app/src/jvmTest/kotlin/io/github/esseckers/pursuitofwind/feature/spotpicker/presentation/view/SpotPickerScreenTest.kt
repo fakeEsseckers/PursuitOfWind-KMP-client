@@ -29,6 +29,7 @@ import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.S
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.preview.SpotPickerPreviewData
 import io.github.esseckers.pursuitofwind.testing.PHONE_DENSITY
 import io.github.esseckers.pursuitofwind.testing.PHONE_SIZE
+import io.github.esseckers.pursuitofwind.testing.ScriptedSpotMap
 import io.github.esseckers.pursuitofwind.testing.checkTexts
 import java.util.Locale
 import kotlin.test.AfterTest
@@ -43,6 +44,7 @@ class SpotPickerScreenTest {
     private val intents = mutableListOf<SpotPickerIntent>()
     private var backs = 0
     private var maps = 0
+    private val map = ScriptedSpotMap()
     private val systemLocale = Locale.getDefault()
 
     @BeforeTest
@@ -63,7 +65,7 @@ class SpotPickerScreenTest {
             CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale)) {
                 PursuitOfWindTheme(
                     darkTheme = false,
-                ) { SpotPickerScreen(state = state, onIntent = { intents += it }, onBack = { backs++ }, onOpenMap = { maps++ }) }
+                ) { SpotPickerScreen(state = state, map = map, onIntent = { intents += it }, onBack = { backs++ }, onOpenMap = { maps++ }) }
             }
         }
     }

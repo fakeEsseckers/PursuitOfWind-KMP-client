@@ -3,6 +3,7 @@ package io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.previe
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.PursuitOfWindTheme
+import io.github.esseckers.pursuitofwind.core.map.MapLibreSpotMap
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerState
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.view.SpotPickerScreen
 
@@ -13,7 +14,9 @@ private fun SpotPickerPreview(
     state: SpotPickerState,
     darkTheme: Boolean = false,
 ) {
-    PursuitOfWindTheme(darkTheme = darkTheme) { SpotPickerScreen(state = state, onIntent = {}, onBack = {}, onOpenMap = {}) }
+    PursuitOfWindTheme(darkTheme = darkTheme) {
+        SpotPickerScreen(state = state, map = MapLibreSpotMap(), onIntent = {}, onBack = {}, onOpenMap = {})
+    }
 }
 
 @Preview
@@ -43,6 +46,14 @@ private fun SpotPickerEmptyPreview() = SpotPickerPreview(SpotPickerPreviewData.e
 @Preview
 @Composable
 private fun SpotPickerErrorDarkPreview() = SpotPickerPreview(SpotPickerPreviewData.error, darkTheme = true)
+
+@Preview
+@Composable
+private fun SpotPickerOnMapPreview() = SpotPickerPreview(SpotPickerPreviewData.onMap)
+
+@Preview
+@Composable
+private fun SpotPickerMapOfflineDarkPreview() = SpotPickerPreview(SpotPickerPreviewData.mapOffline, darkTheme = true)
 
 @Preview
 @Composable

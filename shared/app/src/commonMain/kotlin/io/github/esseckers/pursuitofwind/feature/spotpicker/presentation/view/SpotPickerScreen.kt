@@ -43,6 +43,7 @@ import io.github.esseckers.pursuitofwind.core.designsystem.component.screenInset
 import io.github.esseckers.pursuitofwind.core.designsystem.icon.AppIcons
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Sizes
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Spacing
+import io.github.esseckers.pursuitofwind.core.map.SpotMap
 import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.action_back
@@ -61,6 +62,7 @@ import io.github.esseckers.pursuitofwind.core.resources.spots_not_listed
 import io.github.esseckers.pursuitofwind.core.resources.spots_open_map
 import io.github.esseckers.pursuitofwind.core.resources.spots_title
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.PickSpotUi
+import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.PickerView
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerIntent
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerState
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerState.Content
@@ -68,13 +70,14 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * The spot catalog to choose favorites from, each with its drive from home. Stateless; `SpotPickerRoute` connects it
- * to its ViewModel. "Done" stays at the bottom, so it is in reach however long the list is. A spot that is not in the
- * catalog yet is added on the map ([onOpenMap]).
+ * The spot catalog to choose favorites from, each with its drive from home, as a list or on [map]. Stateless;
+ * `SpotPickerRoute` connects it to its ViewModel. "Done" stays at the bottom, so it is in reach however long the list
+ * is. A spot that is not in the catalog yet is added on the map screen ([onOpenMap]).
  */
 @Composable
 internal fun SpotPickerScreen(
     state: SpotPickerState,
+    map: SpotMap,
     onIntent: (SpotPickerIntent) -> Unit,
     onBack: () -> Unit,
     onOpenMap: () -> Unit,
@@ -106,8 +109,31 @@ internal fun SpotPickerScreen(
                 Content.Loading -> LoadingSpots()
                 Content.Empty -> NoSpots(onOpenMap)
                 is Content.Error -> SpotsError(content.message, refresh)
-                is Content.Ready -> SpotList(content.spots, state.notice, onIntent, onOpenMap)
+                is Content.Ready -> CatalogViews(state, content.spots, map, onIntent, onOpenMap)
             }
+        }
+    }
+}
+
+/**
+ * The switch between the list and the map, and the one chosen. Each switch to the map draws it anew, where all the spots
+ * are in sight.
+ */
+@Composable
+private fun CatalogViews(
+    state: SpotPickerState,
+    spots: List<PickSpotUi>,
+    map: SpotMap,
+    onIntent: (SpotPickerIntent) -> Unit,
+    onOpenMap: () -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+        ViewSwitch(view = state.view, onIntent = onIntent, modifier = Modifier.padding(start = Spacing.m, end = Spacing.m, top = Spacing.s))
+        val shown = state.map
+        if (state.view == PickerView.MAP && shown != null) {
+            SpotsOnMap(shown, state.mapSpot, MapNotices(state.notice, state.baseMapFailed), map, onIntent, onOpenMap)
+        } else {
+            SpotList(spots, state.notice, onIntent, onOpenMap)
         }
     }
 }

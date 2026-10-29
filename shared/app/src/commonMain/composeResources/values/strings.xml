@@ -243,6 +243,9 @@
     <string name="spots_empty_body">Nobody has added a spot yet. Add yours on the map.</string>
     <string name="spots_not_listed">Your spot is not here? Add it on the map.</string>
     <string name="spots_open_map">Add a spot</string>
+    <string name="spots_view_list">List</string>
+    <string name="spots_view_map">Map</string>
+    <string name="spots_map_hint">Tap a spot to choose it.</string>
     <string name="banner_spots_offline">No connection. Showing the saved list of spots.</string>
     <string name="banner_spots_failed">Couldn’t update the list of spots.</string>
 

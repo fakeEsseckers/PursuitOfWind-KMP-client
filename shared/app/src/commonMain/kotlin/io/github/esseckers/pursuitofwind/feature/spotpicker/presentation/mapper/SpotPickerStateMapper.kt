@@ -1,5 +1,8 @@
 package io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.mapper
 
+import io.github.esseckers.pursuitofwind.core.map.MapCameraUi
+import io.github.esseckers.pursuitofwind.core.map.SpotMapUi
+import io.github.esseckers.pursuitofwind.core.map.SpotMarkerUi
 import io.github.esseckers.pursuitofwind.core.refresh.RefreshNoticeMapper
 import io.github.esseckers.pursuitofwind.core.ui.DEFAULT_SPOT_DRIVE_MINUTES
 import io.github.esseckers.pursuitofwind.core.ui.SPOT_DRIVE_STEPS
@@ -23,10 +26,13 @@ internal object SpotPickerStateMapper {
                 isRefreshing = refresh.refreshing,
                 saving = inputs.saving,
                 saveError = inputs.saveError?.message(),
+                view = inputs.view,
+                baseMapFailed = inputs.baseMapFailed,
                 inputs = inputs,
             )
         val snapshot = inputs.snapshot ?: return base
-        val spots = newestFirst(snapshot.catalog.value).map { spotUi(it, choiceOf(inputs, it.id)) }
+        val catalog = newestFirst(snapshot.catalog.value)
+        val spots = catalog.map { spotUi(it, choiceOf(inputs, it.id)) }
         val error = refresh.shownError
         val content =
             when {
@@ -37,6 +43,8 @@ internal object SpotPickerStateMapper {
             }
         return base.copy(
             content = content,
+            map = if (content is Content.Ready) mapOf(catalog, spots, inputs) else null,
+            mapSpot = spots.firstOrNull { it.id == inputs.mapSpot }.takeIf { content is Content.Ready },
             // Cached spots win over an error: the list stays, with a notice above it.
             notice = if (content is Content.Ready) RefreshNoticeMapper.notice(error) else null,
             selectedCount = spots.count { it.selected },
@@ -77,6 +85,32 @@ internal object SpotPickerStateMapper {
                 SpotChangeEntity(spot.id, choice.driveMinutes.minutes, choice.selected)
             }
         }
+    }
+
+    /**
+     * The catalog on the map: the chosen spots stand out, the one picked on the map most. The map opens where every
+     * spot is in sight.
+     */
+    private fun mapOf(
+        catalog: List<Spot>,
+        spots: List<PickSpotUi>,
+        inputs: SpotPickerInputs,
+    ): SpotMapUi {
+        val chosen = spots.filter { it.selected }.map { it.id }.toSet()
+        return SpotMapUi(
+            markers =
+                catalog.map {
+                    SpotMarkerUi(
+                        it.id,
+                        it.name,
+                        it.location,
+                        followed = it.id in chosen,
+                        selected = it.id == inputs.mapSpot,
+                    )
+                },
+            start = MapCameraUi.showing(catalog.map { it.location }),
+            attempt = inputs.baseMapAttempt,
+        )
     }
 
     /** The spots riders added last come first, so a spot just added on the map is at the top; a tie goes by name. */

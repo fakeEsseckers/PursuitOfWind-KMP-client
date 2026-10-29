@@ -254,6 +254,9 @@
     <string name="spots_empty_body">Спотов пока никто не добавил. Добавь свой на карте.</string>
     <string name="spots_not_listed">Твоего спота нет в списке? Добавь его на карте.</string>
     <string name="spots_open_map">Добавить спот</string>
+    <string name="spots_view_list">Список</string>
+    <string name="spots_view_map">Карта</string>
+    <string name="spots_map_hint">Нажми на спот, чтобы выбрать его.</string>
     <string name="banner_spots_offline">Нет сети. Показан сохранённый список спотов.</string>
     <string name="banner_spots_failed">Не удалось обновить список спотов.</string>
 

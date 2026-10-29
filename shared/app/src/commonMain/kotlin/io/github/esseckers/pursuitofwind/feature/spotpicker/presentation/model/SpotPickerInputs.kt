@@ -7,7 +7,8 @@ import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.entity.SpotPi
 
 /**
  * What [SpotPickerState] is computed from: the cached [snapshot] (null until it arrives), how the refresh and the save
- * are going, and the rider's [choices], which overlay the followed spots until they are saved.
+ * are going, and the rider's [choices], which overlay the followed spots until they are saved; then the [view], the
+ * spot picked on the map ([mapSpot]) and how the map's base map is doing ([baseMapFailed], [baseMapAttempt]).
  */
 internal data class SpotPickerInputs(
     val snapshot: SpotPickerSnapshotEntity? = null,
@@ -15,6 +16,10 @@ internal data class SpotPickerInputs(
     val choices: Map<SpotId, SpotChoice> = emptyMap(),
     val saving: Boolean = false,
     val saveError: AppError? = null,
+    val view: PickerView = PickerView.LIST,
+    val mapSpot: SpotId? = null,
+    val baseMapFailed: Boolean = false,
+    val baseMapAttempt: Int = 0,
 )
 
 /** The rider's choice for one spot: a favorite or not, and the drive from home in minutes. */
