@@ -9,6 +9,7 @@ import io.github.esseckers.pursuitofwind.engine.model.Bearing
 import io.github.esseckers.pursuitofwind.engine.model.Sector
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.entity.SpotPickerSnapshotEntity
+import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.PickerView
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerState
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.viewmodel.SpotPickerReducer
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.viewmodel.SpotPickerResult
@@ -21,10 +22,10 @@ import kotlin.time.Instant
  * to Dune Point (the latest), with Nordstrand Bay followed as a favorite at 2 h. Built by the real reducer.
  */
 internal object SpotPickerPreviewData {
-    val nordstrand = spot("nordstrand-bay", "Nordstrand Bay", added = "2026-04-11T09:20:00Z")
-    val saltLagoon = spot("salt-lagoon", "Salt Lagoon", added = "2026-05-03T16:45:00Z")
-    val lakeWeiss = spot("lake-weiss", "Lake Weiss", added = "2026-05-24T11:10:00Z")
-    val dune = spot("dune-point", "Dune Point", added = "2026-06-14T08:30:00Z")
+    val nordstrand = spot("nordstrand-bay", "Nordstrand Bay", GeoPoint(54.4936, 8.8131), added = "2026-04-11T09:20:00Z")
+    val saltLagoon = spot("salt-lagoon", "Salt Lagoon", GeoPoint(53.0712, 8.2156), added = "2026-05-03T16:45:00Z")
+    val lakeWeiss = spot("lake-weiss", "Lake Weiss", GeoPoint(52.4123, 11.6274), added = "2026-05-24T11:10:00Z")
+    val dune = spot("dune-point", "Dune Point", GeoPoint(55.0157, 8.4352), added = "2026-06-14T08:30:00Z")
 
     private val fetchedAt = Instant.parse("2026-10-24T06:00:00Z")
     private val catalog = listOf(dune, lakeWeiss, nordstrand, saltLagoon)
@@ -57,6 +58,24 @@ internal object SpotPickerPreviewData {
     val error =
         reduce(SpotPickerResult.DataChanged(SpotPickerSnapshotEntity(Cached(emptyList(), null), emptyList())), refreshed(AppError.Network))
 
+    /** The catalog on the map, Lake Weiss picked on it. */
+    val onMap =
+        reduce(
+            SpotPickerResult.DataChanged(SpotPickerSnapshotEntity(Cached(catalog, fetchedAt), following)),
+            refreshed(),
+            SpotPickerResult.MapChange.ViewChosen(PickerView.MAP),
+            SpotPickerResult.MapChange.Picked(lakeWeiss.id),
+        )
+
+    /** The map offline before a spot is picked on it: the saved catalog, and no base map. */
+    val mapOffline =
+        reduce(
+            SpotPickerResult.DataChanged(SpotPickerSnapshotEntity(Cached(catalog, fetchedAt), following)),
+            refreshed(AppError.Network),
+            SpotPickerResult.MapChange.ViewChosen(PickerView.MAP),
+            SpotPickerResult.MapChange.BaseMapLoaded(loaded = false),
+        )
+
     /** Saving the choice failed. */
     val saveFailed =
         reduce(
@@ -74,12 +93,13 @@ internal object SpotPickerPreviewData {
     private fun spot(
         id: String,
         name: String,
+        location: GeoPoint,
         added: String,
     ): Spot =
         Spot(
             id = SpotId(id),
             name = name,
-            location = GeoPoint(54.5, 8.8),
+            location = location,
             timeZone = TimeZone.of("Europe/Berlin"),
             rideableSectors = listOf(Sector.of(180.0, 300.0)),
             dangerSectors = emptyList(),

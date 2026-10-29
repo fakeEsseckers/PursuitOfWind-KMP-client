@@ -7,6 +7,7 @@ import io.github.esseckers.pursuitofwind.core.resources.error_storage
 import io.github.esseckers.pursuitofwind.core.resources.error_unauthorized
 import io.github.esseckers.pursuitofwind.core.resources.error_unknown
 import io.github.esseckers.pursuitofwind.data.model.AppError
+import io.github.esseckers.pursuitofwind.data.model.GeoPoint
 import io.github.esseckers.pursuitofwind.data.model.WindUnit
 import io.github.esseckers.pursuitofwind.engine.model.WindSpeed
 import kotlinx.datetime.TimeZone
@@ -22,6 +23,15 @@ class FormattingTest {
         assertEquals("08:30", Instant.parse("2026-10-24T06:30:00Z").clockTime(berlin))
         assertEquals("07:30", Instant.parse("2026-10-26T06:30:00Z").clockTime(berlin))
         assertEquals("00:05", Instant.parse("2026-10-22T22:05:00Z").clockTime(berlin))
+    }
+
+    @Test
+    fun `coordinates read latitude then longitude in degrees with five decimals and a point`() {
+        assertEquals("54.49360, 8.81310", coordinatesText(GeoPoint(latitude = 54.4936, longitude = 8.8131)))
+        assertEquals("-33.92490, -70.00012", coordinatesText(GeoPoint(latitude = -33.9249, longitude = -70.00012)))
+        assertEquals("12.34568, 180.00000", coordinatesText(GeoPoint(latitude = 12.3456789, longitude = 179.999996)))
+        // Too close to zero to show a sign.
+        assertEquals("0.00000, 0.00000", coordinatesText(GeoPoint(latitude = -0.000001, longitude = 0.0)))
     }
 
     @Test

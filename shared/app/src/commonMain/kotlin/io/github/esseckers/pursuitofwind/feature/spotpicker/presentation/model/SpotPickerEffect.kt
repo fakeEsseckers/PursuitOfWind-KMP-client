@@ -4,4 +4,9 @@ package io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model
 internal sealed interface SpotPickerEffect {
     /** The choices are saved, or there was nothing to save. */
     data object Finished : SpotPickerEffect
+
+    /** Put a spot's [coordinates] on the clipboard. */
+    data class CopyCoordinates(
+        val coordinates: String,
+    ) : SpotPickerEffect
 }

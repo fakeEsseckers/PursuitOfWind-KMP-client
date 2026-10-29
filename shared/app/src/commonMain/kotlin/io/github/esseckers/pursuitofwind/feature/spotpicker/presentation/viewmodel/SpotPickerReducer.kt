@@ -47,10 +47,40 @@ internal object SpotPickerReducer : Reducer<SpotPickerState, SpotPickerResult> {
                 is SpotPickerResult.SaveFinished -> {
                     inputs.copy(saving = false, saveError = result.error)
                 }
+
+                is SpotPickerResult.MapChange -> {
+                    mapChange(inputs, result)
+                }
             }
         val computed = SpotPickerStateMapper.map(next)
         return if (computed.content == state.content) computed.copy(content = state.content) else computed
     }
+
+    /**
+     * Another attempt clears the failure until it fails again, so the message does not stay over a map that loads. Only
+     * a map that failed is tried again, so a refresh leaves a loaded map where the rider moved it.
+     */
+    private fun mapChange(
+        inputs: SpotPickerInputs,
+        change: SpotPickerResult.MapChange,
+    ): SpotPickerInputs =
+        when (change) {
+            is SpotPickerResult.MapChange.ViewChosen -> {
+                inputs.copy(view = change.view)
+            }
+
+            is SpotPickerResult.MapChange.Picked -> {
+                inputs.copy(mapSpot = change.spotId)
+            }
+
+            is SpotPickerResult.MapChange.BaseMapLoaded -> {
+                inputs.copy(baseMapFailed = !change.loaded)
+            }
+
+            SpotPickerResult.MapChange.BaseMapRetried -> {
+                if (inputs.baseMapFailed) inputs.copy(baseMapFailed = false, baseMapAttempt = inputs.baseMapAttempt + 1) else inputs
+            }
+        }
 
     private fun SpotPickerInputs.choose(
         spotId: SpotId,

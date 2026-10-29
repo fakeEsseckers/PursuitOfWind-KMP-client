@@ -46,6 +46,7 @@ import io.github.esseckers.pursuitofwind.core.designsystem.theme.PursuitOfWindTh
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Spacing
 import io.github.esseckers.pursuitofwind.core.map.SpotMap
 import io.github.esseckers.pursuitofwind.core.platform.ShareLauncher
+import io.github.esseckers.pursuitofwind.core.platform.TextClipboard
 import io.github.esseckers.pursuitofwind.data.fake.ControllableClock
 import io.github.esseckers.pursuitofwind.data.model.GeoPoint
 import io.github.esseckers.pursuitofwind.data.repository.CrewRepository
@@ -59,6 +60,7 @@ import io.github.esseckers.pursuitofwind.feature.spotdetail.alex
 import io.github.esseckers.pursuitofwind.feature.spotdetail.at
 import io.github.esseckers.pursuitofwind.testing.RecordingAppLocale
 import io.github.esseckers.pursuitofwind.testing.RecordingShareLauncher
+import io.github.esseckers.pursuitofwind.testing.RecordingTextClipboard
 import io.github.esseckers.pursuitofwind.testing.ScriptedSpotMap
 import io.github.esseckers.pursuitofwind.testing.releaseMainDispatcher
 import io.github.esseckers.pursuitofwind.testing.testGraph
@@ -253,6 +255,47 @@ class AppNavigationTest {
             onNodeWithContentDescription("Back").performClick()
             waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("myspots.list")).fetchSemanticsNodes().isNotEmpty() }
             onNodeWithTag("tab.spots").assertIsSelected()
+        }
+
+    @Test
+    fun `the coordinates of a spot in the picker go to the clipboard and a snackbar says so`() =
+        runComposeUiTest {
+            showApp()
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("today.header")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("tab.spots").performClick()
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("myspots.add")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("myspots.add").performClick()
+
+            val copy = "spots.copy.salt-lagoon"
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag(copy)).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("spots.list").performScrollToNode(hasTestTag(copy))
+            onNodeWithTag(copy).performClick()
+
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasText("Coordinates copied")).fetchSemanticsNodes().isNotEmpty() }
+            val clipboard = graph.koin.get<TextClipboard>() as RecordingTextClipboard
+            assertEquals(listOf("Coordinates" to "53.07120, 8.21560"), clipboard.copied)
+        }
+
+    @Test
+    fun `where the system shows what was copied the picker says nothing more`() =
+        runComposeUiTest {
+            val clipboard = graph.koin.get<TextClipboard>() as RecordingTextClipboard
+            clipboard.systemShows = true
+            showApp()
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("today.header")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("tab.spots").performClick()
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("myspots.add")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("myspots.add").performClick()
+
+            val copy = "spots.copy.dune-point"
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag(copy)).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("spots.list").performScrollToNode(hasTestTag(copy))
+            onNodeWithTag(copy).performClick()
+
+            waitUntil(timeoutMillis = TIMEOUT_MS) { clipboard.copied.isNotEmpty() }
+            waitForIdle()
+            assertEquals(listOf("Coordinates" to "55.01570, 8.43520"), clipboard.copied)
+            onNode(hasText("Coordinates copied")).assertDoesNotExist()
         }
 
     @Test

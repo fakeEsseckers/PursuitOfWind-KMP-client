@@ -19,6 +19,7 @@ import io.github.esseckers.pursuitofwind.feature.spotdetail.NORDSTRAND
 import io.github.esseckers.pursuitofwind.feature.spotdetail.SATURDAY
 import io.github.esseckers.pursuitofwind.feature.spotdetail.at
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.PickSpotUi
+import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.PickerView
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerEffect
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerIntent
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerState
@@ -104,6 +105,64 @@ class SpotPickerViewModelTest {
             viewModel.effects.test(timeout = TURBINE_TIMEOUT) { assertEquals(SpotPickerEffect.Finished, awaitItem()) }
 
             assertEquals(listOf(Triple(saltLagoon, 75.minutes, true)), mySpots().map { Triple(it.spot.id, it.drive, it.favorite) })
+        }
+
+    @Test
+    fun `a spot picked and chosen on the map is followed when done`() =
+        runTest(dispatcher) {
+            val viewModel = viewModel()
+            viewModel.state.test(timeout = TURBINE_TIMEOUT) {
+                awaitReady()
+                viewModel.onIntent(SpotPickerIntent.Show(PickerView.MAP))
+                viewModel.onIntent(SpotPickerIntent.PickOnMap(saltLagoon))
+                val picked = awaitState { it.mapSpot?.id == saltLagoon }
+                assertEquals(
+                    saltLagoon.value,
+                    picked.map
+                        ?.markers
+                        ?.single { it.selected }
+                        ?.id
+                        ?.value,
+                )
+                viewModel.onIntent(SpotPickerIntent.Toggle(saltLagoon))
+                viewModel.onIntent(SpotPickerIntent.Done)
+                awaitState { !it.saving && !it.hasChanges && it.selectedCount == 1 }
+                cancelAndIgnoreRemainingEvents()
+            }
+            viewModel.effects.test(timeout = TURBINE_TIMEOUT) { assertEquals(SpotPickerEffect.Finished, awaitItem()) }
+
+            assertEquals(listOf(saltLagoon), mySpots().filter { it.favorite }.map { it.spot.id })
+        }
+
+    @Test
+    fun `refresh tries a map that did not load again`() =
+        runTest(dispatcher) {
+            val viewModel = viewModel()
+            viewModel.state.test(timeout = TURBINE_TIMEOUT) {
+                awaitReady()
+                viewModel.onIntent(SpotPickerIntent.Show(PickerView.MAP))
+                viewModel.onIntent(SpotPickerIntent.BaseMap(loaded = false))
+                awaitState { it.baseMapFailed }
+                viewModel.onIntent(SpotPickerIntent.Refresh)
+                val retried = awaitState { !it.baseMapFailed }
+                assertEquals(1, retried.map?.attempt)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `copying a spot's coordinates hands them out to copy`() =
+        runTest(dispatcher) {
+            val viewModel = viewModel()
+            viewModel.state.test(timeout = TURBINE_TIMEOUT) {
+                awaitReady()
+                viewModel.onIntent(SpotPickerIntent.CopyCoordinates(saltLagoon))
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            viewModel.effects.test(timeout = TURBINE_TIMEOUT) {
+                assertEquals(SpotPickerEffect.CopyCoordinates("53.07120, 8.21560"), awaitItem())
+            }
         }
 
     @Test

@@ -7,7 +7,9 @@ import io.github.esseckers.pursuitofwind.app.language.IosAppLocale
 import io.github.esseckers.pursuitofwind.core.map.MapLibreSpotMap
 import io.github.esseckers.pursuitofwind.core.map.SpotMap
 import io.github.esseckers.pursuitofwind.core.platform.IosShareLauncher
+import io.github.esseckers.pursuitofwind.core.platform.IosTextClipboard
 import io.github.esseckers.pursuitofwind.core.platform.ShareLauncher
+import io.github.esseckers.pursuitofwind.core.platform.TextClipboard
 import org.koin.dsl.module
 import platform.UIKit.UIViewController
 
@@ -23,6 +25,7 @@ fun MainViewController(): UIViewController {
                 single<ShareLauncher> { IosShareLauncher() }
                 single<AppLocale> { IosAppLocale() }
                 single<SpotMap> { MapLibreSpotMap() }
+                single<TextClipboard> { IosTextClipboard() }
             },
     )
     return ComposeUIViewController { App() }

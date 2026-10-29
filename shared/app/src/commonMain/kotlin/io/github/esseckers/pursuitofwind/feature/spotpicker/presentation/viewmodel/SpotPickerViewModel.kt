@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import io.github.esseckers.pursuitofwind.core.launchFinishing
 import io.github.esseckers.pursuitofwind.core.mvi.MviViewModel
 import io.github.esseckers.pursuitofwind.data.model.AppError
+import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.repository.SpotPickerRepository
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerEffect
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerIntent
@@ -16,17 +17,53 @@ import kotlinx.coroutines.flow.onStart
  * The spot picker in MVI. While it is shown, the cached catalog and followed spots come in as results; the first time
  * it shows, it fetches both, so a new rider sees the whole catalog. Choices stay a draft until
  * [SpotPickerIntent.Done], which saves what changed and finishes with [SpotPickerEffect.Finished]. A failed refresh or
- * save is part of the state.
+ * save is part of the state. Coordinates the rider copies go out as [SpotPickerEffect.CopyCoordinates].
  */
 internal class SpotPickerViewModel(
     private val repository: SpotPickerRepository,
 ) : MviViewModel<SpotPickerState, SpotPickerIntent, SpotPickerResult, SpotPickerEffect>(SpotPickerState(), SpotPickerReducer) {
     override fun onIntent(intent: SpotPickerIntent) {
         when (intent) {
-            is SpotPickerIntent.Toggle -> dispatchResult(SpotPickerResult.Toggled(intent.spotId))
-            is SpotPickerIntent.ChangeDrive -> dispatchResult(SpotPickerResult.DriveChanged(intent.spotId, intent.step))
-            SpotPickerIntent.Refresh -> refresh()
-            SpotPickerIntent.Done -> done()
+            is SpotPickerIntent.Toggle -> {
+                dispatchResult(SpotPickerResult.Toggled(intent.spotId))
+            }
+
+            is SpotPickerIntent.ChangeDrive -> {
+                dispatchResult(SpotPickerResult.DriveChanged(intent.spotId, intent.step))
+            }
+
+            SpotPickerIntent.Refresh -> {
+                dispatchResult(SpotPickerResult.MapChange.BaseMapRetried)
+                refresh()
+            }
+
+            SpotPickerIntent.Done -> {
+                done()
+            }
+
+            is SpotPickerIntent.Show -> {
+                dispatchResult(SpotPickerResult.MapChange.ViewChosen(intent.view))
+            }
+
+            is SpotPickerIntent.PickOnMap -> {
+                dispatchResult(SpotPickerResult.MapChange.Picked(intent.spotId))
+            }
+
+            SpotPickerIntent.TapMap -> {
+                dispatchResult(SpotPickerResult.MapChange.Picked(null))
+            }
+
+            is SpotPickerIntent.BaseMap -> {
+                dispatchResult(SpotPickerResult.MapChange.BaseMapLoaded(intent.loaded))
+            }
+
+            SpotPickerIntent.RetryBaseMap -> {
+                dispatchResult(SpotPickerResult.MapChange.BaseMapRetried)
+            }
+
+            is SpotPickerIntent.CopyCoordinates -> {
+                copyCoordinates(intent.spotId)
+            }
         }
     }
 
@@ -46,6 +83,11 @@ internal class SpotPickerViewModel(
             unfinished = AppError.Unknown("Refresh did not finish"),
             work = { repository.refresh() },
         ) { error -> dispatchResult(SpotPickerResult.RefreshFinished(error)) }
+    }
+
+    private fun copyCoordinates(spotId: SpotId) {
+        val spots = (currentState.content as? SpotPickerState.Content.Ready)?.spots.orEmpty()
+        spots.firstOrNull { it.id == spotId }?.let { postEffect(SpotPickerEffect.CopyCoordinates(it.coordinates)) }
     }
 
     /** Saves what changed, then finishes; with nothing changed, finishes at once. One save at a time. */

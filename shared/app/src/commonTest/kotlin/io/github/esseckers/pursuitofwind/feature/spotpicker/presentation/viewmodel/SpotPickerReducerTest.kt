@@ -5,6 +5,7 @@ import io.github.esseckers.pursuitofwind.core.resources.error_server
 import io.github.esseckers.pursuitofwind.core.ui.Step
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.feature.spotpicker.following
+import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.PickerView
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerState
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerState.Content
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.preview.SpotPickerPreviewData.dune
@@ -125,5 +126,59 @@ class SpotPickerReducerTest {
         val refreshing = reduce(SpotPickerResult.RefreshStarted, from = loaded)
 
         assertSame(loaded.content, refreshing.content)
+    }
+
+    @Test
+    fun `the map shows a spot picked on it and a tap beside the spots puts it away`() {
+        val onMap = reduce(SpotPickerResult.MapChange.ViewChosen(PickerView.MAP), from = loaded)
+        val picked = reduce(SpotPickerResult.MapChange.Picked(dune.id), from = onMap)
+        val putAway = reduce(SpotPickerResult.MapChange.Picked(null), from = picked)
+        val back = reduce(SpotPickerResult.MapChange.ViewChosen(PickerView.LIST), from = picked)
+
+        assertEquals(PickerView.LIST, loaded.view)
+        assertEquals(PickerView.MAP, onMap.view)
+        assertEquals(dune.id, picked.mapSpot?.id)
+        assertNull(putAway.mapSpot)
+        assertEquals(PickerView.LIST, back.view)
+    }
+
+    @Test
+    fun `a spot chosen on the map is chosen in the list and stands out on the map`() {
+        val picked =
+            reduce(SpotPickerResult.MapChange.ViewChosen(PickerView.MAP), SpotPickerResult.MapChange.Picked(dune.id), from = loaded)
+
+        val chosen = reduce(SpotPickerResult.Toggled(dune.id), SpotPickerResult.DriveChanged(dune.id, Step.UP), from = picked)
+
+        assertTrue(chosen.spot("dune-point").selected)
+        assertEquals(chosen.spot("dune-point"), chosen.mapSpot)
+        assertTrue(
+            chosen.map
+                ?.markers
+                ?.single { it.id == dune.id }
+                ?.followed == true,
+        )
+        assertTrue(chosen.hasChanges)
+    }
+
+    @Test
+    fun `a map that did not load says so until another attempt`() {
+        val failed = reduce(SpotPickerResult.MapChange.BaseMapLoaded(loaded = false), from = loaded)
+        val retried = reduce(SpotPickerResult.MapChange.BaseMapRetried, from = failed)
+        val loadedAgain = reduce(SpotPickerResult.MapChange.BaseMapLoaded(loaded = true), from = retried)
+
+        assertTrue(failed.baseMapFailed)
+        assertFalse(retried.baseMapFailed)
+        assertEquals(1, retried.map?.attempt)
+        assertFalse(loadedAgain.baseMapFailed)
+    }
+
+    @Test
+    fun `a map that loaded is not loaded again`() {
+        val shown = reduce(SpotPickerResult.MapChange.BaseMapLoaded(loaded = true), from = loaded)
+
+        val retried = reduce(SpotPickerResult.MapChange.BaseMapRetried, from = shown)
+
+        assertEquals(0, retried.map?.attempt)
+        assertEquals(shown, retried)
     }
 }

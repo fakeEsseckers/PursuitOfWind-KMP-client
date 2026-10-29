@@ -1,5 +1,6 @@
 package io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.mapper
 
+import io.github.esseckers.pursuitofwind.core.map.MapCameraUi
 import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
 import io.github.esseckers.pursuitofwind.core.refresh.RefreshStatus
 import io.github.esseckers.pursuitofwind.core.resources.Res
@@ -8,6 +9,7 @@ import io.github.esseckers.pursuitofwind.core.ui.DEFAULT_SPOT_DRIVE_MINUTES
 import io.github.esseckers.pursuitofwind.core.ui.SPOT_DRIVE_STEPS
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.Cached
+import io.github.esseckers.pursuitofwind.feature.spotpicker.CATALOG
 import io.github.esseckers.pursuitofwind.feature.spotpicker.FETCHED_AT
 import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.entity.SpotChangeEntity
 import io.github.esseckers.pursuitofwind.feature.spotpicker.domain.entity.SpotPickerSnapshotEntity
@@ -23,6 +25,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
@@ -38,6 +42,7 @@ class SpotPickerStateMapperTest {
         assertEquals(listOf("Dune Point", "Lake Weiss", "Salt Lagoon", "Nordstrand Bay"), spots.map { it.name })
         assertEquals(listOf(false, false, false, true), spots.map { it.selected })
         assertEquals(2.hours, spots.single { it.selected }.drive)
+        assertEquals("54.49360, 8.81310", spots.single { it.selected }.coordinates)
         assertEquals(DEFAULT_SPOT_DRIVE_MINUTES.minutes, spots.first().drive)
         assertEquals(1, state.selectedCount)
         assertFalse(state.hasChanges)
@@ -132,5 +137,43 @@ class SpotPickerStateMapperTest {
         assertFalse(spots.single { it.id == dune.id }.canShorten)
         assertFalse(spots.single { it.id == saltLagoon.id }.canLengthen)
         assertTrue(spots.single { it.id == dune.id }.canLengthen)
+    }
+
+    @Test
+    fun `the map shows every spot with the chosen ones standing out and opens where all are in sight`() {
+        val state = SpotPickerStateMapper.map(inputs(following(nordstrand, 2.hours)))
+        val map = assertNotNull(state.map)
+
+        assertEquals(CATALOG.map { it.id }.toSet(), map.markers.map { it.id }.toSet())
+        assertEquals(listOf(nordstrand.id), map.markers.filter { it.followed }.map { it.id })
+        assertEquals(nordstrand.location, map.markers.single { it.id == nordstrand.id }.location)
+        val allInSight = MapCameraUi.showing(CATALOG.map { it.location })
+        assertEquals(allInSight.center to allInSight.zoom, map.start.center to map.start.zoom)
+        assertEquals(allInSight.fit.toSet(), map.start.fit.toSet())
+        assertTrue(map.markers.none { it.selected })
+        assertNull(state.mapSpot)
+    }
+
+    @Test
+    fun `a spot picked on the map shows under it as in the list and stands out most`() {
+        val state = SpotPickerStateMapper.map(inputs(following(nordstrand, 2.hours)).copy(mapSpot = dune.id))
+
+        assertEquals((state.content as Content.Ready).spots.single { it.id == dune.id }, state.mapSpot)
+        assertEquals(listOf(dune.id), assertNotNull(state.map).markers.filter { it.selected }.map { it.id })
+    }
+
+    @Test
+    fun `a spot picked on the map that leaves the catalog leaves the panel to the hint`() {
+        val gone = SpotPickerSnapshotEntity(Cached(CATALOG - dune, FETCHED_AT), emptyList())
+        val state = SpotPickerStateMapper.map(inputs().copy(snapshot = gone, mapSpot = dune.id))
+
+        assertNull(state.mapSpot)
+        assertTrue(assertNotNull(state.map).markers.none { it.selected })
+    }
+
+    @Test
+    fun `there is no map until there is a catalog`() {
+        assertNull(SpotPickerStateMapper.map(SpotPickerInputs()).map)
+        assertNull(SpotPickerStateMapper.map(SpotPickerInputs(snapshot = empty, refresh = RefreshStatus(finished = true))).map)
     }
 }

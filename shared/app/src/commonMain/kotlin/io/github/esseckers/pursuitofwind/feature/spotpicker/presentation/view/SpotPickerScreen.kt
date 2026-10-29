@@ -21,9 +21,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -32,6 +34,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import io.github.esseckers.pursuitofwind.core.designsystem.component.ActionButton
+import io.github.esseckers.pursuitofwind.core.designsystem.component.AppSnackbarHost
 import io.github.esseckers.pursuitofwind.core.designsystem.component.BarIconButton
 import io.github.esseckers.pursuitofwind.core.designsystem.component.IconLine
 import io.github.esseckers.pursuitofwind.core.designsystem.component.MessageState
@@ -43,6 +46,7 @@ import io.github.esseckers.pursuitofwind.core.designsystem.component.screenInset
 import io.github.esseckers.pursuitofwind.core.designsystem.icon.AppIcons
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Sizes
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Spacing
+import io.github.esseckers.pursuitofwind.core.map.SpotMap
 import io.github.esseckers.pursuitofwind.core.refresh.RefreshNotice
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.action_back
@@ -61,6 +65,7 @@ import io.github.esseckers.pursuitofwind.core.resources.spots_not_listed
 import io.github.esseckers.pursuitofwind.core.resources.spots_open_map
 import io.github.esseckers.pursuitofwind.core.resources.spots_title
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.PickSpotUi
+import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.PickerView
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerIntent
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerState
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.SpotPickerState.Content
@@ -68,17 +73,20 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * The spot catalog to choose favorites from, each with its drive from home. Stateless; `SpotPickerRoute` connects it
- * to its ViewModel. "Done" stays at the bottom, so it is in reach however long the list is. A spot that is not in the
- * catalog yet is added on the map ([onOpenMap]).
+ * The spot catalog to choose favorites from, each with its drive from home, as a list or on [map]. Stateless;
+ * `SpotPickerRoute` connects it to its ViewModel. "Done" stays at the bottom, so it is in reach however long the list
+ * is. A spot that is not in the catalog yet is added on the map screen ([onOpenMap]). [snackbarHostState] says that
+ * coordinates were copied.
  */
 @Composable
 internal fun SpotPickerScreen(
     state: SpotPickerState,
+    map: SpotMap,
     onIntent: (SpotPickerIntent) -> Unit,
     onBack: () -> Unit,
     onOpenMap: () -> Unit,
     modifier: Modifier = Modifier,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
     val refresh = { onIntent(SpotPickerIntent.Refresh) }
     Scaffold(
@@ -99,6 +107,7 @@ internal fun SpotPickerScreen(
             )
         },
         bottomBar = { DoneBar(state = state, onDone = { onIntent(SpotPickerIntent.Done) }) },
+        snackbarHost = { AppSnackbarHost(snackbarHostState) },
         contentWindowInsets = screenInsets(),
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
@@ -106,8 +115,31 @@ internal fun SpotPickerScreen(
                 Content.Loading -> LoadingSpots()
                 Content.Empty -> NoSpots(onOpenMap)
                 is Content.Error -> SpotsError(content.message, refresh)
-                is Content.Ready -> SpotList(content.spots, state.notice, onIntent, onOpenMap)
+                is Content.Ready -> CatalogViews(state, content.spots, map, onIntent, onOpenMap)
             }
+        }
+    }
+}
+
+/**
+ * The switch between the list and the map, and the one chosen. Each switch to the map draws it anew, where all the spots
+ * are in sight.
+ */
+@Composable
+private fun CatalogViews(
+    state: SpotPickerState,
+    spots: List<PickSpotUi>,
+    map: SpotMap,
+    onIntent: (SpotPickerIntent) -> Unit,
+    onOpenMap: () -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+        ViewSwitch(view = state.view, onIntent = onIntent, modifier = Modifier.padding(start = Spacing.m, end = Spacing.m, top = Spacing.s))
+        val shown = state.map
+        if (state.view == PickerView.MAP && shown != null) {
+            SpotsOnMap(shown, state.mapSpot, MapNotices(state.notice, state.baseMapFailed), map, onIntent, onOpenMap)
+        } else {
+            SpotList(spots, state.notice, onIntent, onOpenMap)
         }
     }
 }
@@ -149,6 +181,7 @@ private fun SpotList(
                 spot = spot,
                 onToggle = { onIntent(SpotPickerIntent.Toggle(spot.id)) },
                 onDrive = { step -> onIntent(SpotPickerIntent.ChangeDrive(spot.id, step)) },
+                onCopy = { onIntent(SpotPickerIntent.CopyCoordinates(spot.id)) },
             )
         }
     }

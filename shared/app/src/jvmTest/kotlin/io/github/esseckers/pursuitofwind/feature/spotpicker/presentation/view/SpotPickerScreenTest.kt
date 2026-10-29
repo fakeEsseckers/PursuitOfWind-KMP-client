@@ -29,6 +29,7 @@ import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.S
 import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.preview.SpotPickerPreviewData
 import io.github.esseckers.pursuitofwind.testing.PHONE_DENSITY
 import io.github.esseckers.pursuitofwind.testing.PHONE_SIZE
+import io.github.esseckers.pursuitofwind.testing.ScriptedSpotMap
 import io.github.esseckers.pursuitofwind.testing.checkTexts
 import java.util.Locale
 import kotlin.test.AfterTest
@@ -43,6 +44,7 @@ class SpotPickerScreenTest {
     private val intents = mutableListOf<SpotPickerIntent>()
     private var backs = 0
     private var maps = 0
+    private val map = ScriptedSpotMap()
     private val systemLocale = Locale.getDefault()
 
     @BeforeTest
@@ -63,7 +65,7 @@ class SpotPickerScreenTest {
             CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale)) {
                 PursuitOfWindTheme(
                     darkTheme = false,
-                ) { SpotPickerScreen(state = state, onIntent = { intents += it }, onBack = { backs++ }, onOpenMap = { maps++ }) }
+                ) { SpotPickerScreen(state = state, map = map, onIntent = { intents += it }, onBack = { backs++ }, onOpenMap = { maps++ }) }
             }
         }
     }
@@ -111,6 +113,20 @@ class SpotPickerScreenTest {
                 intents,
             )
             assertEquals(1, backs)
+        }
+
+    @Test
+    fun `each spot shows where it is and copies that`() =
+        runComposeUiTest {
+            show(SpotPickerPreviewData.chosen)
+
+            scrollTo("spots.copy.nordstrand-bay")
+            onNodeWithTag("spots.coordinates.nordstrand-bay").assert(hasAnyDescendant(hasText("54.49360, 8.81310")))
+            onNodeWithTag(
+                "spots.copy.nordstrand-bay",
+            ).assert(hasContentDescription("Copy the coordinates of Nordstrand Bay")).performClick()
+
+            assertEquals(listOf<SpotPickerIntent>(SpotPickerIntent.CopyCoordinates(SpotId("nordstrand-bay"))), intents)
         }
 
     @Test
@@ -192,6 +208,7 @@ class SpotPickerScreenTest {
             onNode(isHeading() and hasText("Твои споты")).assertIsDisplayed()
             scrollTo("spots.drive.nordstrand-bay")
             onNodeWithTag("spots.drive.nordstrand-bay").assert(hasAnyDescendant(hasText("2 ч")))
+            onNodeWithTag("spots.copy.nordstrand-bay").assert(hasContentDescription("Скопировать координаты: Nordstrand Bay"))
             onNodeWithTag("spots.done").assert(hasText("Готово"))
         }
 
