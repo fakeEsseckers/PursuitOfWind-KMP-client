@@ -185,6 +185,7 @@ private fun MapPanel(
                     spot = spot,
                     onToggle = { onIntent(SpotPickerIntent.Toggle(spot.id)) },
                     onDrive = { step -> onIntent(SpotPickerIntent.ChangeDrive(spot.id, step)) },
+                    onCopy = { onIntent(SpotPickerIntent.CopyCoordinates(spot.id)) },
                 )
             }
         }

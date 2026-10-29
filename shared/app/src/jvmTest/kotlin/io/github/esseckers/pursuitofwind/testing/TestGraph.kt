@@ -4,6 +4,7 @@ import io.github.esseckers.pursuitofwind.app.di.appModules
 import io.github.esseckers.pursuitofwind.app.language.AppLocale
 import io.github.esseckers.pursuitofwind.core.map.SpotMap
 import io.github.esseckers.pursuitofwind.core.platform.ShareLauncher
+import io.github.esseckers.pursuitofwind.core.platform.TextClipboard
 import io.github.esseckers.pursuitofwind.data.Environment
 import io.github.esseckers.pursuitofwind.data.fake.ControllableClock
 import io.github.esseckers.pursuitofwind.data.fake.FakePursuitOfWindServer
@@ -20,8 +21,8 @@ import org.koin.dsl.module
  * The app's own Koin graph for [Environment.Fake] at [clock], with the fake backend seeded by [steadyBreeze]: the real
  * data layer (HTTP to the in-app server, in-memory Room, DataStore), so screen tests need no fake repositories. The
  * platform's share sheet is a [RecordingShareLauncher], its locale a [RecordingAppLocale], its map a [ScriptedSpotMap],
- * and the rider is in Berlin, like the fixtures, whatever the machine's zone. [overrides] replace definitions of the
- * graph, such as the HTTP engine with [HeldRequests.engine].
+ * its clipboard a [RecordingTextClipboard], and the rider is in Berlin, like the fixtures, whatever the machine's zone.
+ * [overrides] replace definitions of the graph, such as the HTTP engine with [HeldRequests.engine].
  */
 internal fun testGraph(
     clock: ControllableClock,
@@ -34,6 +35,7 @@ internal fun testGraph(
                 single<ShareLauncher> { RecordingShareLauncher() }
                 single<AppLocale> { RecordingAppLocale() }
                 single<SpotMap> { ScriptedSpotMap() }
+                single<TextClipboard> { RecordingTextClipboard() }
             }
         modules(appModules(Environment.Fake, clock, riderZone = { TimeZone.of("Europe/Berlin") }) + platform + overrides)
     }

@@ -151,6 +151,21 @@ class SpotPickerViewModelTest {
         }
 
     @Test
+    fun `copying a spot's coordinates hands them out to copy`() =
+        runTest(dispatcher) {
+            val viewModel = viewModel()
+            viewModel.state.test(timeout = TURBINE_TIMEOUT) {
+                awaitReady()
+                viewModel.onIntent(SpotPickerIntent.CopyCoordinates(saltLagoon))
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            viewModel.effects.test(timeout = TURBINE_TIMEOUT) {
+                assertEquals(SpotPickerEffect.CopyCoordinates("53.07120, 8.21560"), awaitItem())
+            }
+        }
+
+    @Test
     fun `a favorite that is unchosen stays followed but not as a favorite`() =
         runTest(dispatcher) {
             spots.follow(NORDSTRAND, 2.hours, favorite = true).value()

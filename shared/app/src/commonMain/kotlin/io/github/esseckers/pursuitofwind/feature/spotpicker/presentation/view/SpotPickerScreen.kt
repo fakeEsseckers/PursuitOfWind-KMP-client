@@ -21,9 +21,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -32,6 +34,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import io.github.esseckers.pursuitofwind.core.designsystem.component.ActionButton
+import io.github.esseckers.pursuitofwind.core.designsystem.component.AppSnackbarHost
 import io.github.esseckers.pursuitofwind.core.designsystem.component.BarIconButton
 import io.github.esseckers.pursuitofwind.core.designsystem.component.IconLine
 import io.github.esseckers.pursuitofwind.core.designsystem.component.MessageState
@@ -72,7 +75,8 @@ import org.jetbrains.compose.resources.stringResource
 /**
  * The spot catalog to choose favorites from, each with its drive from home, as a list or on [map]. Stateless;
  * `SpotPickerRoute` connects it to its ViewModel. "Done" stays at the bottom, so it is in reach however long the list
- * is. A spot that is not in the catalog yet is added on the map screen ([onOpenMap]).
+ * is. A spot that is not in the catalog yet is added on the map screen ([onOpenMap]). [snackbarHostState] says that
+ * coordinates were copied.
  */
 @Composable
 internal fun SpotPickerScreen(
@@ -82,6 +86,7 @@ internal fun SpotPickerScreen(
     onBack: () -> Unit,
     onOpenMap: () -> Unit,
     modifier: Modifier = Modifier,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
     val refresh = { onIntent(SpotPickerIntent.Refresh) }
     Scaffold(
@@ -102,6 +107,7 @@ internal fun SpotPickerScreen(
             )
         },
         bottomBar = { DoneBar(state = state, onDone = { onIntent(SpotPickerIntent.Done) }) },
+        snackbarHost = { AppSnackbarHost(snackbarHostState) },
         contentWindowInsets = screenInsets(),
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
@@ -175,6 +181,7 @@ private fun SpotList(
                 spot = spot,
                 onToggle = { onIntent(SpotPickerIntent.Toggle(spot.id)) },
                 onDrive = { step -> onIntent(SpotPickerIntent.ChangeDrive(spot.id, step)) },
+                onCopy = { onIntent(SpotPickerIntent.CopyCoordinates(spot.id)) },
             )
         }
     }

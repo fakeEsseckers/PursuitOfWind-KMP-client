@@ -42,6 +42,7 @@ class SpotPickerStateMapperTest {
         assertEquals(listOf("Dune Point", "Lake Weiss", "Salt Lagoon", "Nordstrand Bay"), spots.map { it.name })
         assertEquals(listOf(false, false, false, true), spots.map { it.selected })
         assertEquals(2.hours, spots.single { it.selected }.drive)
+        assertEquals("54.49360, 8.81310", spots.single { it.selected }.coordinates)
         assertEquals(DEFAULT_SPOT_DRIVE_MINUTES.minutes, spots.first().drive)
         assertEquals(1, state.selectedCount)
         assertFalse(state.hasChanges)

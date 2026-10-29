@@ -78,15 +78,24 @@ class SpotPickerMapScreenTest {
         }
 
     @Test
-    fun `the map gets the catalog and a spot picked on it shows under it to choose`() =
+    fun `the map gets the catalog and a spot picked on it shows under it to choose and copy`() =
         runComposeUiTest {
             show(SpotPickerPreviewData.onMap)
 
             assertEquals(SpotPickerPreviewData.onMap.map, map.shown)
             onNodeWithTag("spots.toggle.lake-weiss").assert(hasText("Lake Weiss")).performClick()
+            onNodeWithTag("spots.coordinates.lake-weiss").assert(hasAnyDescendant(hasText("52.41230, 11.62740")))
+            onNodeWithTag("spots.copy.lake-weiss").performClick()
             onNodeWithTag("spots.view.LIST").performClick()
 
-            assertEquals(listOf(SpotPickerIntent.Toggle(lakeWeiss.id), SpotPickerIntent.Show(PickerView.LIST)), intents)
+            assertEquals(
+                listOf(
+                    SpotPickerIntent.Toggle(lakeWeiss.id),
+                    SpotPickerIntent.CopyCoordinates(lakeWeiss.id),
+                    SpotPickerIntent.Show(PickerView.LIST),
+                ),
+                intents,
+            )
         }
 
     @Test

@@ -16,6 +16,11 @@ internal sealed interface SpotPickerIntent {
         val step: Step,
     ) : SpotPickerIntent
 
+    /** Copy where [spotId] is, to work out the drive in another app. */
+    data class CopyCoordinates(
+        val spotId: SpotId,
+    ) : SpotPickerIntent
+
     /** Fetch the catalog again, or retry after an error; a map that did not load tries again too. */
     data object Refresh : SpotPickerIntent
 

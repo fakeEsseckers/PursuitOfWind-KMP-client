@@ -6,6 +6,7 @@ import io.github.esseckers.pursuitofwind.core.map.SpotMarkerUi
 import io.github.esseckers.pursuitofwind.core.refresh.RefreshNoticeMapper
 import io.github.esseckers.pursuitofwind.core.ui.DEFAULT_SPOT_DRIVE_MINUTES
 import io.github.esseckers.pursuitofwind.core.ui.SPOT_DRIVE_STEPS
+import io.github.esseckers.pursuitofwind.core.ui.coordinatesText
 import io.github.esseckers.pursuitofwind.core.ui.message
 import io.github.esseckers.pursuitofwind.data.model.Spot
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
@@ -125,6 +126,7 @@ internal object SpotPickerStateMapper {
         return PickSpotUi(
             id = spot.id,
             name = spot.name,
+            coordinates = coordinatesText(spot.location),
             selected = choice.selected,
             drive = choice.driveMinutes.minutes,
             canShorten = drive.canDecrease,

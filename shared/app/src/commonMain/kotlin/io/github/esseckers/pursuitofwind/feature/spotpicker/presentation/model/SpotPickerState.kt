@@ -60,10 +60,14 @@ internal enum class PickerView {
     MAP,
 }
 
-/** A spot of the catalog as the picker shows it; [drive] can change in steps while [canShorten] or [canLengthen]. */
+/**
+ * A spot of the catalog as the picker shows it; [drive] can change in steps while [canShorten] or [canLengthen].
+ * [coordinates] are where it is, for the rider to copy into a navigation app and see how long the drive is.
+ */
 internal data class PickSpotUi(
     val id: SpotId,
     val name: String,
+    val coordinates: String,
     val selected: Boolean,
     val drive: Duration,
     val canShorten: Boolean,

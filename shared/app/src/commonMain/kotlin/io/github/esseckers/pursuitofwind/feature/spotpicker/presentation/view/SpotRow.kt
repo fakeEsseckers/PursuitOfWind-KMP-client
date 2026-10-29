@@ -17,12 +17,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import io.github.esseckers.pursuitofwind.core.designsystem.component.BarIconButton
 import io.github.esseckers.pursuitofwind.core.designsystem.component.IconLine
 import io.github.esseckers.pursuitofwind.core.designsystem.component.Stepper
 import io.github.esseckers.pursuitofwind.core.designsystem.icon.AppIcons
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Sizes
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Spacing
 import io.github.esseckers.pursuitofwind.core.resources.Res
+import io.github.esseckers.pursuitofwind.core.resources.spots_copy_coordinates
 import io.github.esseckers.pursuitofwind.core.resources.spots_drive
 import io.github.esseckers.pursuitofwind.core.resources.spots_drive_longer
 import io.github.esseckers.pursuitofwind.core.resources.spots_drive_shorter
@@ -32,14 +34,17 @@ import io.github.esseckers.pursuitofwind.feature.spotpicker.presentation.model.P
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * One spot of the catalog: a checkbox row that makes it a favorite, and, once chosen, the drive from home. The row and
- * the drive buttons are separate nodes for screen readers: "Nordstrand Bay, checked", then "Longer drive to …".
+ * One spot of the catalog: a checkbox row that makes it a favorite, where it is with a button that copies that
+ * ([onCopy]) for working out the drive in another app, and, once chosen, the drive from home. The row, the copy button
+ * and the drive buttons are separate nodes for screen readers: "Nordstrand Bay, checked", "Copy the coordinates of
+ * Nordstrand Bay", then "Longer drive to …".
  */
 @Composable
 internal fun SpotRow(
     spot: PickSpotUi,
     onToggle: () -> Unit,
     onDrive: (Step) -> Unit,
+    onCopy: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val outline = if (spot.selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
@@ -58,6 +63,25 @@ internal fun SpotRow(
             // The row handles the tap, so the box itself is only a picture of the state.
             Checkbox(checked = spot.selected, onCheckedChange = null, modifier = Modifier.padding(Spacing.s))
             Text(text = spot.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(start = Spacing.m, end = Spacing.xs),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconLine(
+                icon = AppIcons.Pin,
+                text = spot.coordinates,
+                style = MaterialTheme.typography.bodyMedium,
+                iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f).testTag("spots.coordinates.${spot.id.value}"),
+            )
+            BarIconButton(
+                icon = AppIcons.Copy,
+                label = stringResource(Res.string.spots_copy_coordinates, spot.name),
+                onClick = onCopy,
+                modifier = Modifier.testTag("spots.copy.${spot.id.value}"),
+            )
         }
         if (spot.selected) {
             Stepper(

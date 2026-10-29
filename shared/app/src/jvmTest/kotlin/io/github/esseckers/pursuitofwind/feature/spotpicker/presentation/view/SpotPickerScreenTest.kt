@@ -116,6 +116,20 @@ class SpotPickerScreenTest {
         }
 
     @Test
+    fun `each spot shows where it is and copies that`() =
+        runComposeUiTest {
+            show(SpotPickerPreviewData.chosen)
+
+            scrollTo("spots.copy.nordstrand-bay")
+            onNodeWithTag("spots.coordinates.nordstrand-bay").assert(hasAnyDescendant(hasText("54.49360, 8.81310")))
+            onNodeWithTag(
+                "spots.copy.nordstrand-bay",
+            ).assert(hasContentDescription("Copy the coordinates of Nordstrand Bay")).performClick()
+
+            assertEquals(listOf<SpotPickerIntent>(SpotPickerIntent.CopyCoordinates(SpotId("nordstrand-bay"))), intents)
+        }
+
+    @Test
     fun `with nothing chosen the button skips this step`() =
         runComposeUiTest {
             show(SpotPickerPreviewData.fresh)
@@ -194,6 +208,7 @@ class SpotPickerScreenTest {
             onNode(isHeading() and hasText("Твои споты")).assertIsDisplayed()
             scrollTo("spots.drive.nordstrand-bay")
             onNodeWithTag("spots.drive.nordstrand-bay").assert(hasAnyDescendant(hasText("2 ч")))
+            onNodeWithTag("spots.copy.nordstrand-bay").assert(hasContentDescription("Скопировать координаты: Nordstrand Bay"))
             onNodeWithTag("spots.done").assert(hasText("Готово"))
         }
 
