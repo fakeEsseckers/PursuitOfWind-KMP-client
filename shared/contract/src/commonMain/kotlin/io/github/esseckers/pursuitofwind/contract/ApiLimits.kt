@@ -1,7 +1,7 @@
 package io.github.esseckers.pursuitofwind.contract
 
 /**
- * The field limits of `api/openapi.yaml`, for the client's forms and the fake server's validation;
+ * The field limits and defaults of `api/openapi.yaml`, for the client's forms and the fake server's validation;
  * `ApiLimitsContractTest` keeps them equal to the spec. Text lengths count Unicode code points, as JSON Schema does: an
  * emoji is one character, though a Kotlin string holds it as two.
  */
@@ -18,6 +18,13 @@ public object ApiLimits {
         public const val MIN_SESSION_MIN_MINUTES: Int = 30
         public const val MIN_SESSION_MAX_MINUTES: Int = 720
         public const val MAX_DRIVE_MAX_MINUTES: Int = 720
+        public const val RIDING_FROM_HOUR_MAX: Int = 23
+        public const val RIDING_TO_HOUR_MIN: Int = 1
+        public const val RIDING_TO_HOUR_MAX: Int = 24
+
+        /** The riding hours of a profile that does not give them: 9:00 to 21:00. */
+        public const val RIDING_FROM_HOUR_DEFAULT: Int = 9
+        public const val RIDING_TO_HOUR_DEFAULT: Int = 21
     }
 
     /** `CreateSpotRequest` and `SpotUpdate`. */

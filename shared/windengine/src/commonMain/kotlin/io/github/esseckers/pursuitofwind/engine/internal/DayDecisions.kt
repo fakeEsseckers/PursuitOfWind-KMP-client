@@ -12,8 +12,6 @@ import io.github.esseckers.pursuitofwind.engine.model.Verdict
 import kotlinx.datetime.LocalDate
 import kotlin.time.Instant
 
-private const val MAX_ALTERNATIVES = 2
-
 /** One spot on one local date. */
 private class SpotDay(
     val spot: SpotConfig,
@@ -66,28 +64,40 @@ private fun decideDay(
 ): DayDecision {
     val reachable = days.filterNot { it.tooFar }
     val ranked = reachable.flatMap { it.windows }.filter { it.qualifies }.sortedWith(ranking)
-    if (ranked.isNotEmpty()) return DayDecision.Go(date, ranked.first(), ranked.drop(1).take(MAX_ALTERNATIVES))
+    if (ranked.isNotEmpty()) return DayDecision.Go(date, ranked.first(), ranked.drop(1))
     val details = days.map { SpotNoGo(it.spot.id, if (it.tooFar) Reason.TOO_FAR else noGoReason(listOf(it))) }.sortedBy { it.spotId }
     val primaryReason = if (reachable.isEmpty()) Reason.TOO_FAR else noGoReason(reachable)
     return DayDecision.NoGo(date, primaryReason, details, nextGoDay = null)
 }
 
 /**
- * WINDOW_TOO_SHORT if any hour was GO (its window did not qualify). Otherwise the most frequent reason across
- * daylight hours, the more severe one on a tie; DARK when there is no daylight hour at all.
+ * WINDOW_TOO_SHORT if any hour was GO (its window did not qualify); OUTSIDE_RIDING_HOURS if an hour would have been GO
+ * but for the riding hours. Otherwise the most frequent reason across the daylight hours within the riding hours, or
+ * across all daylight hours when none lies within them; DARK when there is no daylight hour.
  */
 private fun noGoReason(days: List<SpotDay>): Reason {
     val verdicts = days.flatMap { it.verdicts }
-    if (verdicts.any { it.verdict == Verdict.GO }) return Reason.WINDOW_TOO_SHORT
-    val counts =
-        verdicts
-            .filterNot { Reason.DARK in it.reasons }
-            .flatMap { it.reasons }
-            .groupingBy { it }
-            .eachCount()
-    return counts.entries.minWithOrNull(compareByDescending<Map.Entry<Reason, Int>> { it.value }.thenBy { it.key })?.key
-        ?: Reason.DARK
+    val daylight = verdicts.filterNot { Reason.DARK in it.reasons }
+    val riding = daylight.filterNot { Reason.OUTSIDE_RIDING_HOURS in it.reasons }
+    return when {
+        verdicts.any { it.verdict == Verdict.GO } -> Reason.WINDOW_TOO_SHORT
+        verdicts.any { it.reasons == listOf(Reason.OUTSIDE_RIDING_HOURS) } -> Reason.OUTSIDE_RIDING_HOURS
+        else -> mostFrequentReason(riding.ifEmpty { daylight }) ?: Reason.DARK
+    }
 }
+
+/**
+ * The reason that most of [verdicts] share, counting every reason of an hour but OUTSIDE_RIDING_HOURS, the more severe
+ * one on a tie.
+ */
+private fun mostFrequentReason(verdicts: List<HourVerdict>): Reason? =
+    verdicts
+        .flatMap { it.reasons - Reason.OUTSIDE_RIDING_HOURS }
+        .groupingBy { it }
+        .eachCount()
+        .entries
+        .minWithOrNull(compareByDescending<Map.Entry<Reason, Int>> { it.value }.thenBy { it.key })
+        ?.key
 
 private fun withNextGoDays(decisions: List<DayDecision>): List<DayDecision> {
     var nextGo: LocalDate? = null

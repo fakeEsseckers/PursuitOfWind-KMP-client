@@ -1,12 +1,15 @@
 package io.github.esseckers.pursuitofwind.data.fake
 
 import io.github.esseckers.pursuitofwind.contract.ApiRoute
+import io.github.esseckers.pursuitofwind.contract.ContractJson
 import io.github.esseckers.pursuitofwind.contract.MySpotListDto
 import io.github.esseckers.pursuitofwind.contract.MySpotUpdateDto
 import io.github.esseckers.pursuitofwind.contract.ProblemCode
 import io.github.esseckers.pursuitofwind.contract.RiderProfileDto
 import io.github.esseckers.pursuitofwind.contract.SpotPageDto
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -33,6 +36,45 @@ class ProfileAndSpotsTest {
             assertEquals(422, duplicateKite.status)
             assertTrue(duplicateKite.problem().detail!!.contains("twice"))
             assertEquals(ALEX_PROFILE, stored.decode(RiderProfileDto.serializer()))
+        }
+
+    @Test
+    fun `riding hours default to 9 to 21 and lie within the day and start before they end`() =
+        runTest {
+            val driver = fakeDriver()
+            val token = driver.signIn()
+            val withoutHours =
+                JsonObject(
+                    ContractJson.encodeToJsonElement(RiderProfileDto.serializer(), ALEX_PROFILE).jsonObject - "ridingFromHour" -
+                        "ridingToHour",
+                ).toString()
+
+            val reversed =
+                driver.send(
+                    ApiRoute.PUT_PROFILE,
+                    token = token,
+                    value = ALEX_PROFILE.copy(ridingFromHour = 21, ridingToHour = 9),
+                )
+            val noHours = driver.call(ApiRoute.PUT_PROFILE, token = token, body = withoutHours)
+            val stored = driver.call(ApiRoute.GET_PROFILE, token = token)
+            val outOfRange =
+                listOf(-1 to 21, 24 to 25, 9 to 0, 9 to 25).map { (from, to) ->
+                    driver
+                        .send(
+                            ApiRoute.PUT_PROFILE,
+                            token = token,
+                            value = ALEX_PROFILE.copy(ridingFromHour = from, ridingToHour = to),
+                        ).status
+                }
+            driver.send(ApiRoute.PUT_PROFILE, token = token, value = ALEX_PROFILE.copy(ridingFromHour = 0, ridingToHour = 24))
+            val wholeDay = driver.call(ApiRoute.GET_PROFILE, token = token).decode(RiderProfileDto.serializer())
+
+            assertEquals(422, reversed.status)
+            assertEquals("ridingFromHour must be below ridingToHour", reversed.problem().detail)
+            assertEquals(listOf(422, 422, 422, 422), outOfRange)
+            assertEquals(200, noHours.status)
+            assertTrue("\"ridingFromHour\":9" in stored.body && "\"ridingToHour\":21" in stored.body, stored.body)
+            assertEquals(0 to 24, wholeDay.ridingFromHour to wholeDay.ridingToHour)
         }
 
     @Test

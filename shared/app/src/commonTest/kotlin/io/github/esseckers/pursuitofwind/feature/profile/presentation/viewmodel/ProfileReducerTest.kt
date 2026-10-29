@@ -156,6 +156,18 @@ class ProfileReducerTest {
     }
 
     @Test
+    fun `the riding hour steppers keep an hour between the start and the end`() {
+        val loaded = reduce(ProfileResult.Loaded(savedAlex()))
+        val lateStart = reduce(*Array(11) { ProfileResult.Edited(ProfileEdit.RidingFrom(Step.UP)) }, from = loaded)
+
+        assertEquals(StepperUi(9, canDecrease = true, canIncrease = true), loaded.ridingFrom)
+        assertEquals(StepperUi(21, canDecrease = true, canIncrease = true), loaded.ridingTo)
+        assertEquals(StepperUi(20, canDecrease = true, canIncrease = false), lateStart.ridingFrom)
+        assertEquals(StepperUi(21, canDecrease = false, canIncrease = true), lateStart.ridingTo)
+        assertTrue(lateStart.hasChanges)
+    }
+
+    @Test
     fun `the kite chips keep their instance while the quiver is the same`() {
         val loaded = reduce(ProfileResult.Loaded(savedAlex()))
         val renamed = reduce(ProfileResult.Edited(ProfileEdit.Name("Alexandra")), from = loaded)

@@ -13,6 +13,7 @@ How `:shared:windengine` turns a forecast into GO / NO-GO. The engine is pure Ko
 | `evaluateHour(hour, profile, spot)` | `HourVerdict`: GO / MARGINAL / NO_GO, reasons, recommended kite, consensus wind |
 | `findWindows(hours, spot, profile, now)` | `SessionWindow`s of one spot, qualifying or not |
 | `decideDays(forecasts, profile, now)` | one `DayDecision` (`Go` or `NoGo`) per local date from today on |
+| `bestFirst(windows, driveTo)` | the windows ranked as a day ranks them (section 6), best first |
 | `sectorsFacing(water)` | `ShoreSectors`: the rideable and danger sector of a spot whose open water lies towards `water` |
 
 `localHourLabel(start, zone)` formats an hour slot for charts (see [Time](#time)).
@@ -21,7 +22,7 @@ How `:shared:windengine` turns a forecast into GO / NO-GO. The engine is pure Ko
 
 - Wind is stored in m/s (`WindSpeed`); thresholds below are written in knots because riders think in knots. Conversion: 1 kn = 1852 / 3600 m/s.
 - `Bearing` is the direction the wind blows **from**, normalized to [0°, 360°). `Sector(from, to)` is a clockwise arc, both ends included, and may wrap past north (`Sector.of(300.0, 60.0)`). Equal bounds are rejected.
-- `RiderProfile`: weight, `SkillLevel`, quiver (m²), optional personal `minWind` / `maxWind`, `minSession` (default 2 h), `maxDrive` (default 3 h).
+- `RiderProfile`: weight, `SkillLevel`, quiver (m²), optional personal `minWind` / `maxWind`, `minSession` (default 2 h), `maxDrive` (default 3 h), `ridingHours` (default 9–21: from 09:00 to 21:00 in the spot's local time; whole hours from 0 to 24, the start before the end).
 - `SpotConfig`: id, name, IANA time zone, rideable sectors (at least one), danger sectors, one-way `drive`.
 - `ForecastHour`: start instant, wind per weather model (mean, gust, bearing), precipitation, temperature, thunderstorm risk, `isDaylight`. An hour lasts one hour. `isDaylight` is false when the hour starts before sunrise or ends later than 30 minutes before sunset; the data layer computes it.
 
@@ -48,6 +49,7 @@ Personal `minWind` / `maxWind` replace the level limits. The gust tolerance alwa
 | Thunder | thunderstorm risk HIGH | NO_GO THUNDERSTORM |
 | Danger direction | bearing inside a danger sector | NO_GO OFFSHORE_DANGER |
 | Darkness | `isDaylight` is false | NO_GO DARK |
+| Riding hours | the hour does not start within the rider's riding hours, in the spot's local time (9–21: the first hour starts at 09:00, the last at 20:00) | NO_GO OUTSIDE_RIDING_HOURS |
 | Too strong | mean above max | NO_GO TOO_STRONG |
 | Gusty | gust spread over tolerance by up to 3 kn | MARGINAL GUSTY |
 | Gusty | gust spread over tolerance by more than 3 kn | NO_GO GUSTY |
@@ -59,7 +61,7 @@ Personal `minWind` / `maxWind` replace the level limits. The gust tolerance alwa
 
 The hour gets the worst result (NO_GO > MARGINAL > GO). `reasons` lists every non-GO reason, most severe first:
 
-THUNDERSTORM, OFFSHORE_DANGER, DARK, TOO_STRONG, OVERPOWERED_FOR_QUIVER, GUSTY, DIRECTION_UNRIDEABLE, TOO_LIGHT, UNDERPOWERED_FOR_QUIVER, RAIN, COLD.
+THUNDERSTORM, OFFSHORE_DANGER, DARK, OUTSIDE_RIDING_HOURS, TOO_STRONG, OVERPOWERED_FOR_QUIVER, GUSTY, DIRECTION_UNRIDEABLE, TOO_LIGHT, UNDERPOWERED_FOR_QUIVER, RAIN, COLD.
 
 TOO_FAR and WINDOW_TOO_SHORT only appear on decisions, never on an hour.
 
@@ -89,20 +91,20 @@ The kite is computed for NO_GO hours too; the UI decides whether to show it.
 - The window's kite is the most frequent hour kite, the smaller one on a tie.
 - A spot with `drive > maxDrive` has no windows and is reported as TOO_FAR.
 
-## 6. Confidence and score
+## 6. Confidence and ranking
 
 - Confidence from the median of the hourly model spreads in the window (even count: mean of the two middle values): up to 3 kn HIGH, up to 6 kn MEDIUM, above LOW. Hours with a single model have no spread; no spread at all is UNKNOWN.
-- `score = usableHours × quality × confidenceFactor`, where `quality = 1.0 − 0.15 × marginalHours`, at least 0.1, and the factor is HIGH 1.0, MEDIUM 0.85, LOW 0.6, UNKNOWN 0.8.
-- Ranking: higher score (scores equal to six decimals tie); then shorter drive; then earlier start; then spot id.
+- Ranking, best first: the longer usable riding time; then the higher confidence (HIGH, MEDIUM, UNKNOWN, LOW); then the shorter drive; then the earlier start; then spot id. Riders want the longest session; confidence only decides between equally long ones.
 
 ## 7. Day decision
 
 - A day is a calendar date in the spot's time zone; an hour belongs to the date of its start there, and windows are built per day, so they never cross local midnight. Dates before today (in the spot's zone) are skipped. A date covers the favorite spots that have forecast hours on it; dates only a too-far spot covers are left out unless no spot is reachable at all.
-- `Go`: the best qualifying window of the day across reachable spots, with up to two alternative windows. Kite, `leaveBy` and confidence come from the window.
+- `Go`: the best qualifying window of the day across reachable spots; every other qualifying window of the day is an alternative, best first. Kite, `leaveBy` and confidence come from the window.
 - `NoGo.primaryReason`:
   1. every spot is beyond the maximum drive: TOO_FAR;
   2. some hour was GO but no window qualified: WINDOW_TOO_SHORT;
-  3. otherwise the most frequent reason across the daylight hours of reachable spots, the more severe one on a tie; DARK if there is no daylight hour.
+  3. some hour would have been GO but for the riding hours (OUTSIDE_RIDING_HOURS is its only reason): OUTSIDE_RIDING_HOURS;
+  4. otherwise the most frequent reason across the daylight hours within the riding hours of reachable spots, or across all their daylight hours if none lies within the riding hours (OUTSIDE_RIDING_HOURS itself not counted), the more severe one on a tie; DARK if there is no daylight hour.
 - `NoGo.details`: the same rule applied to each spot on its own (TOO_FAR for spots beyond the drive).
 - `NoGo.nextGoDay`: the earliest later date in the forecast with a `Go`.
 
@@ -122,6 +124,7 @@ Forecast hours are instants in UTC. Day boundaries and labels use the spot's IAN
 
 - On the spring-forward day (Europe/Berlin, 2026-03-29) a local day has 23 hourly slots and no slot is labelled 02:00.
 - On the fall-back day (2026-10-25) it has 25 slots; the repeated hour appears twice, and `localHourLabel` adds the UTC offset to both (`02:00 UTC+2`, `02:00 UTC+1`) so labels stay distinct.
+- In a time zone half an hour off UTC (Asia/Kolkata, UTC+5:30) hourly slots start at half past. Riding hours count the hours that start within them, so 9–21 there counts from 09:30 to 21:30, and 0–24 is still the whole day.
 
 ## UI copy
 
@@ -140,3 +143,4 @@ Forecast hours are instants in UTC. Day boundaries and labels use the spot's IAN
 | OVERPOWERED_FOR_QUIVER | Your kites are too big |
 | TOO_FAR | Beyond your max drive |
 | WINDOW_TOO_SHORT | Window too short after the drive |
+| OUTSIDE_RIDING_HOURS | Outside your riding hours (day: wind only outside your riding hours) |

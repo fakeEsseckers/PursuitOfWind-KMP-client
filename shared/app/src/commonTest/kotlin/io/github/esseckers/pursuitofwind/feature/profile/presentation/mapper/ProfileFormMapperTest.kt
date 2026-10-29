@@ -2,6 +2,7 @@ package io.github.esseckers.pursuitofwind.feature.profile.presentation.mapper
 
 import io.github.esseckers.pursuitofwind.core.ui.Step
 import io.github.esseckers.pursuitofwind.data.model.WindUnit
+import io.github.esseckers.pursuitofwind.engine.model.RidingHours
 import io.github.esseckers.pursuitofwind.engine.model.SkillLevel
 import io.github.esseckers.pursuitofwind.engine.model.WindSpeed
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileCheck
@@ -24,10 +25,11 @@ class ProfileFormMapperTest {
 
     @Test
     fun `a saved profile fills the form and checks back to the same profile`() {
-        val saved = savedAlex(minWind = WindSpeed.knots(14.0), maxWind = WindSpeed.knots(30.0))
+        val saved = savedAlex(minWind = WindSpeed.knots(14.0), maxWind = WindSpeed.knots(30.0), ridingHours = RidingHours(7, 22))
         val form = ProfileFormMapper.formOf(saved)
 
         assertEquals("80", form.weightKg)
+        assertEquals(7 to 22, form.ridingFromHour to form.ridingToHour)
         assertEquals("14", form.minWind)
         assertEquals("30", form.maxWind)
         assertEquals(saved, (ProfileFormMapper.check(form) as ProfileCheck.Valid).profile)
@@ -175,5 +177,24 @@ class ProfileFormMapperTest {
         assertEquals(690, ProfileFormMapper.edit(longest, ProfileEdit.MaxDrive(Step.DOWN)).maxDriveMinutes)
         assertEquals(720, ProfileFormMapper.edit(longest, ProfileEdit.MaxDrive(Step.UP)).maxDriveMinutes)
         assertIs<ProfileCheck.Invalid>(ProfileFormMapper.check(ProfileForm()))
+    }
+
+    @Test
+    fun `riding hours move by the hour from midnight to midnight and start before they end`() {
+        fun ProfileForm.hours() = ridingFromHour to ridingToHour
+
+        fun ProfileForm.after(edit: ProfileEdit) = ProfileFormMapper.edit(this, edit).hours()
+        val oneHour = ProfileForm(ridingFromHour = 20, ridingToHour = 21)
+        val wholeDay = ProfileForm(ridingFromHour = 0, ridingToHour = 24)
+
+        assertEquals(9 to 21, ProfileForm().hours())
+        assertEquals(10 to 21, ProfileForm().after(ProfileEdit.RidingFrom(Step.UP)))
+        assertEquals(9 to 20, ProfileForm().after(ProfileEdit.RidingTo(Step.DOWN)))
+        assertEquals(20 to 21, oneHour.after(ProfileEdit.RidingFrom(Step.UP)))
+        assertEquals(20 to 21, oneHour.after(ProfileEdit.RidingTo(Step.DOWN)))
+        assertEquals(0 to 24, wholeDay.after(ProfileEdit.RidingFrom(Step.DOWN)))
+        assertEquals(0 to 24, wholeDay.after(ProfileEdit.RidingTo(Step.UP)))
+        val profile = (ProfileFormMapper.check(filled.copy(ridingFromHour = 6, ridingToHour = 14)) as ProfileCheck.Valid).profile
+        assertEquals(RidingHours(6, 14), profile.rider.ridingHours)
     }
 }

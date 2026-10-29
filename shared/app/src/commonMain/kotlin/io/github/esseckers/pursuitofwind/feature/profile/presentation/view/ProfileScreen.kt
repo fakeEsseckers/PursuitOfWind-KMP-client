@@ -127,6 +127,8 @@ private fun ProfileForm(
             LanguageChoice(language = state.language, onChoose = { onIntent(ProfileIntent.ChooseLanguage(it)) })
             MoreSettings(
                 form = state.form,
+                ridingFrom = state.ridingFrom,
+                ridingTo = state.ridingTo,
                 minSession = state.minSession,
                 maxDrive = state.maxDrive,
                 version = state.formVersion,

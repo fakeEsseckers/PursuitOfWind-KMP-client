@@ -11,7 +11,9 @@ import io.github.esseckers.pursuitofwind.engine.model.SpotConfig
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.engine.model.ThunderRisk
 import io.github.esseckers.pursuitofwind.engine.model.WindSpeed
+import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import kotlin.math.abs
 import kotlin.math.min
 import kotlin.time.Duration.Companion.hours
@@ -99,6 +101,9 @@ fun hoursFromPattern(
             }
         }
     }
+
+/** The start of the hour at [localTime] on the fixtures' Saturday, 2026-07-18, in Berlin (UTC+2 in summer). */
+fun berlin(localTime: String): Instant = LocalDateTime.parse("2026-07-18T$localTime").toInstant(BERLIN)
 
 /** Smallest angle between two bearings, so 359.9999° and 0° are 0.0001° apart. */
 fun angularDistance(

@@ -158,7 +158,7 @@ class DayCardsMapperTest {
         val crew = CrewRidesEntity(emptyList(), hasCrew = true, userId = me.userId)
         val today = assertIs<DayUi.Go>(cards(forecasts = mapOf("nordstrand-bay" to windyToday), rides = crew).single())
 
-        assertEquals(RideOfferUi(SpotId("nordstrand-bay"), at(THURSDAY, 10, 30), at(THURSDAY, 17), at(THURSDAY, 5, 30)), today.offer)
+        assertEquals(RideOfferUi(SpotId("nordstrand-bay"), at(THURSDAY, 10, 30), at(THURSDAY, 17), at(THURSDAY, 6, 30)), today.offer)
     }
 
     @Test
@@ -172,12 +172,13 @@ class DayCardsMapperTest {
 
     @Test
     fun `once the time to leave has passed the card says to leave now and shows only the time left to ride`() {
-        // 2 h drive and 30 min to rig: leaving at 08:00 means riding from 10:30. The morning is lighter.
+        // The window opens at 09:00, when the riding hours start, so the time to leave was 06:30 (2 h drive, 30 min to
+        // rig). Leaving now, at 08:00, means riding from 10:30. The morning is lighter.
         val windyToday = day(THURSDAY) { hour -> if (hour < 10) 12.0 else 18.0 }
         val today = assertIs<DayUi.Go>(cards(forecasts = mapOf("nordstrand-bay" to windyToday)).single())
 
         assertTrue(today.leaveNow)
-        assertEquals("05:30", today.leaveBy)
+        assertEquals("06:30", today.leaveBy)
         assertEquals(TimeRange("10:30", "17:00"), today.window)
         assertEquals(WindRange(18, 18, WindUnit.KNOTS), today.wind)
     }

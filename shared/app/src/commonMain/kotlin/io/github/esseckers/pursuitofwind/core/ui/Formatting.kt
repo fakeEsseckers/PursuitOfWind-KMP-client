@@ -21,6 +21,9 @@ internal fun Instant.clockTime(zone: TimeZone): String {
     return "${time.hour.twoDigits()}:${time.minute.twoDigits()}"
 }
 
+/** An hour of the day as 24-hour time, such as `09:00`; 24 is the midnight that ends the day, `24:00`. */
+internal fun hourOfDay(hour: Int): String = "${hour.twoDigits()}:00"
+
 private fun Int.twoDigits(): String = toString().padStart(2, '0')
 
 /** A kite size without a needless fraction: `9`, `10.5`, or `10,5` with a comma as [decimalSeparator]. */

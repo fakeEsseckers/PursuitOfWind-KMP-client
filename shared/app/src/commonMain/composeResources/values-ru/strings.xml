@@ -2,9 +2,9 @@
     <string name="app_name">Pursuit Of Wind</string>
 
     <!-- Verdicts and confidence (design system) -->
-    <string name="verdict_go">ДА</string>
+    <string name="verdict_go">ПОГНАЛИ</string>
     <string name="verdict_marginal">НА ГРАНИ</string>
-    <string name="verdict_no_go">НЕТ</string>
+    <string name="verdict_no_go">НЕ СТОИТ</string>
     <string name="confidence_high">Уверенность высокая</string>
     <string name="confidence_medium">Уверенность средняя</string>
     <string name="confidence_low">Уверенность низкая</string>
@@ -29,6 +29,8 @@
     <string name="reason_cold">Холодно</string>
     <string name="reason_too_far">Дальше, чем ты готов ехать</string>
     <string name="reason_window_too_short">Окно слишком короткое с учётом дороги</string>
+    <string name="reason_outside_riding_hours">Вне твоих часов катания</string>
+    <string name="reason_day_outside_riding_hours">Ветер только вне твоих часов катания</string>
 
     <!-- Days -->
     <string name="day_today">Сегодня</string>
@@ -216,6 +218,12 @@
     <string name="language_english">English</string>
     <string name="language_russian">Русский</string>
     <string name="profile_more">Дополнительно</string>
+    <string name="profile_riding_from">Катаю с</string>
+    <string name="profile_riding_from_earlier">Начинать катание раньше</string>
+    <string name="profile_riding_from_later">Начинать катание позже</string>
+    <string name="profile_riding_to">Катаю до</string>
+    <string name="profile_riding_to_earlier">Заканчивать катание раньше</string>
+    <string name="profile_riding_to_later">Заканчивать катание позже</string>
     <string name="profile_min_session">Самая короткая сессия, ради которой стоит ехать</string>
     <string name="profile_min_session_shorter">Короче</string>
     <string name="profile_min_session_longer">Дольше</string>

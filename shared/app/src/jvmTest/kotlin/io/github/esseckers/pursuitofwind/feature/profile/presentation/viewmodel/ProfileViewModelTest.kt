@@ -8,6 +8,7 @@ import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.error_network
+import io.github.esseckers.pursuitofwind.core.ui.Step
 import io.github.esseckers.pursuitofwind.data.fake.ControllableClock
 import io.github.esseckers.pursuitofwind.data.fake.FakePursuitOfWindServer
 import io.github.esseckers.pursuitofwind.data.fake.NetworkMode
@@ -15,6 +16,7 @@ import io.github.esseckers.pursuitofwind.data.model.AppLanguage
 import io.github.esseckers.pursuitofwind.data.model.WindUnit
 import io.github.esseckers.pursuitofwind.data.repository.PreferencesRepository
 import io.github.esseckers.pursuitofwind.data.repository.ProfileRepository
+import io.github.esseckers.pursuitofwind.engine.model.RidingHours
 import io.github.esseckers.pursuitofwind.engine.model.SkillLevel
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileEdit
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileEffect
@@ -86,6 +88,8 @@ class ProfileViewModelTest {
                     ProfileEdit.Level(SkillLevel.ADVANCED),
                     ProfileEdit.Kite(8.0, owned = true),
                     ProfileEdit.Units(WindUnit.METERS_PER_SECOND),
+                    ProfileEdit.RidingFrom(Step.DOWN),
+                    ProfileEdit.RidingTo(Step.UP),
                 )
                 viewModel.onIntent(ProfileIntent.Save)
                 awaitState { !it.saving && !it.hasChanges }
@@ -99,6 +103,7 @@ class ProfileViewModelTest {
             assertEquals(SkillLevel.ADVANCED, stored?.rider?.level)
             assertEquals(listOf(8.0), stored?.rider?.quiverM2)
             assertEquals(WindUnit.METERS_PER_SECOND, stored?.windUnit)
+            assertEquals(RidingHours(8, 22), stored?.rider?.ridingHours)
         }
 
     @Test

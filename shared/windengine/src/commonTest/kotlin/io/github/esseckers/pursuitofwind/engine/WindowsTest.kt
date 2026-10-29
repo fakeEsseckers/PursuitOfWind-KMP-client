@@ -70,7 +70,7 @@ class WindowsTest {
         val window = windowsAt(now = "2026-07-18T16:00:00Z").single()
 
         assertEquals(Duration.ZERO, window.usable)
-        assertEquals(0.0, window.score)
+        assertFalse(window.isReachable)
     }
 
     @Test
@@ -144,6 +144,5 @@ class WindowsTest {
                 ).single()
 
         assertEquals(Confidence.UNKNOWN, window.confidence)
-        assertEquals(4.0 * 0.8, window.score, 1e-9)
     }
 }

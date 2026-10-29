@@ -1,6 +1,12 @@
 package io.github.esseckers.pursuitofwind.feature.spotdetail.domain.mapper
 
+import io.github.esseckers.pursuitofwind.engine.model.Bearing
+import io.github.esseckers.pursuitofwind.engine.model.Confidence
 import io.github.esseckers.pursuitofwind.engine.model.ForecastHour
+import io.github.esseckers.pursuitofwind.engine.model.ModelId
+import io.github.esseckers.pursuitofwind.engine.model.ModelWind
+import io.github.esseckers.pursuitofwind.engine.model.WindSpeed
+import io.github.esseckers.pursuitofwind.feature.spotdetail.BERLIN
 import io.github.esseckers.pursuitofwind.feature.spotdetail.MONDAY
 import io.github.esseckers.pursuitofwind.feature.spotdetail.SATURDAY
 import io.github.esseckers.pursuitofwind.feature.spotdetail.SUNDAY
@@ -16,6 +22,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 
 class SpotEvaluationMapperTest {
@@ -61,6 +68,30 @@ class SpotEvaluationMapperTest {
         assertEquals(first, SpotEvaluationMapper.bestWindowOn(evaluation, SATURDAY))
         assertNull(SpotEvaluationMapper.bestWindowOn(evaluation, SUNDAY))
         assertNull(SpotEvaluationMapper.firstWorthRiding(evaluate(hours = forecast { 6.0 })))
+    }
+
+    @Test
+    fun `the best window on a day is the longest one even when the models agree less on it`() {
+        // Sunday: a 3 h window the models agree on, then a 4 h one where a third model sees 8 kn more (LOW confidence).
+        val disagreeing = ModelWind(WindSpeed.knots(28.0), WindSpeed.knots(32.0), Bearing(240.0))
+        val sunday =
+            forecast { local -> if (local.date == SUNDAY && local.hour in 9..16 && local.hour != 12) 20.0 else 6.0 }
+                .map { hour ->
+                    val local = hour.start.toLocalDateTime(BERLIN)
+                    if (local.date == SUNDAY &&
+                        local.hour in 13..16
+                    ) {
+                        hour.copy(byModel = hour.byModel + (ModelId.GFS to disagreeing))
+                    } else {
+                        hour
+                    }
+                }
+
+        val best = SpotEvaluationMapper.bestWindowOn(evaluate(hours = sunday), SUNDAY)
+
+        assertEquals(at(SUNDAY, 13), best?.start)
+        assertEquals(4.hours, best?.usable)
+        assertEquals(Confidence.LOW, best?.confidence)
     }
 
     @Test

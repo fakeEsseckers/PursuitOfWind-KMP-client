@@ -4,6 +4,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import io.github.esseckers.pursuitofwind.data.model.RideStatus
 import io.github.esseckers.pursuitofwind.data.model.WindUnit
+import io.github.esseckers.pursuitofwind.engine.model.RidingHours
 import io.github.esseckers.pursuitofwind.engine.model.SkillLevel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -11,7 +12,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
-/** A cache written by a newer version of the app still reads after a downgrade. */
+/** A cache written by another version of the app still reads: a newer one after a downgrade, an older one after an update. */
 class UnknownCachedValueTest {
     @Test
     fun `a cached ride with a status this version does not know shows as cancelled`() =
@@ -81,6 +82,47 @@ class UnknownCachedValueTest {
                         .value
                         ?.displayName,
                 )
+            }
+        }
+
+    @Test
+    fun `a profile cached before riding hours existed reads as riding from 9 to 21`() =
+        runTest {
+            world {
+                val alex = device()
+                alex.profiles.save(ALEX.copy(rider = ALEX.rider.copy(ridingHours = RidingHours(fromHour = 7, toHour = 22)))).value()
+                alex.settingsFile.edit { stored ->
+                    stored[PROFILE] = stored[PROFILE]!!.replace(Regex(",?\"riding(From|To)Hour\":\\d+"), "")
+                }
+
+                val profile = alex.profiles.profile.first()
+
+                assertNotNull(profile.updatedAt)
+                assertEquals(RidingHours.DEFAULT, profile.value?.rider?.ridingHours)
+            }
+        }
+
+    @Test
+    fun `cached riding hours this version cannot use read as 9 to 21`() =
+        runTest {
+            world {
+                val alex = device()
+                alex.profiles.save(ALEX).value()
+                alex.settingsFile.edit { stored ->
+                    // Past midnight, which a later version might allow.
+                    stored[PROFILE] =
+                        stored[PROFILE]!!
+                            .replace(
+                                "\"ridingFromHour\":9",
+                                "\"ridingFromHour\":22",
+                            ).replace("\"ridingToHour\":21", "\"ridingToHour\":6")
+                }
+
+                val profile = alex.profiles.profile.first()
+
+                assertNotNull(profile.updatedAt)
+                assertEquals(RidingHours.DEFAULT, profile.value?.rider?.ridingHours)
+                assertEquals(ALEX.displayName, profile.value?.displayName)
             }
         }
 

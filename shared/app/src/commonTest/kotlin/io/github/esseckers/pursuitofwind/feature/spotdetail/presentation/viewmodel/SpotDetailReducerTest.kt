@@ -95,10 +95,10 @@ class SpotDetailReducerTest {
     }
 
     @Test
-    fun `selecting a day shows its best window or its first daylight hour`() {
+    fun `selecting a day shows its best window or its first daylight hour within the riding hours`() {
         val sunday = assertIs<Content.Ready>(ready.after(SpotDetailResult.Selected(Selection.Day(SUNDAY))).content)
 
-        assertEquals(at(SUNDAY, 8), sunday.selected.start)
+        assertEquals(at(SUNDAY, 9), sunday.selected.start)
     }
 
     @Test

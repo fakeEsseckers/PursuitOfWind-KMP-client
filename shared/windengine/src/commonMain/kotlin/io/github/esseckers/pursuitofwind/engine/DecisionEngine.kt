@@ -3,6 +3,7 @@ package io.github.esseckers.pursuitofwind.engine
 import io.github.esseckers.pursuitofwind.engine.internal.dayDecisions
 import io.github.esseckers.pursuitofwind.engine.internal.hourVerdict
 import io.github.esseckers.pursuitofwind.engine.internal.shoreSectors
+import io.github.esseckers.pursuitofwind.engine.internal.windowRanking
 import io.github.esseckers.pursuitofwind.engine.internal.windowsAt
 import io.github.esseckers.pursuitofwind.engine.model.Bearing
 import io.github.esseckers.pursuitofwind.engine.model.DayDecision
@@ -13,6 +14,8 @@ import io.github.esseckers.pursuitofwind.engine.model.SessionWindow
 import io.github.esseckers.pursuitofwind.engine.model.ShoreSectors
 import io.github.esseckers.pursuitofwind.engine.model.SpotConfig
 import io.github.esseckers.pursuitofwind.engine.model.SpotForecast
+import io.github.esseckers.pursuitofwind.engine.model.SpotId
+import kotlin.time.Duration
 import kotlin.time.Instant
 
 /**
@@ -50,6 +53,15 @@ public object DecisionEngine {
         profile: RiderProfile,
         now: Instant,
     ): List<DayDecision> = dayDecisions(forecasts = forecasts, profile = profile, now = now)
+
+    /**
+     * [windows] best first, as a day's decision ranks them: the longest usable riding time, then the higher confidence,
+     * then the shorter drive ([driveTo]), then the earlier start, then the spot id.
+     */
+    public fun bestFirst(
+        windows: List<SessionWindow>,
+        driveTo: (SpotId) -> Duration,
+    ): List<SessionWindow> = windows.sortedWith(windowRanking(driveTo))
 
     /**
      * The sectors of a spot whose open water lies towards [water], seen from the beach. Wind from within 100° of the

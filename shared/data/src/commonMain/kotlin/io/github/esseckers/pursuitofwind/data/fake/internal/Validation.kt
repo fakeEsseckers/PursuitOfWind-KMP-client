@@ -77,6 +77,13 @@ internal object Validation {
             "minSessionMinutes must be from ${SESSION_MINUTES.first} to ${SESSION_MINUTES.last}"
         }
         check422(profile.maxDriveMinutes in PROFILE_DRIVE_MINUTES) { "maxDriveMinutes must be from 0 to ${PROFILE_DRIVE_MINUTES.last}" }
+        check422(profile.ridingFromHour in 0..limits.RIDING_FROM_HOUR_MAX) {
+            "ridingFromHour must be from 0 to ${limits.RIDING_FROM_HOUR_MAX}, was ${profile.ridingFromHour}"
+        }
+        check422(profile.ridingToHour in limits.RIDING_TO_HOUR_MIN..limits.RIDING_TO_HOUR_MAX) {
+            "ridingToHour must be from ${limits.RIDING_TO_HOUR_MIN} to ${limits.RIDING_TO_HOUR_MAX}, was ${profile.ridingToHour}"
+        }
+        check422(profile.ridingFromHour < profile.ridingToHour) { "ridingFromHour must be below ridingToHour" }
     }
 
     fun ride(request: CreateRideRequestDto) {

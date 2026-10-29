@@ -31,9 +31,11 @@ import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.PursuitOfWindTheme
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Sizes
+import io.github.esseckers.pursuitofwind.engine.model.Reason
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.today.at
 import io.github.esseckers.pursuitofwind.feature.today.day
+import io.github.esseckers.pursuitofwind.feature.today.presentation.model.SpotReasonUi
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayIntent
 import io.github.esseckers.pursuitofwind.feature.today.presentation.model.TodayState
 import io.github.esseckers.pursuitofwind.feature.today.presentation.preview.TodayPreviewData
@@ -78,6 +80,36 @@ class TodayScreenTest {
         onNodeWithTag("today.days").performScrollToNode(hasTestTag(tag))
     }
 
+    /** Every text on the three day cards fits its box and the screen; [lastText] proves the last card was measured. */
+    private fun ComposeUiTest.assertNothingCutOff(lastText: String) {
+        val screenWidth = onRoot().fetchSemanticsNode().size.width
+        val checked = mutableSetOf<String>()
+        val cutOff = mutableSetOf<String>()
+        // The list only lays out what is on screen, so bring each card in before measuring its text.
+        listOf("today.day.2026-10-22", "today.day.2026-10-23", "today.day.2026-10-24").forEach { card ->
+            onNodeWithTag("today.days").performScrollToNode(hasTestTag(card))
+            onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsActions.GetTextLayoutResult), useUnmergedTree = true)
+                .fetchSemanticsNodes()
+                .forEach { node ->
+                    val text =
+                        node.config
+                            .getOrNull(SemanticsProperties.Text)
+                            ?.joinToString()
+                            .orEmpty()
+                    val layouts = mutableListOf<TextLayoutResult>()
+                    node.config[SemanticsActions.GetTextLayoutResult].action?.invoke(layouts)
+                    checked += text
+                    // Clipped vertically by its own box, or pushed past the edge of the screen.
+                    if (layouts.any { it.didOverflowHeight } || node.boundsInRoot.left < 0f || node.boundsInRoot.right > screenWidth) {
+                        cutOff += text
+                    }
+                }
+        }
+
+        assertTrue(lastText in checked, "The last card was never measured: $checked")
+        assertEquals(emptySet(), cutOff)
+    }
+
     @Test
     fun `a GO day reads as one card with the spot and window and kite and departure and the ride`() =
         runComposeUiTest {
@@ -97,7 +129,7 @@ class TodayScreenTest {
                 .assert(hasText("Andrei drives, leaves at 08:30"))
                 .assert(hasText("2 seats free"))
             // The alternative is a button of its own, so screen readers reach it after the card.
-            onNodeWithTag("today.alternative.lake-weiss").assert(hasText("Also good: Lake Weiss, 14:00–17:00"))
+            onNodeWithTag("today.alternative.lake-weiss.14:00").assert(hasText("Also good: Lake Weiss, 14:00–17:00"))
         }
 
     @Test
@@ -107,7 +139,7 @@ class TodayScreenTest {
             scrollTo("today.day.2026-10-24")
 
             onNodeWithTag("today.day.2026-10-24").assert(hasClickAction()).performClick()
-            onNodeWithTag("today.alternative.lake-weiss").performClick()
+            onNodeWithTag("today.alternative.lake-weiss.14:00").performClick()
 
             assertEquals(
                 listOf<TodayIntent>(
@@ -162,6 +194,25 @@ class TodayScreenTest {
                 .assert(hasText("Next good day: Saturday"))
             onNodeWithTag("today.spot.2026-10-22.lake-weiss").assert(hasText("Lake Weiss: Too gusty"))
             onNodeWithTag("today.spot.2026-10-22.nordstrand-bay").assert(hasText("Nordstrand Bay: Offshore wind — dangerous here"))
+        }
+
+    @Test
+    fun `a day whose wind is good only outside the riding hours says so`() =
+        runComposeUiTest {
+            val outside =
+                TodayPreviewData.tooShortTomorrow.copy(
+                    reason = Reason.OUTSIDE_RIDING_HOURS,
+                    spots =
+                        listOf(
+                            SpotReasonUi(SpotId("lake-weiss"), "Lake Weiss", Reason.TOO_LIGHT),
+                            SpotReasonUi(SpotId("nordstrand-bay"), "Nordstrand Bay", Reason.OUTSIDE_RIDING_HOURS),
+                        ),
+                )
+            show(TodayPreviewData.ready.copy(content = TodayState.Content.Ready(listOf(outside))))
+
+            onNodeWithTag("today.day.2026-10-23").assert(hasText("Wind only outside your riding hours"))
+            onNodeWithTag("today.spot.2026-10-23.nordstrand-bay").assert(hasText("Nordstrand Bay: Wind only outside your riding hours"))
+            onNodeWithTag("today.spot.2026-10-23.lake-weiss").assert(hasText("Lake Weiss: Not enough wind"))
         }
 
     @Test
@@ -262,32 +313,16 @@ class TodayScreenTest {
         runSkikoComposeUiTest(size = Size(PHONE_WIDTH_PX, PHONE_HEIGHT_PX), density = Density(PHONE_DENSITY)) {
             show(TodayPreviewData.ready, fontScale = 2f)
 
-            val screenWidth = onRoot().fetchSemanticsNode().size.width
-            val checked = mutableSetOf<String>()
-            val cutOff = mutableSetOf<String>()
-            // The list only lays out what is on screen, so bring each card in before measuring its text.
-            listOf("today.day.2026-10-22", "today.day.2026-10-23", "today.day.2026-10-24").forEach { card ->
-                onNodeWithTag("today.days").performScrollToNode(hasTestTag(card))
-                onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsActions.GetTextLayoutResult), useUnmergedTree = true)
-                    .fetchSemanticsNodes()
-                    .forEach { node ->
-                        val text =
-                            node.config
-                                .getOrNull(SemanticsProperties.Text)
-                                ?.joinToString()
-                                .orEmpty()
-                        val layouts = mutableListOf<TextLayoutResult>()
-                        node.config[SemanticsActions.GetTextLayoutResult].action?.invoke(layouts)
-                        checked += text
-                        // Clipped vertically by its own box, or pushed past the edge of the screen.
-                        if (layouts.any { it.didOverflowHeight } || node.boundsInRoot.left < 0f || node.boundsInRoot.right > screenWidth) {
-                            cutOff += text
-                        }
-                    }
-            }
+            assertNothingCutOff(lastText = "Andrei drives, leaves at 08:30")
+        }
 
-            assertTrue("Andrei drives, leaves at 08:30" in checked, "The last card was never measured: $checked")
-            assertEquals(emptySet(), cutOff)
+    @Test
+    fun `no text is cut off at twice the font size in russian either`() =
+        runSkikoComposeUiTest(size = Size(PHONE_WIDTH_PX, PHONE_HEIGHT_PX), density = Density(PHONE_DENSITY)) {
+            Locale.setDefault(Locale.forLanguageTag("ru"))
+            show(TodayPreviewData.ready, fontScale = 2f)
+
+            assertNothingCutOff(lastText = "Andrei едет, выезд в 08:30")
         }
 
     @Test
@@ -346,12 +381,12 @@ class TodayScreenTest {
             onNode(isHeading() and hasText("Едем?")).assertIsDisplayed()
             onNodeWithTag("today.header").assert(hasText("Обновлено 12 минут назад"))
             onNodeWithTag("today.day.2026-10-24")
-                .assert(hasText("ДА"))
+                .assert(hasText("ПОГНАЛИ"))
                 .assert(hasText("Суббота"))
                 .assert(hasText("18–22 уз"))
                 .assert(hasText("Выезжай до 10:30"))
                 .assert(hasText("2 свободных места"))
-            onNodeWithTag("today.day.2026-10-22").assert(hasText("Ближайший хороший день: суббота"))
+            onNodeWithTag("today.day.2026-10-22").assert(hasText("НЕ СТОИТ")).assert(hasText("Ближайший хороший день: суббота"))
         }
 
     private companion object {

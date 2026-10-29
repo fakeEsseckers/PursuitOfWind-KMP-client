@@ -29,6 +29,9 @@
     <string name="reason_cold">Cold</string>
     <string name="reason_too_far">Beyond your max drive</string>
     <string name="reason_window_too_short">Window too short after the drive</string>
+    <string name="reason_outside_riding_hours">Outside your riding hours</string>
+    <!-- A day whose wind is good only outside the rider's riding hours -->
+    <string name="reason_day_outside_riding_hours">Wind only outside your riding hours</string>
 
     <!-- Days -->
     <string name="day_today">Today</string>
@@ -204,6 +207,12 @@
     <string name="language_english">English</string>
     <string name="language_russian">Русский</string>
     <string name="profile_more">More settings</string>
+    <string name="profile_riding_from">Ride from</string>
+    <string name="profile_riding_from_earlier">Start riding earlier</string>
+    <string name="profile_riding_from_later">Start riding later</string>
+    <string name="profile_riding_to">Ride until</string>
+    <string name="profile_riding_to_earlier">Finish riding earlier</string>
+    <string name="profile_riding_to_later">Finish riding later</string>
     <string name="profile_min_session">Shortest session worth the drive</string>
     <string name="profile_min_session_shorter">Shorter session</string>
     <string name="profile_min_session_longer">Longer session</string>

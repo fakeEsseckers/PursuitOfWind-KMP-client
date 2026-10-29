@@ -4,6 +4,7 @@ import io.github.esseckers.pursuitofwind.core.ui.formatTenths
 import io.github.esseckers.pursuitofwind.data.model.Profile
 import io.github.esseckers.pursuitofwind.data.model.WindUnit
 import io.github.esseckers.pursuitofwind.engine.model.RiderProfile
+import io.github.esseckers.pursuitofwind.engine.model.RidingHours
 import io.github.esseckers.pursuitofwind.engine.model.WindSpeed
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.KiteChoice
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileCheck
@@ -30,6 +31,8 @@ internal object ProfileFormMapper {
             kitesM2 = rider.quiverM2.toSet(),
             minSessionMinutes = rider.minSession.inWholeMinutes.toInt(),
             maxDriveMinutes = rider.maxDrive.inWholeMinutes.toInt(),
+            ridingFromHour = rider.ridingHours.fromHour,
+            ridingToHour = rider.ridingHours.toHour,
             minWind = rider.minWind?.let { formatTenths(it.valueIn(limitUnit)) }.orEmpty(),
             maxWind = rider.maxWind?.let { formatTenths(it.valueIn(limitUnit)) }.orEmpty(),
             minWindSpeed = rider.minWind,
@@ -71,6 +74,14 @@ internal object ProfileFormMapper {
 
             is ProfileEdit.MaxDrive -> {
                 form.copy(maxDriveMinutes = ProfileLimits.MAX_DRIVE_STEPS.next(form.maxDriveMinutes, edit.step))
+            }
+
+            is ProfileEdit.RidingFrom -> {
+                form.copy(ridingFromHour = ProfileLimits.ridingFromSteps(form.ridingToHour).next(form.ridingFromHour, edit.step))
+            }
+
+            is ProfileEdit.RidingTo -> {
+                form.copy(ridingToHour = ProfileLimits.ridingToSteps(form.ridingFromHour).next(form.ridingToHour, edit.step))
             }
 
             is ProfileEdit.MinWind -> {
@@ -115,6 +126,7 @@ internal object ProfileFormMapper {
                         maxWind = (maxWind as? WindLimit.Set)?.speed,
                         minSession = form.minSessionMinutes.minutes,
                         maxDrive = form.maxDriveMinutes.minutes,
+                        ridingHours = RidingHours(fromHour = form.ridingFromHour, toHour = form.ridingToHour),
                     ),
                 windUnit = form.unit,
             ),
