@@ -21,12 +21,10 @@ internal sealed interface ProfileIntent {
         val on: Boolean,
     ) : ProfileIntent
 
-    /** The system's answer to the question [ProfileEffect.AskForNotifications] put to the rider. */
-    data class NotificationsAnswered(
-        val allowed: Boolean,
-    ) : ProfileIntent
-
-    /** Whether the system shows the app's notifications right now, read each time the screen comes back. */
+    /**
+     * Whether the system shows the app's notifications right now: its answer to [ProfileEffect.AskForNotifications],
+     * and what it says each time the screen comes back, also from the system's own dialog or settings.
+     */
     data class NotificationsChecked(
         val allowed: Boolean,
     ) : ProfileIntent

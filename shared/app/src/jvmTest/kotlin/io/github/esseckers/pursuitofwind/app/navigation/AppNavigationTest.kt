@@ -259,7 +259,7 @@ class AppNavigationTest {
         }
 
     @Test
-    fun `a no from the system leaves the alerts off and the profile leads to the system's settings`() =
+    fun `a no from the system stores no alerts and the profile leads to its settings and takes the wish back`() =
         runComposeUiTest {
             val permission = graph.koin.get<NotificationPermission>() as RecordingNotificationPermission
             permission.answer = false
@@ -275,11 +275,16 @@ class AppNavigationTest {
             onNodeWithTag("profile.alerts").performScrollTo().performClick()
 
             waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("profile.alerts.settings")).fetchSemanticsNodes().isNotEmpty() }
-            onNodeWithTag("profile.alerts").assertIsOff()
+            // The switch keeps showing what the rider asked for, so it can be taken back.
+            onNodeWithTag("profile.alerts").assertIsOn()
             onNodeWithTag("profile.alerts.settings").performScrollTo().performClick()
 
             // The route opens the settings for an effect, which arrives a moment after the tap.
             waitUntil(timeoutMillis = TIMEOUT_MS) { permission.settingsOpened == 1 }
+            onNodeWithTag("profile.alerts").performScrollTo().performClick()
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("profile.alerts.settings")).fetchSemanticsNodes().isEmpty() }
+            onNodeWithTag("profile.alerts").assertIsOff()
+            assertEquals(1, permission.requests)
             assertFalse(
                 runBlocking {
                     graph.koin

@@ -313,13 +313,23 @@ class ProfileScreenTest {
         runComposeUiTest {
             show(ProfilePreviewData.alertsBlocked)
 
-            onNodeWithTag("profile.alerts").performScrollTo().assertIsOff()
+            onNodeWithTag("profile.alerts").performScrollTo().assertIsOn()
             onNodeWithTag("profile.alerts.blocked")
                 .performScrollTo()
                 .assert(hasText("Notifications from this app are turned off in the phone’s settings."))
             onNodeWithTag("profile.alerts.settings").performScrollTo().assert(hasText("Open settings")).performClick()
 
             assertEquals(listOf<ProfileIntent>(ProfileIntent.OpenNotificationSettings), intents)
+        }
+
+    @Test
+    fun `alerts the system blocks are taken back with a tap on the switch`() =
+        runComposeUiTest {
+            show(ProfilePreviewData.alertsBlocked)
+
+            onNodeWithTag("profile.alerts").performScrollTo().performClick()
+
+            assertEquals(listOf<ProfileIntent>(ProfileIntent.SetAlerts(on = false)), intents)
         }
 
     @Test

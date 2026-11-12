@@ -4,6 +4,7 @@ import io.github.esseckers.pursuitofwind.core.mvi.Reducer
 import io.github.esseckers.pursuitofwind.core.ui.message
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.mapper.ProfileFormMapper
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.AlertsUi
+import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.AlertsWish
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileCheck
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileEdit
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileForm
@@ -72,19 +73,36 @@ internal object ProfileReducer : Reducer<ProfileState, ProfileResult> {
     private fun ProfileForm.windLimits(): Pair<String, String> = minWind to maxWind
 
     /**
-     * A wish the system refused stands until the system shows notifications or the rider turns the alerts off, so the
-     * screen keeps saying why they are not on.
+     * A wish ends when it becomes the stored choice. Nothing else the store or the system says ends it: the settings
+     * file emits again whenever anything in it changes, and a wish the system refused must stand until the rider takes
+     * it back.
      */
     private fun ProfileInputs.with(result: ProfileResult.Alerts): ProfileInputs =
         when (result) {
             is ProfileResult.AlertsChosen -> {
-                copy(alertsChosen = result.chosen, alertsRefused = result.chosen && alertsRefused)
+                copy(
+                    alertsChosen = result.chosen,
+                    alertsWish = if (result.chosen) AlertsWish.NONE else alertsWish,
+                )
             }
 
             is ProfileResult.NotificationsChecked -> {
-                copy(notificationsAllowed = result.allowed, alertsRefused = !result.allowed && (result.refused || alertsRefused))
+                copy(notificationsAllowed = result.allowed)
+            }
+
+            is ProfileResult.AlertsWished -> {
+                copy(alertsWish = result.wish)
             }
         }
+
+    /**
+     * The switch shows what the rider wants, stored or not, so a tap can always take it back. It is blocked when the
+     * system is known not to show notifications; not while the system is being asked, when its dialog is the answer.
+     */
+    private fun ProfileInputs.alerts(): AlertsUi {
+        val wanted = alertsChosen || alertsWish != AlertsWish.NONE
+        return AlertsUi(on = wanted, blocked = wanted && notificationsAllowed == false && alertsWish != AlertsWish.ASKING)
+    }
 
     private fun ProfileState.derived(): ProfileState {
         val check = ProfileFormMapper.check(form)
@@ -98,11 +116,7 @@ internal object ProfileReducer : Reducer<ProfileState, ProfileResult> {
             ridingTo = ProfileLimits.ridingToSteps(form.ridingFromHour).stepper(form.ridingToHour),
             errors = if (inputs.submitted) (check as? ProfileCheck.Invalid)?.errors.orEmpty() else emptyMap(),
             validProfile = valid,
-            alerts =
-                AlertsUi(
-                    on = inputs.alertsChosen && inputs.notificationsAllowed,
-                    blocked = (inputs.alertsChosen || inputs.alertsRefused) && !inputs.notificationsAllowed,
-                ),
+            alerts = inputs.alerts(),
             // The same profile typed differently (`62,5` for 62.5 kg) is no change.
             hasChanges = saved == null || (form != ProfileFormMapper.formOf(saved) && valid != saved),
         )

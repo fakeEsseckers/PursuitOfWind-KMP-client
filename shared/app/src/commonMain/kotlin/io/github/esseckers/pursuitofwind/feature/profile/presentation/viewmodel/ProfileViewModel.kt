@@ -10,6 +10,7 @@ import io.github.esseckers.pursuitofwind.data.model.Profile
 import io.github.esseckers.pursuitofwind.data.model.errorOrNull
 import io.github.esseckers.pursuitofwind.data.model.valueOrNull
 import io.github.esseckers.pursuitofwind.feature.profile.domain.repository.ProfileEditRepository
+import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.AlertsWish
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileEffect
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileIntent
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileState
@@ -33,9 +34,8 @@ internal class ProfileViewModel(
             is ProfileIntent.Edit -> dispatchResult(ProfileResult.Edited(intent.edit))
             ProfileIntent.Save -> save()
             is ProfileIntent.ChooseLanguage -> chooseLanguage(intent.language)
-            is ProfileIntent.SetAlerts -> if (intent.on) postEffect(ProfileEffect.AskForNotifications) else setAlerts(on = false)
-            is ProfileIntent.NotificationsAnswered -> notificationsChecked(intent.allowed, answer = true)
-            is ProfileIntent.NotificationsChecked -> notificationsChecked(intent.allowed, answer = false)
+            is ProfileIntent.SetAlerts -> if (intent.on) askForAlerts() else dropAlerts()
+            is ProfileIntent.NotificationsChecked -> notificationsChecked(intent.allowed)
             ProfileIntent.OpenNotificationSettings -> postEffect(ProfileEffect.OpenNotificationSettings)
         }
     }
@@ -52,23 +52,39 @@ internal class ProfileViewModel(
         viewModelScope.launch { repository.setLanguage(language) }
     }
 
-    /**
-     * What the system says about the app's notifications: its [answer] to the rider turning the alerts on, or a look at
-     * it when the screen comes back. A yes stores the rider's wish, also one the system refused earlier and now allows,
-     * as after a visit to its settings.
-     */
-    private fun notificationsChecked(
-        allowed: Boolean,
-        answer: Boolean,
-    ) {
-        val wanted = answer || currentState.inputs.alertsRefused
-        dispatchResult(ProfileResult.NotificationsChecked(allowed, refused = answer && !allowed))
-        if (allowed && wanted) setAlerts(on = true)
+    /** One question at a time: a second tap while the system is being asked does nothing. */
+    private fun askForAlerts() {
+        if (currentState.inputs.alertsWish == AlertsWish.ASKING) return
+        dispatchResult(ProfileResult.AlertsWished(AlertsWish.ASKING))
+        postEffect(ProfileEffect.AskForNotifications)
     }
 
-    /** Like the language, the choice is stored and comes back through [bind]. */
-    private fun setAlerts(on: Boolean) {
-        viewModelScope.launch { repository.setAlerts(on) }
+    /** Takes back the wish, stored or not. Like the language, the stored choice comes back through [bind]. */
+    private fun dropAlerts() {
+        dispatchResult(ProfileResult.AlertsWished(AlertsWish.NONE))
+        viewModelScope.launch { repository.setAlerts(on = false) }
+    }
+
+    /**
+     * What the system says about the app's notifications. A yes stores a wish the rider has, whether the system was
+     * just asked or refused it earlier and allows it now, as after a visit to its settings. A no to the question makes
+     * the wish a refused one. Without a wish, nothing follows: notifications being allowed turns no alerts on.
+     */
+    private fun notificationsChecked(allowed: Boolean) {
+        val wish = currentState.inputs.alertsWish
+        dispatchResult(ProfileResult.NotificationsChecked(allowed))
+        when {
+            wish == AlertsWish.NONE -> Unit
+            allowed -> storeAlerts()
+            wish == AlertsWish.ASKING -> dispatchResult(ProfileResult.AlertsWished(AlertsWish.REFUSED))
+        }
+    }
+
+    /** The stored choice ends the wish as it comes back through [bind]; a choice that cannot be stored ends it here. */
+    private fun storeAlerts() {
+        viewModelScope.launch {
+            if (repository.setAlerts(on = true) is Outcome.Failure) dispatchResult(ProfileResult.AlertsWished(AlertsWish.NONE))
+        }
     }
 
     /** One save at a time; a tap while the form is loading or saving does nothing. */

@@ -5,6 +5,7 @@ import io.github.esseckers.pursuitofwind.data.model.Profile
 import io.github.esseckers.pursuitofwind.data.model.WindUnit
 import io.github.esseckers.pursuitofwind.engine.model.RiderProfile
 import io.github.esseckers.pursuitofwind.engine.model.SkillLevel
+import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.AlertsWish
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileEdit
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileState
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.viewmodel.ProfileReducer
@@ -67,7 +68,12 @@ internal object ProfilePreviewData {
     val alertsOn = reduce(ProfileResult.Loaded(alex), ProfileResult.AlertsChosen(true), ProfileResult.NotificationsChecked(allowed = true))
 
     /** Alex asked to be told about new session windows, and the system does not show the app's notifications. */
-    val alertsBlocked = reduce(ProfileResult.Loaded(alex), ProfileResult.NotificationsChecked(allowed = false, refused = true))
+    val alertsBlocked =
+        reduce(
+            ProfileResult.Loaded(alex),
+            ProfileResult.AlertsWished(AlertsWish.REFUSED),
+            ProfileResult.NotificationsChecked(allowed = false),
+        )
 
     private fun reduce(vararg results: ProfileResult): ProfileState = results.fold(ProfileState(), ProfileReducer::reduce)
 }

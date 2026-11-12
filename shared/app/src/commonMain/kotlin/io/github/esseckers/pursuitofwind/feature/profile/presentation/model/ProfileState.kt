@@ -44,8 +44,8 @@ internal data class ProfileState(
 /**
  * The switch that has the app tell the rider about new session windows.
  *
- * @property on the rider asked for it, and the system shows the app's notifications.
- * @property blocked the rider wants it, and the system does not show the app's notifications; only the system's
+ * @property on the rider wants the alerts: the switch shows the rider's wish, so it can always be taken back.
+ * @property blocked the rider wants them and the system does not show the app's notifications; only the system's
  *   settings change that.
  */
 internal data class AlertsUi(
@@ -53,20 +53,31 @@ internal data class AlertsUi(
     val blocked: Boolean = false,
 )
 
+/** A wish for alerts that is not the stored choice yet. */
+internal enum class AlertsWish {
+    NONE,
+
+    /** The rider turned the switch on and the system is being asked. */
+    ASKING,
+
+    /** The system said no. The wish stands until the system allows notifications or the rider turns the switch off. */
+    REFUSED,
+}
+
 /**
  * The saved profile ([loaded] once it was read, even when there is none), and whether the rider has tried to save.
  *
  * @property alertsChosen the rider's stored choice to be told about new session windows.
- * @property notificationsAllowed whether the system shows the app's notifications, as last checked.
- * @property alertsRefused the rider asked to be told and the system said no; the choice follows once it says yes.
+ * @property notificationsAllowed whether the system shows the app's notifications, as last checked; null until then.
+ * @property alertsWish the rider's wish for alerts while it is not the stored choice.
  */
 internal data class ProfileInputs(
     val saved: Profile? = null,
     val loaded: Boolean = false,
     val submitted: Boolean = false,
     val alertsChosen: Boolean = false,
-    val notificationsAllowed: Boolean = false,
-    val alertsRefused: Boolean = false,
+    val notificationsAllowed: Boolean? = null,
+    val alertsWish: AlertsWish = AlertsWish.NONE,
 )
 
 /** Where the form is shown: as the first step of onboarding, or as the Profile tab. */

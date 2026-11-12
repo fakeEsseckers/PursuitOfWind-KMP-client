@@ -8,6 +8,7 @@ import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.AppLanguage
 import io.github.esseckers.pursuitofwind.data.model.WindUnit
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.AlertsUi
+import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.AlertsWish
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileEdit
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileError
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileField
@@ -177,27 +178,46 @@ class ProfileReducerTest {
     }
 
     @Test
-    fun `the alerts are on only while the rider chose them and the system shows notifications`() {
+    fun `the switch shows the stored choice before the system has been asked about notifications`() {
         val chosen = reduce(ProfileResult.AlertsChosen(true))
-        val allowed = reduce(ProfileResult.NotificationsChecked(allowed = true), from = chosen)
 
-        // Chosen earlier, and notifications were turned off in the system's settings since.
-        assertEquals(AlertsUi(on = false, blocked = true), chosen.alerts)
-        assertEquals(AlertsUi(on = true), allowed.alerts)
+        // Nothing is known about the system yet, so nothing is called blocked.
+        assertEquals(AlertsUi(on = true), chosen.alerts)
+        assertEquals(AlertsUi(on = true), reduce(ProfileResult.NotificationsChecked(allowed = true), from = chosen).alerts)
         assertEquals(AlertsUi(), reduce(ProfileResult.NotificationsChecked(allowed = true)).alerts)
     }
 
     @Test
-    fun `a refusal by the system shows as blocked until it allows notifications or the rider gives up`() {
-        val refused = reduce(ProfileResult.NotificationsChecked(allowed = false, refused = true))
-        val stillRefused = reduce(ProfileResult.NotificationsChecked(allowed = false), from = refused)
-        val allowed = reduce(ProfileResult.NotificationsChecked(allowed = true), from = refused)
+    fun `chosen alerts the system does not show stay on and say they are blocked`() {
+        val blocked = reduce(ProfileResult.AlertsChosen(true), ProfileResult.NotificationsChecked(allowed = false))
 
-        assertEquals(AlertsUi(on = false, blocked = true), refused.alerts)
-        assertEquals(refused.alerts, stillRefused.alerts)
-        assertTrue(stillRefused.inputs.alertsRefused)
-        assertEquals(AlertsUi(), allowed.alerts)
-        assertFalse(allowed.inputs.alertsRefused)
+        assertEquals(AlertsUi(on = true, blocked = true), blocked.alerts)
+        assertEquals(AlertsUi(), reduce(ProfileResult.AlertsChosen(false), from = blocked).alerts)
+    }
+
+    @Test
+    fun `a wish shows as on while the system is asked and as blocked once it says no`() {
+        val denied = reduce(ProfileResult.NotificationsChecked(allowed = false))
+        val asking = reduce(ProfileResult.AlertsWished(AlertsWish.ASKING), from = denied)
+        val refused = reduce(ProfileResult.AlertsWished(AlertsWish.REFUSED), from = asking)
+
+        // While its dialog is up the system has not answered: the earlier no is not held against the wish.
+        assertEquals(AlertsUi(on = true), asking.alerts)
+        assertEquals(AlertsUi(on = true, blocked = true), refused.alerts)
+        assertEquals(AlertsUi(), reduce(ProfileResult.AlertsWished(AlertsWish.NONE), from = refused).alerts)
+    }
+
+    @Test
+    fun `a wish ends when it becomes the stored choice and not when the settings file emits again`() {
+        val refused = reduce(ProfileResult.AlertsWished(AlertsWish.REFUSED), ProfileResult.NotificationsChecked(allowed = false))
+        // Saving the profile or the language makes the store emit the same choice again.
+        val emittedAgain = reduce(ProfileResult.AlertsChosen(false), from = refused)
+        val stored = reduce(ProfileResult.NotificationsChecked(allowed = true), ProfileResult.AlertsChosen(true), from = refused)
+
+        assertEquals(AlertsWish.REFUSED, emittedAgain.inputs.alertsWish)
+        assertEquals(AlertsUi(on = true, blocked = true), emittedAgain.alerts)
+        assertEquals(AlertsWish.NONE, stored.inputs.alertsWish)
+        assertEquals(AlertsUi(on = true), stored.alerts)
     }
 
     @Test

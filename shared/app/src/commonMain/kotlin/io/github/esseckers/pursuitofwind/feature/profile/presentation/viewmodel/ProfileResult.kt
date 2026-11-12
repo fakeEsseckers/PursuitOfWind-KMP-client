@@ -3,6 +3,7 @@ package io.github.esseckers.pursuitofwind.feature.profile.presentation.viewmodel
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.AppLanguage
 import io.github.esseckers.pursuitofwind.data.model.Profile
+import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.AlertsWish
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileEdit
 
 /** What happened, as the reducer sees it. */
@@ -34,13 +35,14 @@ internal sealed interface ProfileResult {
         val chosen: Boolean,
     ) : Alerts
 
-    /**
-     * Whether the system shows the app's notifications. [refused] when this is its answer to the rider turning the
-     * alerts on, so the choice was not stored.
-     */
+    /** Whether the system shows the app's notifications. */
     data class NotificationsChecked(
         val allowed: Boolean,
-        val refused: Boolean = false,
+    ) : Alerts
+
+    /** The rider's wish for alerts changed: the system is being asked, it said no, or the wish is gone. */
+    data class AlertsWished(
+        val wish: AlertsWish,
     ) : Alerts
 
     /** The save ended: [saved] as the server stored it, or failing with [error]. */

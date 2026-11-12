@@ -37,10 +37,11 @@ internal class ProfileEditRepositoryImpl(
         }
 
     override val alerts: Flow<Boolean> =
-        windowAlerts.enabled.catch { failure ->
-            Logger.withTag("Profile").e(failure) { "Reading the alerts choice failed" }
-            emit(false)
-        }
+        windowAlerts.enabled
+            .catch { failure ->
+                Logger.withTag("Profile").e(failure) { "Reading the alerts choice failed" }
+                emit(false)
+            }.distinctUntilChanged()
 
     override suspend fun save(profile: Profile): Outcome<Profile> = profiles.save(profile)
 

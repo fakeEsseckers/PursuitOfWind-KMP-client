@@ -62,7 +62,7 @@ internal fun ProfileRoute(
             }
 
             ProfileEffect.AskForNotifications -> {
-                notifications?.let { scope.launch { viewModel.onIntent(ProfileIntent.NotificationsAnswered(it.request())) } }
+                notifications?.let { scope.launch { viewModel.onIntent(ProfileIntent.NotificationsChecked(it.request())) } }
             }
 
             ProfileEffect.OpenNotificationSettings -> {
