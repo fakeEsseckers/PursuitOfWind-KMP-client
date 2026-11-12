@@ -14,6 +14,7 @@ import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
@@ -23,6 +24,7 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isHeading
+import androidx.compose.ui.test.isOn
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -45,6 +47,8 @@ import io.github.esseckers.pursuitofwind.app.language.AppLocale
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.PursuitOfWindTheme
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Spacing
 import io.github.esseckers.pursuitofwind.core.map.SpotMap
+import io.github.esseckers.pursuitofwind.core.platform.BackgroundRefreshScheduler
+import io.github.esseckers.pursuitofwind.core.platform.NotificationPermission
 import io.github.esseckers.pursuitofwind.core.platform.ShareLauncher
 import io.github.esseckers.pursuitofwind.core.platform.TextClipboard
 import io.github.esseckers.pursuitofwind.data.fake.ControllableClock
@@ -52,6 +56,7 @@ import io.github.esseckers.pursuitofwind.data.model.GeoPoint
 import io.github.esseckers.pursuitofwind.data.repository.CrewRepository
 import io.github.esseckers.pursuitofwind.data.repository.ProfileRepository
 import io.github.esseckers.pursuitofwind.data.repository.SpotRepository
+import io.github.esseckers.pursuitofwind.data.repository.WindowAlertsRepository
 import io.github.esseckers.pursuitofwind.engine.model.Bearing
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.spotdetail.NORDSTRAND
@@ -59,6 +64,8 @@ import io.github.esseckers.pursuitofwind.feature.spotdetail.SATURDAY
 import io.github.esseckers.pursuitofwind.feature.spotdetail.alex
 import io.github.esseckers.pursuitofwind.feature.spotdetail.at
 import io.github.esseckers.pursuitofwind.testing.RecordingAppLocale
+import io.github.esseckers.pursuitofwind.testing.RecordingBackgroundRefreshScheduler
+import io.github.esseckers.pursuitofwind.testing.RecordingNotificationPermission
 import io.github.esseckers.pursuitofwind.testing.RecordingShareLauncher
 import io.github.esseckers.pursuitofwind.testing.RecordingTextClipboard
 import io.github.esseckers.pursuitofwind.testing.ScriptedSpotMap
@@ -222,6 +229,82 @@ class AppNavigationTest {
             onNodeWithTag("profile.weight").assert(hasText("78"))
             // The phone's language first, then the one picked.
             assertEquals(listOf(null, "ru"), (graph.koin.get<AppLocale>() as RecordingAppLocale).tags)
+        }
+
+    @Test
+    fun `the alerts switch in the profile asks the system and its yes turns the alerts on`() =
+        runComposeUiTest {
+            val permission = graph.koin.get<NotificationPermission>() as RecordingNotificationPermission
+            setContent {
+                KoinIsolatedContext(graph) {
+                    CompositionLocalProvider(LocalViewModelStoreOwner provides owner) { PursuitOfWindTheme { AppNavigation() } }
+                }
+            }
+
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("today.header")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("tab.profile").performClick()
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("profile.alerts")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("profile.alerts").performScrollTo().assertIsOff().performClick()
+
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("profile.alerts") and isOn()).fetchSemanticsNodes().isNotEmpty() }
+            assertEquals(1, permission.requests)
+            assertTrue(
+                runBlocking {
+                    graph.koin
+                        .get<WindowAlertsRepository>()
+                        .enabled
+                        .first()
+                },
+            )
+        }
+
+    @Test
+    fun `a no from the system leaves the alerts off and the profile leads to the system's settings`() =
+        runComposeUiTest {
+            val permission = graph.koin.get<NotificationPermission>() as RecordingNotificationPermission
+            permission.answer = false
+            setContent {
+                KoinIsolatedContext(graph) {
+                    CompositionLocalProvider(LocalViewModelStoreOwner provides owner) { PursuitOfWindTheme { AppNavigation() } }
+                }
+            }
+
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("today.header")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("tab.profile").performClick()
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("profile.alerts")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("profile.alerts").performScrollTo().performClick()
+
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("profile.alerts.settings")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("profile.alerts").assertIsOff()
+            onNodeWithTag("profile.alerts.settings").performScrollTo().performClick()
+
+            // The route opens the settings for an effect, which arrives a moment after the tap.
+            waitUntil(timeoutMillis = TIMEOUT_MS) { permission.settingsOpened == 1 }
+            assertFalse(
+                runBlocking {
+                    graph.koin
+                        .get<WindowAlertsRepository>()
+                        .enabled
+                        .first()
+                },
+            )
+        }
+
+    @Test
+    fun `a device that runs no background checks does not offer the alerts`() =
+        runComposeUiTest {
+            (graph.koin.get<BackgroundRefreshScheduler>() as RecordingBackgroundRefreshScheduler).available = false
+            setContent {
+                KoinIsolatedContext(graph) {
+                    CompositionLocalProvider(LocalViewModelStoreOwner provides owner) { PursuitOfWindTheme { AppNavigation() } }
+                }
+            }
+
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("today.header")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("tab.profile").performClick()
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("profile.form")).fetchSemanticsNodes().isNotEmpty() }
+
+            onNodeWithTag("profile.alerts").assertDoesNotExist()
         }
 
     @Test

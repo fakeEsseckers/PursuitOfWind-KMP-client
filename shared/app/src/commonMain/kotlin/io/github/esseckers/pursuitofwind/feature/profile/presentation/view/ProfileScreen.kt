@@ -49,7 +49,8 @@ import org.jetbrains.compose.resources.stringResource
 /**
  * The rider's profile as a form: onboarding's "About you" ([ProfileMode.SET_UP], with back and "Continue") or the
  * Profile tab ([ProfileMode.TAB], saved in place). Stateless; `ProfileRoute` connects it to its ViewModel.
- * [snackbarHostState] shows the tab's "Profile saved".
+ * [snackbarHostState] shows the tab's "Profile saved". With [alertsOffered] false the form leaves out the alerts about
+ * new session windows: this device cannot check for them while the app is closed.
  */
 @Composable
 internal fun ProfileScreen(
@@ -59,6 +60,7 @@ internal fun ProfileScreen(
     modifier: Modifier = Modifier,
     onBack: () -> Unit = {},
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+    alertsOffered: Boolean = true,
 ) {
     Scaffold(
         modifier = modifier,
@@ -86,7 +88,7 @@ internal fun ProfileScreen(
             if (state.loading) {
                 Box(modifier = Modifier.fillMaxSize().padding(padding).testTag("profile.loading"))
             } else {
-                ProfileForm(state = state, mode = mode, onIntent = onIntent, modifier = Modifier.padding(padding))
+                ProfileForm(state, mode, alertsOffered, onIntent, modifier = Modifier.padding(padding))
             }
             NavigationBarScrim(modifier = Modifier.align(Alignment.BottomCenter))
         }
@@ -97,6 +99,7 @@ internal fun ProfileScreen(
 private fun ProfileForm(
     state: ProfileState,
     mode: ProfileMode,
+    alertsOffered: Boolean,
     onIntent: (ProfileIntent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -125,6 +128,13 @@ private fun ProfileForm(
             KiteChoices(kites = state.kites, onEdit = onEdit)
             UnitChoice(unit = state.form.unit, onEdit = onEdit)
             LanguageChoice(language = state.language, onChoose = { onIntent(ProfileIntent.ChooseLanguage(it)) })
+            if (alertsOffered) {
+                AlertsChoice(
+                    alerts = state.alerts,
+                    onSet = { onIntent(ProfileIntent.SetAlerts(it)) },
+                    onOpenSettings = { onIntent(ProfileIntent.OpenNotificationSettings) },
+                )
+            }
             MoreSettings(
                 form = state.form,
                 ridingFrom = state.ridingFrom,

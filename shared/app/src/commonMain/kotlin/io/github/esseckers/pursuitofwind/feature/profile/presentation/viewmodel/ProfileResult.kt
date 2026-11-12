@@ -26,6 +26,23 @@ internal sealed interface ProfileResult {
         val language: AppLanguage,
     ) : ProfileResult
 
+    /** What the alerts switch follows: the rider's choice, and the system's say on notifications. */
+    sealed interface Alerts : ProfileResult
+
+    /** The rider's choice to be told about new session windows, as stored. */
+    data class AlertsChosen(
+        val chosen: Boolean,
+    ) : Alerts
+
+    /**
+     * Whether the system shows the app's notifications. [refused] when this is its answer to the rider turning the
+     * alerts on, so the choice was not stored.
+     */
+    data class NotificationsChecked(
+        val allowed: Boolean,
+        val refused: Boolean = false,
+    ) : Alerts
+
     /** The save ended: [saved] as the server stored it, or failing with [error]. */
     data class SaveFinished(
         val error: AppError?,

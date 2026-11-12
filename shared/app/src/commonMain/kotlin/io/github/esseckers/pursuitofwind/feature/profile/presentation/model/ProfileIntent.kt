@@ -15,4 +15,21 @@ internal sealed interface ProfileIntent {
     data class ChooseLanguage(
         val language: AppLanguage,
     ) : ProfileIntent
+
+    /** Tell the rider about new session windows from now on, or stop. Turning it on asks the system first. */
+    data class SetAlerts(
+        val on: Boolean,
+    ) : ProfileIntent
+
+    /** The system's answer to the question [ProfileEffect.AskForNotifications] put to the rider. */
+    data class NotificationsAnswered(
+        val allowed: Boolean,
+    ) : ProfileIntent
+
+    /** Whether the system shows the app's notifications right now, read each time the screen comes back. */
+    data class NotificationsChecked(
+        val allowed: Boolean,
+    ) : ProfileIntent
+
+    data object OpenNotificationSettings : ProfileIntent
 }

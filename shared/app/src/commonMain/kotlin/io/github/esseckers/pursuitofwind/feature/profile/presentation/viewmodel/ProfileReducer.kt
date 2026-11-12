@@ -3,15 +3,17 @@ package io.github.esseckers.pursuitofwind.feature.profile.presentation.viewmodel
 import io.github.esseckers.pursuitofwind.core.mvi.Reducer
 import io.github.esseckers.pursuitofwind.core.ui.message
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.mapper.ProfileFormMapper
+import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.AlertsUi
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileCheck
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileEdit
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileForm
+import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileInputs
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileLimits
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileState
 
 /**
  * Folds each result into the form and recomputes what follows from it: the kite chips, the steppers, the errors once
- * the rider has tried to save, the profile to save, and whether anything changed. The first [ProfileResult.Loaded]
+ * the rider has tried to save, the profile to save, whether anything changed, and the alerts switch. The first [ProfileResult.Loaded]
  * fills the form; later ones (after a save) only update what the form is compared with, so a draft is never overwritten.
  */
 internal object ProfileReducer : Reducer<ProfileState, ProfileResult> {
@@ -51,6 +53,10 @@ internal object ProfileReducer : Reducer<ProfileState, ProfileResult> {
                     state.copy(language = result.language)
                 }
 
+                is ProfileResult.Alerts -> {
+                    state.copy(inputs = inputs.with(result))
+                }
+
                 is ProfileResult.SaveFinished -> {
                     // The saved profile counts at once, before the cache emits it, so "Save" is not offered again meanwhile.
                     state.copy(
@@ -65,6 +71,21 @@ internal object ProfileReducer : Reducer<ProfileState, ProfileResult> {
 
     private fun ProfileForm.windLimits(): Pair<String, String> = minWind to maxWind
 
+    /**
+     * A wish the system refused stands until the system shows notifications or the rider turns the alerts off, so the
+     * screen keeps saying why they are not on.
+     */
+    private fun ProfileInputs.with(result: ProfileResult.Alerts): ProfileInputs =
+        when (result) {
+            is ProfileResult.AlertsChosen -> {
+                copy(alertsChosen = result.chosen, alertsRefused = result.chosen && alertsRefused)
+            }
+
+            is ProfileResult.NotificationsChecked -> {
+                copy(notificationsAllowed = result.allowed, alertsRefused = !result.allowed && (result.refused || alertsRefused))
+            }
+        }
+
     private fun ProfileState.derived(): ProfileState {
         val check = ProfileFormMapper.check(form)
         val valid = (check as? ProfileCheck.Valid)?.profile
@@ -77,6 +98,11 @@ internal object ProfileReducer : Reducer<ProfileState, ProfileResult> {
             ridingTo = ProfileLimits.ridingToSteps(form.ridingFromHour).stepper(form.ridingToHour),
             errors = if (inputs.submitted) (check as? ProfileCheck.Invalid)?.errors.orEmpty() else emptyMap(),
             validProfile = valid,
+            alerts =
+                AlertsUi(
+                    on = inputs.alertsChosen && inputs.notificationsAllowed,
+                    blocked = (inputs.alertsChosen || inputs.alertsRefused) && !inputs.notificationsAllowed,
+                ),
             // The same profile typed differently (`62,5` for 62.5 kg) is no change.
             hasChanges = saved == null || (form != ProfileFormMapper.formOf(saved) && valid != saved),
         )

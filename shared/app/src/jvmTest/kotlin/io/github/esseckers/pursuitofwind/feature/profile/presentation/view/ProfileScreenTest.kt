@@ -14,6 +14,8 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasText
@@ -69,11 +71,18 @@ class ProfileScreenTest {
         state: ProfileState,
         mode: ProfileMode = ProfileMode.TAB,
         fontScale: Float = 1f,
+        alertsOffered: Boolean = true,
     ) {
         setContent {
             CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale)) {
                 PursuitOfWindTheme(darkTheme = false) {
-                    ProfileScreen(state = state, mode = mode, onIntent = { intents += it }, onBack = { backs++ })
+                    ProfileScreen(
+                        state = state,
+                        mode = mode,
+                        onIntent = { intents += it },
+                        onBack = { backs++ },
+                        alertsOffered = alertsOffered,
+                    )
                 }
             }
         }
@@ -270,6 +279,79 @@ class ProfileScreenTest {
             onNodeWithTag("profile.level.INTERMEDIATE").performScrollTo().assert(hasText("Средний"))
             onNodeWithTag("profile.kite.9").performScrollTo().assert(hasText("9 м²"))
             onNodeWithTag("profile.save").performScrollTo().assert(hasText("Продолжить"))
+        }
+
+    @Test
+    fun `the alerts are a switch named by its row and a tap asks to turn them on`() =
+        runComposeUiTest {
+            show(ProfilePreviewData.saved)
+
+            onNode(isHeading() and hasText("Notifications")).performScrollTo().assertIsDisplayed()
+            onNodeWithTag("profile.alerts")
+                .performScrollTo()
+                .assert(hasText("Tell me about a new window worth the drive"))
+                .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Switch))
+                .assertIsOff()
+                .performClick()
+            onNodeWithTag("profile.alerts.blocked").assertDoesNotExist()
+
+            assertEquals(listOf<ProfileIntent>(ProfileIntent.SetAlerts(on = true)), intents)
+        }
+
+    @Test
+    fun `alerts that are on show as on and a tap turns them off`() =
+        runComposeUiTest {
+            show(ProfilePreviewData.alertsOn)
+
+            onNodeWithTag("profile.alerts").performScrollTo().assertIsOn().performClick()
+
+            assertEquals(listOf<ProfileIntent>(ProfileIntent.SetAlerts(on = false)), intents)
+        }
+
+    @Test
+    fun `alerts the system blocks say so and lead to its settings`() =
+        runComposeUiTest {
+            show(ProfilePreviewData.alertsBlocked)
+
+            onNodeWithTag("profile.alerts").performScrollTo().assertIsOff()
+            onNodeWithTag("profile.alerts.blocked")
+                .performScrollTo()
+                .assert(hasText("Notifications from this app are turned off in the phone’s settings."))
+            onNodeWithTag("profile.alerts.settings").performScrollTo().assert(hasText("Open settings")).performClick()
+
+            assertEquals(listOf<ProfileIntent>(ProfileIntent.OpenNotificationSettings), intents)
+        }
+
+    @Test
+    fun `a device that cannot check in the background is not offered the alerts`() =
+        runComposeUiTest {
+            show(ProfilePreviewData.saved, alertsOffered = false)
+
+            onNodeWithTag("profile.alerts").assertDoesNotExist()
+            onNodeWithTag("profile.language.SYSTEM").performScrollTo().assertIsDisplayed()
+        }
+
+    @Test
+    fun `the alerts speak Russian`() =
+        runComposeUiTest {
+            Locale.setDefault(Locale.forLanguageTag("ru"))
+            show(ProfilePreviewData.alertsBlocked)
+
+            onNodeWithTag("profile.alerts")
+                .performScrollTo()
+                .assert(hasText("Сообщать о новом окне, ради которого стоит ехать"))
+            onNodeWithTag("profile.alerts.settings").performScrollTo().assert(hasText("Открыть настройки"))
+        }
+
+    @Test
+    fun `the blocked alerts fit at twice the font size on a phone`() =
+        runSkikoComposeUiTest(size = PHONE_SIZE, density = PHONE_DENSITY) {
+            show(ProfilePreviewData.alertsBlocked, fontScale = 2f)
+
+            val fit = checkTexts()
+
+            assertTrue("Open settings" in fit.checked, "The alerts were never measured: ${fit.checked}")
+            assertEquals(emptySet(), fit.cutOff)
         }
 
     @Test

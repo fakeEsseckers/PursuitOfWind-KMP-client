@@ -12,8 +12,8 @@ import io.github.esseckers.pursuitofwind.feature.profile.presentation.viewmodel.
 
 /**
  * States of the profile form for previews and UI tests: a new rider, the sample rider Alex (80 kg, intermediate,
- * kites 7 / 9 / 12 m², knots), a form with errors, and a failed save. They are built by the real reducer, so they are
- * what the app would show.
+ * kites 7 / 9 / 12 m², knots), a form with errors, a failed save, and the alerts switch on and blocked. They are built
+ * by the real reducer, so they are what the app would show.
  */
 internal object ProfilePreviewData {
     val alex =
@@ -62,6 +62,12 @@ internal object ProfilePreviewData {
             ProfileResult.Submitted,
             ProfileResult.SaveStarted,
         )
+
+    /** Alex is told about new session windows. */
+    val alertsOn = reduce(ProfileResult.Loaded(alex), ProfileResult.AlertsChosen(true), ProfileResult.NotificationsChecked(allowed = true))
+
+    /** Alex asked to be told about new session windows, and the system does not show the app's notifications. */
+    val alertsBlocked = reduce(ProfileResult.Loaded(alex), ProfileResult.NotificationsChecked(allowed = false, refused = true))
 
     private fun reduce(vararg results: ProfileResult): ProfileState = results.fold(ProfileState(), ProfileReducer::reduce)
 }

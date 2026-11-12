@@ -19,6 +19,7 @@ import org.jetbrains.compose.resources.StringResource
  * @property hasChanges whether the form differs from the saved profile (always true before there is one).
  * @property saveError why the last save failed; cleared when the next one starts.
  * @property language the app's language; it is not part of the draft and applies as soon as it is picked.
+ * @property alerts whether the app tells the rider about new session windows; not part of the draft either.
  * @property inputs what the reducer computes the rest from. The view does not read it.
  */
 internal data class ProfileState(
@@ -36,14 +37,36 @@ internal data class ProfileState(
     val saving: Boolean = false,
     val saveError: StringResource? = null,
     val language: AppLanguage = AppLanguage.SYSTEM,
+    val alerts: AlertsUi = AlertsUi(),
     val inputs: ProfileInputs = ProfileInputs(),
 )
 
-/** The saved profile ([loaded] once it was read, even when there is none), and whether the rider has tried to save. */
+/**
+ * The switch that has the app tell the rider about new session windows.
+ *
+ * @property on the rider asked for it, and the system shows the app's notifications.
+ * @property blocked the rider wants it, and the system does not show the app's notifications; only the system's
+ *   settings change that.
+ */
+internal data class AlertsUi(
+    val on: Boolean = false,
+    val blocked: Boolean = false,
+)
+
+/**
+ * The saved profile ([loaded] once it was read, even when there is none), and whether the rider has tried to save.
+ *
+ * @property alertsChosen the rider's stored choice to be told about new session windows.
+ * @property notificationsAllowed whether the system shows the app's notifications, as last checked.
+ * @property alertsRefused the rider asked to be told and the system said no; the choice follows once it says yes.
+ */
 internal data class ProfileInputs(
     val saved: Profile? = null,
     val loaded: Boolean = false,
     val submitted: Boolean = false,
+    val alertsChosen: Boolean = false,
+    val notificationsAllowed: Boolean = false,
+    val alertsRefused: Boolean = false,
 )
 
 /** Where the form is shown: as the first step of onboarding, or as the Profile tab. */

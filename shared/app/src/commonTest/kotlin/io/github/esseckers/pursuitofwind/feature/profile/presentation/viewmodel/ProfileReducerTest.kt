@@ -7,6 +7,7 @@ import io.github.esseckers.pursuitofwind.core.ui.StepperUi
 import io.github.esseckers.pursuitofwind.data.model.AppError
 import io.github.esseckers.pursuitofwind.data.model.AppLanguage
 import io.github.esseckers.pursuitofwind.data.model.WindUnit
+import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.AlertsUi
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileEdit
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileError
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileField
@@ -173,5 +174,36 @@ class ProfileReducerTest {
         val renamed = reduce(ProfileResult.Edited(ProfileEdit.Name("Alexandra")), from = loaded)
 
         assertSame(loaded.kites, renamed.kites)
+    }
+
+    @Test
+    fun `the alerts are on only while the rider chose them and the system shows notifications`() {
+        val chosen = reduce(ProfileResult.AlertsChosen(true))
+        val allowed = reduce(ProfileResult.NotificationsChecked(allowed = true), from = chosen)
+
+        // Chosen earlier, and notifications were turned off in the system's settings since.
+        assertEquals(AlertsUi(on = false, blocked = true), chosen.alerts)
+        assertEquals(AlertsUi(on = true), allowed.alerts)
+        assertEquals(AlertsUi(), reduce(ProfileResult.NotificationsChecked(allowed = true)).alerts)
+    }
+
+    @Test
+    fun `a refusal by the system shows as blocked until it allows notifications or the rider gives up`() {
+        val refused = reduce(ProfileResult.NotificationsChecked(allowed = false, refused = true))
+        val stillRefused = reduce(ProfileResult.NotificationsChecked(allowed = false), from = refused)
+        val allowed = reduce(ProfileResult.NotificationsChecked(allowed = true), from = refused)
+
+        assertEquals(AlertsUi(on = false, blocked = true), refused.alerts)
+        assertEquals(refused.alerts, stillRefused.alerts)
+        assertTrue(stillRefused.inputs.alertsRefused)
+        assertEquals(AlertsUi(), allowed.alerts)
+        assertFalse(allowed.inputs.alertsRefused)
+    }
+
+    @Test
+    fun `notifications the system does not show are no problem while the rider never asked for alerts`() {
+        val state = reduce(ProfileResult.AlertsChosen(false), ProfileResult.NotificationsChecked(allowed = false))
+
+        assertEquals(AlertsUi(), state.alerts)
     }
 }

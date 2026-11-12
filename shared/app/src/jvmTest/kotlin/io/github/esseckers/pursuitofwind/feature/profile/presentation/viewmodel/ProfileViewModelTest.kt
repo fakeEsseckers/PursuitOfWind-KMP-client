@@ -16,8 +16,10 @@ import io.github.esseckers.pursuitofwind.data.model.AppLanguage
 import io.github.esseckers.pursuitofwind.data.model.WindUnit
 import io.github.esseckers.pursuitofwind.data.repository.PreferencesRepository
 import io.github.esseckers.pursuitofwind.data.repository.ProfileRepository
+import io.github.esseckers.pursuitofwind.data.repository.WindowAlertsRepository
 import io.github.esseckers.pursuitofwind.engine.model.RidingHours
 import io.github.esseckers.pursuitofwind.engine.model.SkillLevel
+import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.AlertsUi
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileEdit
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileEffect
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileError
@@ -55,6 +57,7 @@ class ProfileViewModelTest {
     private val koin: Koin = testGraph(clock).koin
     private val server get() = koin.get<FakePursuitOfWindServer>()
     private val profiles get() = koin.get<ProfileRepository>()
+    private val alerts get() = koin.get<WindowAlertsRepository>()
     private val viewModels = ViewModelStore()
 
     @BeforeTest
@@ -194,6 +197,81 @@ class ProfileViewModelTest {
             }
             assertEquals(AppLanguage.RUSSIAN, koin.get<PreferencesRepository>().language.first())
             assertNull(profiles.profile.first().value)
+        }
+
+    @Test
+    fun `turning the alerts on asks the system and its yes stores the choice`() =
+        runTest(dispatcher) {
+            val viewModel = viewModel()
+            viewModel.state.test(timeout = TURBINE_TIMEOUT) {
+                awaitState { !it.loading }
+                viewModel.onIntent(ProfileIntent.SetAlerts(on = true))
+                viewModel.effects.test(timeout = TURBINE_TIMEOUT) { assertEquals(ProfileEffect.AskForNotifications, awaitItem()) }
+                // Nothing is stored before the system has answered.
+                assertFalse(alerts.enabled.first())
+
+                viewModel.onIntent(ProfileIntent.NotificationsAnswered(allowed = true))
+
+                assertEquals(AlertsUi(on = true), awaitState { it.alerts.on }.alerts)
+                cancelAndIgnoreRemainingEvents()
+            }
+            assertEquals(true, alerts.enabled.first())
+        }
+
+    @Test
+    fun `a no from the system stores nothing and shows as blocked until the system allows notifications`() =
+        runTest(dispatcher) {
+            val viewModel = viewModel()
+            viewModel.state.test(timeout = TURBINE_TIMEOUT) {
+                awaitState { !it.loading }
+                viewModel.onIntent(ProfileIntent.SetAlerts(on = true))
+                viewModel.onIntent(ProfileIntent.NotificationsAnswered(allowed = false))
+                assertEquals(AlertsUi(on = false, blocked = true), awaitState { it.alerts.blocked }.alerts)
+                assertFalse(alerts.enabled.first())
+
+                viewModel.onIntent(ProfileIntent.OpenNotificationSettings)
+                // Back from the system's settings, where the rider allowed them: the wish stands.
+                viewModel.onIntent(ProfileIntent.NotificationsChecked(allowed = true))
+
+                assertEquals(AlertsUi(on = true), awaitState { it.alerts.on }.alerts)
+                cancelAndIgnoreRemainingEvents()
+            }
+            viewModel.effects.test(timeout = TURBINE_TIMEOUT) {
+                assertEquals(ProfileEffect.AskForNotifications, awaitItem())
+                assertEquals(ProfileEffect.OpenNotificationSettings, awaitItem())
+            }
+            assertEquals(true, alerts.enabled.first())
+        }
+
+    @Test
+    fun `alerts chosen earlier show as blocked once the system stops showing notifications and turn off without asking`() =
+        runTest(dispatcher) {
+            alerts.setEnabled(true).value()
+            val viewModel = viewModel()
+            viewModel.state.test(timeout = TURBINE_TIMEOUT) {
+                viewModel.onIntent(ProfileIntent.NotificationsChecked(allowed = false))
+                assertEquals(AlertsUi(on = false, blocked = true), awaitState { !it.loading && it.alerts.blocked }.alerts)
+
+                viewModel.onIntent(ProfileIntent.SetAlerts(on = false))
+
+                assertEquals(AlertsUi(), awaitState { !it.alerts.blocked }.alerts)
+                cancelAndIgnoreRemainingEvents()
+            }
+            viewModel.effects.test(timeout = TURBINE_TIMEOUT) { expectNoEvents() }
+            assertEquals(false, alerts.enabled.first())
+        }
+
+    @Test
+    fun `notifications the system shows turn nothing on by themselves`() =
+        runTest(dispatcher) {
+            val viewModel = viewModel()
+            viewModel.state.test(timeout = TURBINE_TIMEOUT) {
+                awaitState { !it.loading }
+                viewModel.onIntent(ProfileIntent.NotificationsChecked(allowed = true))
+                awaitState { it.inputs.notificationsAllowed }
+                cancelAndIgnoreRemainingEvents()
+            }
+            assertEquals(false, alerts.enabled.first())
         }
 
     @Test
