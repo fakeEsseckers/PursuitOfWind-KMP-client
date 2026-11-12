@@ -5,6 +5,8 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import io.github.esseckers.pursuitofwind.app.R
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.alert_channel
@@ -13,7 +15,7 @@ import org.jetbrains.compose.resources.getString
 /**
  * Local notifications through the platform's [Notification.Builder]. The channel is created on every [show]: creating
  * an existing channel changes nothing but its name, which keeps the name in the app's current language. Tapping a
- * notification opens the app's launcher activity. The notification's id is its tag, so one about the same thing
+ * notification opens the app at the notification's link. The notification's id is its tag, so one about the same thing
  * replaces the earlier one.
  */
 internal class AndroidLocalNotifier(
@@ -35,13 +37,21 @@ internal class AndroidLocalNotifier(
                 .setStyle(Notification.BigTextStyle().bigText(notification.text))
                 .setCategory(Notification.CATEGORY_RECOMMENDATION)
                 .setAutoCancel(true)
-        launchIntent()?.let { builder.setContentIntent(it) }
+        tapIntent(notification)?.let { builder.setContentIntent(it) }
         manager.notify(notification.id, NOTIFICATION_ID, builder.build())
     }
 
-    private fun launchIntent(): PendingIntent? {
-        val intent = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return null
-        return PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+    /**
+     * What a tap starts: the app with the notification's link, for the activity that takes the app's links, or the app
+     * as the launcher starts it. The link is addressed to this app only, so no other app can answer it. Each
+     * notification gets a pending intent of its own (the request code), or the system would hand all of them the last
+     * one's link.
+     */
+    private fun tapIntent(notification: LocalNotification): PendingIntent? {
+        val link = notification.link?.let { Intent(Intent.ACTION_VIEW, Uri.parse(it)).setPackage(context.packageName) }
+        val intent = link ?: context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return null
+        val flags = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        return PendingIntent.getActivity(context, notification.id.hashCode(), intent, flags)
     }
 
     companion object {
