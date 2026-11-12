@@ -1,6 +1,7 @@
 package io.github.esseckers.pursuitofwind.app.di
 
 import co.touchlab.kermit.Logger
+import io.github.esseckers.pursuitofwind.app.navigation.PendingLinks
 import io.github.esseckers.pursuitofwind.data.Environment
 import io.github.esseckers.pursuitofwind.data.di.dataModule
 import io.github.esseckers.pursuitofwind.feature.alerts.di.alertsModule
@@ -35,7 +36,10 @@ internal fun appModules(
     riderZone: () -> TimeZone = TimeZone::currentSystemDefault,
 ): List<Module> =
     listOf(
-        module { factory<TimeZone> { riderZone() } },
+        module {
+            factory<TimeZone> { riderZone() }
+            single { PendingLinks() }
+        },
         dataModule(environment, clock),
         todayModule,
         spotDetailModule,

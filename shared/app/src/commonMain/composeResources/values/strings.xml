@@ -305,7 +305,8 @@
     <string name="crew_switch">Switch crew</string>
     <string name="crew_invite_code">Invite code: %1$s</string>
     <string name="action_share_invite">Invite friends</string>
-    <string name="crew_invite_text">Join my kite crew “%1$s” in Pursuit Of Wind with the invite code %2$s.</string>
+    <!-- %3$s is a link that opens the app at the join dialog -->
+    <string name="crew_invite_text">Join my kite crew “%1$s” in Pursuit Of Wind with the invite code %2$s, or open %3$s on a phone that has the app.</string>
     <string name="crew_members">Members</string>
     <string name="crew_member_you">%1$s (you)</string>
     <string name="crew_member_owner">founder</string>

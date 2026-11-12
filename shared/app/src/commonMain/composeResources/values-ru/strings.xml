@@ -315,7 +315,8 @@
     <string name="crew_switch">Сменить компанию</string>
     <string name="crew_invite_code">Код приглашения: %1$s</string>
     <string name="action_share_invite">Позвать друзей</string>
-    <string name="crew_invite_text">Вступай в мою кайт-компанию «%1$s» в Pursuit Of Wind по коду %2$s.</string>
+    <!-- %3$s is a link that opens the app at the join dialog -->
+    <string name="crew_invite_text">Вступай в мою кайт-компанию «%1$s» в Pursuit Of Wind по коду %2$s или открой %3$s на телефоне с приложением.</string>
     <string name="crew_members">Участники</string>
     <string name="crew_member_you">%1$s (ты)</string>
     <string name="crew_member_owner">основатель</string>

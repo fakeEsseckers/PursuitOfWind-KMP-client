@@ -124,6 +124,21 @@ class CrewViewModelTest {
     }
 
     @Test
+    fun `an invitation link opens the join dialog with its code and joins nothing by itself`() =
+        runTest(dispatcher) {
+            val viewModel = viewModel()
+
+            viewModel.state.test(timeout = TURBINE_TIMEOUT) {
+                awaitState { it.content == Content.NoCrew }
+                viewModel.onIntent(CrewIntent.OpenInvite("WIND-4KQ7"))
+
+                assertEquals(CrewDialog.Join(code = "WIND-4KQ7"), awaitState { it.dialog != null }.dialog)
+                cancelAndIgnoreRemainingEvents()
+            }
+            assertEquals(Content.NoCrew, viewModel.state.value.content)
+        }
+
+    @Test
     fun `a new rider has no crew and joins the Weekend Crew with its code`() =
         runTest(dispatcher) {
             val viewModel = viewModel()

@@ -17,6 +17,11 @@ internal sealed interface CrewIntent {
 
     data object StartJoin : CrewIntent
 
+    /** An invitation link was opened: show the join dialog with its [inviteCode], for the rider to confirm. */
+    data class OpenInvite(
+        val inviteCode: String,
+    ) : CrewIntent
+
     data object CloseDialog : CrewIntent
 
     data class CreateCrew(

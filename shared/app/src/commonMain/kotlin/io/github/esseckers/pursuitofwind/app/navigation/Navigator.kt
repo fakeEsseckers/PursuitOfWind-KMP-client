@@ -1,6 +1,7 @@
 package io.github.esseckers.pursuitofwind.app.navigation
 
 import androidx.navigation3.runtime.NavKey
+import io.github.esseckers.pursuitofwind.core.link.AppLink
 import io.github.esseckers.pursuitofwind.data.model.Profile
 
 /**
@@ -47,6 +48,17 @@ internal class Navigator(
     /** Shows the tab [tab]: Today alone, or [tab] on top of Today. Screens opened on top of the old tab close. */
     fun selectTab(tab: AppTab) {
         show(if (tab == AppTab.TODAY) listOf(Destination.Today) else listOf(Destination.Today, tab.destination))
+    }
+
+    /**
+     * Opens what [link] asks for, for a rider who is set up: the Crew tab for an invitation, where the join dialog
+     * takes its code, or a spot's forecast on top of Today. Whatever was open on top of Today closes, as with a tab.
+     */
+    fun open(link: AppLink) {
+        when (link) {
+            is AppLink.Invite -> selectTab(AppTab.CREW)
+            is AppLink.Spot -> show(listOf(Destination.Today, Destination.SpotDetail(link.spotId, link.date)))
+        }
     }
 
     /** Ends onboarding: Today becomes the only screen. */

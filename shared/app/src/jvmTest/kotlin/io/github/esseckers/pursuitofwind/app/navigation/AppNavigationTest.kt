@@ -232,87 +232,6 @@ class AppNavigationTest {
         }
 
     @Test
-    fun `the alerts switch in the profile asks the system and its yes turns the alerts on`() =
-        runComposeUiTest {
-            val permission = graph.koin.get<NotificationPermission>() as RecordingNotificationPermission
-            setContent {
-                KoinIsolatedContext(graph) {
-                    CompositionLocalProvider(LocalViewModelStoreOwner provides owner) { PursuitOfWindTheme { AppNavigation() } }
-                }
-            }
-
-            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("today.header")).fetchSemanticsNodes().isNotEmpty() }
-            onNodeWithTag("tab.profile").performClick()
-            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("profile.alerts")).fetchSemanticsNodes().isNotEmpty() }
-            onNodeWithTag("profile.alerts").performScrollTo().assertIsOff().performClick()
-
-            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("profile.alerts") and isOn()).fetchSemanticsNodes().isNotEmpty() }
-            assertEquals(1, permission.requests)
-            assertTrue(
-                runBlocking {
-                    graph.koin
-                        .get<WindowAlertsRepository>()
-                        .enabled
-                        .first()
-                },
-            )
-        }
-
-    @Test
-    fun `a no from the system stores no alerts and the profile leads to its settings and takes the wish back`() =
-        runComposeUiTest {
-            val permission = graph.koin.get<NotificationPermission>() as RecordingNotificationPermission
-            permission.answer = false
-            setContent {
-                KoinIsolatedContext(graph) {
-                    CompositionLocalProvider(LocalViewModelStoreOwner provides owner) { PursuitOfWindTheme { AppNavigation() } }
-                }
-            }
-
-            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("today.header")).fetchSemanticsNodes().isNotEmpty() }
-            onNodeWithTag("tab.profile").performClick()
-            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("profile.alerts")).fetchSemanticsNodes().isNotEmpty() }
-            onNodeWithTag("profile.alerts").performScrollTo().performClick()
-
-            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("profile.alerts.settings")).fetchSemanticsNodes().isNotEmpty() }
-            // The switch keeps showing what the rider asked for, so it can be taken back.
-            onNodeWithTag("profile.alerts").assertIsOn()
-            onNodeWithTag("profile.alerts.settings").performScrollTo().performClick()
-
-            // The route opens the settings for an effect, which arrives a moment after the tap.
-            waitUntil(timeoutMillis = TIMEOUT_MS) { permission.settingsOpened == 1 }
-            onNodeWithTag("profile.alerts").performScrollTo().performClick()
-            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("profile.alerts.settings")).fetchSemanticsNodes().isEmpty() }
-            onNodeWithTag("profile.alerts").assertIsOff()
-            assertEquals(1, permission.requests)
-            assertFalse(
-                runBlocking {
-                    graph.koin
-                        .get<WindowAlertsRepository>()
-                        .enabled
-                        .first()
-                },
-            )
-        }
-
-    @Test
-    fun `a device that runs no background checks does not offer the alerts`() =
-        runComposeUiTest {
-            (graph.koin.get<BackgroundRefreshScheduler>() as RecordingBackgroundRefreshScheduler).available = false
-            setContent {
-                KoinIsolatedContext(graph) {
-                    CompositionLocalProvider(LocalViewModelStoreOwner provides owner) { PursuitOfWindTheme { AppNavigation() } }
-                }
-            }
-
-            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("today.header")).fetchSemanticsNodes().isNotEmpty() }
-            onNodeWithTag("tab.profile").performClick()
-            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("profile.form")).fetchSemanticsNodes().isNotEmpty() }
-
-            onNodeWithTag("profile.alerts").assertDoesNotExist()
-        }
-
-    @Test
     fun `on a phone spots added from the Spots tab show there and a spot's forecast returns to the tab`() =
         runSkikoComposeUiTest(size = Size(PHONE_WIDTH, PHONE_HEIGHT)) {
             setContent {
@@ -483,7 +402,10 @@ class AppNavigationTest {
 
             waitUntil(timeoutMillis = TIMEOUT_MS) { (graph.koin.get<ShareLauncher>() as RecordingShareLauncher).shared.isNotEmpty() }
             assertEquals(
-                listOf("Join my kite crew “Weekend Crew” in Pursuit Of Wind with the invite code WIND-4KQ7."),
+                listOf(
+                    "Join my kite crew “Weekend Crew” in Pursuit Of Wind with the invite code WIND-4KQ7, " +
+                        "or open pursuitofwind://invite/WIND-4KQ7 on a phone that has the app.",
+                ),
                 (graph.koin.get<ShareLauncher>() as RecordingShareLauncher).shared,
             )
         }

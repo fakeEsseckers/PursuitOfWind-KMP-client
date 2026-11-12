@@ -3,6 +3,7 @@ package io.github.esseckers.pursuitofwind.feature.crew.presentation.navigation
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -11,6 +12,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.esseckers.pursuitofwind.core.CollectEffects
+import io.github.esseckers.pursuitofwind.core.link.AppLink
 import io.github.esseckers.pursuitofwind.core.platform.ShareLauncher
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.action_share_invite
@@ -32,22 +34,31 @@ import org.koin.compose.viewmodel.koinViewModel
 /**
  * Connects [CrewScreen] to its [CrewViewModel]. [onOpenSpot] navigates to a spot's forecast; invitations go to the
  * system share sheet ([ShareLauncher]); failures, a new crew (with "Invite friends") and joining become snackbars.
- * No layout here.
+ * An invitation link the app was opened with arrives as [inviteCode]: the join dialog opens with it, and
+ * [onInviteTaken] says the link is dealt with. No layout here.
  */
 @Composable
 internal fun CrewRoute(
     onOpenSpot: (SpotId, LocalDate) -> Unit,
     modifier: Modifier = Modifier,
+    inviteCode: String? = null,
+    onInviteTaken: () -> Unit = {},
     viewModel: CrewViewModel = koinViewModel(),
     shareLauncher: ShareLauncher = koinInject(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    LaunchedEffect(inviteCode) {
+        if (inviteCode != null) {
+            viewModel.onIntent(CrewIntent.OpenInvite(inviteCode))
+            onInviteTaken()
+        }
+    }
     CollectEffects(viewModel.effects) { effect ->
         when (effect) {
             is CrewEffect.ShareInvite -> {
-                scope.launch { shareLauncher.share(getString(Res.string.crew_invite_text, effect.crewName, effect.inviteCode)) }
+                scope.launch { shareLauncher.share(inviteText(effect.crewName, effect.inviteCode)) }
             }
 
             is CrewEffect.Created -> {
@@ -59,7 +70,7 @@ internal fun CrewRoute(
                         )
                     // The new crew's code, whichever crew is on screen by the time the rider taps.
                     if (result == SnackbarResult.ActionPerformed) {
-                        shareLauncher.share(getString(Res.string.crew_invite_text, effect.crewName, effect.inviteCode))
+                        shareLauncher.share(inviteText(effect.crewName, effect.inviteCode))
                     }
                 }
             }
@@ -89,3 +100,9 @@ internal fun CrewRoute(
         modifier = modifier,
     )
 }
+
+/** The invitation as shared: the crew, its code to type in, and a link that opens the app at the join dialog. */
+private suspend fun inviteText(
+    crewName: String,
+    inviteCode: String,
+): String = getString(Res.string.crew_invite_text, crewName, inviteCode, AppLink.Invite(inviteCode).uri)

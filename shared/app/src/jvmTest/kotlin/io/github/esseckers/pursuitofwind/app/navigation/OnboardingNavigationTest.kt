@@ -38,6 +38,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.minutes
 
 /**
@@ -122,6 +123,32 @@ class OnboardingNavigationTest {
                 assertEquals(NORDSTRAND, followed.spot.id)
                 assertEquals(60.minutes, followed.drive)
             }
+        }
+
+    @Test
+    fun `an invitation link opened by a new rider waits through onboarding and then opens the join dialog`() =
+        runComposeUiTest {
+            setContent {
+                KoinIsolatedContext(graph) {
+                    CompositionLocalProvider(LocalViewModelStoreOwner provides owner) { PursuitOfWindTheme { AppNavigation() } }
+                }
+            }
+            waitFor("welcome")
+
+            assertTrue(graph.koin.get<PendingLinks>().open("pursuitofwind://invite/WIND-4KQ7"))
+            // Nothing moves: a rider without a profile has no crew tab to open.
+            onNodeWithTag("welcome").assertIsDisplayed()
+            onNodeWithTag("welcome.start").performScrollTo().performClick()
+            waitFor("profile.form")
+            onNodeWithTag("profile.name").performTextInput("Mira")
+            onNodeWithTag("profile.weight").performTextInput("70")
+            onNodeWithTag("profile.save").performScrollTo().performClick()
+            waitFor("spots.done")
+            onNodeWithTag("spots.done").performClick()
+
+            waitFor("crew.joinDialog.field")
+            onNodeWithTag("crew.joinDialog.field").assert(hasText("WIND-4KQ7"))
+            onNodeWithTag("tab.crew").assertIsSelected()
         }
 
     @Test
