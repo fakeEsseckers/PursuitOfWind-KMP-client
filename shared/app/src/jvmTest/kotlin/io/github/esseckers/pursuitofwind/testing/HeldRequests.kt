@@ -11,6 +11,7 @@ import io.ktor.client.request.request
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.Headers
+import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -21,8 +22,9 @@ import kotlin.time.Duration.Companion.seconds
 
 /**
  * Sits between the app and the fake server and passes every request on. It counts the requests [matching], and a test
- * can [hold] the next one until it calls [release], to act while that request is in flight. Bind [engine] in the test
- * graph in place of the server's own engine; to watch two kinds of request, put one in front of the other's engine.
+ * can [hold] the next one until it calls [release], to act while that request is in flight, or have them [refused]
+ * with a status of its choice, as a server would that no longer has what is asked for. Bind [engine] in the test graph
+ * in place of the server's own engine; to watch two kinds of request, put one in front of the other's engine.
  */
 internal class HeldRequests(
     private val matching: (HttpRequestData) -> Boolean,
@@ -34,6 +36,10 @@ internal class HeldRequests(
 
     /** How many requests [matching] were sent so far. */
     val sent: Int get() = count.get()
+
+    /** While set, requests [matching] get this status and an empty body, and never reach the server. */
+    @Volatile
+    var refused: HttpStatusCode? = null
 
     /** Holds the next request [matching]; [awaitHeld] returns once it arrived. */
     fun hold() {
@@ -62,6 +68,8 @@ internal class HeldRequests(
                 count.incrementAndGet()
                 held?.takeIf { it.arrived.complete(Unit) }?.released?.await()
             }
+            val refusal = refused.takeIf { matching(request) }
+            if (refusal != null) return@MockEngine respond("", refusal)
             val answer =
                 upstream.request(request.url.toString()) {
                     method = request.method

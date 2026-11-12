@@ -6,7 +6,6 @@ import io.github.esseckers.pursuitofwind.core.resources.alert_title
 import io.github.esseckers.pursuitofwind.core.resources.decimal_separator
 import io.github.esseckers.pursuitofwind.core.resources.today_kite
 import io.github.esseckers.pursuitofwind.core.resources.today_leave_by
-import io.github.esseckers.pursuitofwind.core.resources.today_leave_now
 import io.github.esseckers.pursuitofwind.core.ui.TimeRange
 import io.github.esseckers.pursuitofwind.core.ui.clockTime
 import io.github.esseckers.pursuitofwind.core.ui.dayLabelOf
@@ -22,7 +21,8 @@ import kotlin.time.Instant
 /**
  * The words of a notification about a GO day, the same facts as its card on Today: the day and the spot, then when the
  * rider can be on the water, the kite to take and when to leave. The session is in the spot's local time, because that
- * is where it happens; the day's name and the time to leave are in [riderZone], where the rider is.
+ * is where it happens; the day's name and the time to leave are in [riderZone], where the rider is. The time to leave
+ * is always a time, never "leave now": a notification may be read hours after it was shown.
  */
 internal object AlertTextMapper {
     private const val SEPARATOR = " · "
@@ -40,11 +40,7 @@ internal object AlertTextMapper {
             listOfNotNull(
                 TimeRange(window.usableStart.clockTime(spot.timeZone), window.end.clockTime(spot.timeZone)).toString(),
                 day.recommendedKiteM2?.let { getString(Res.string.today_kite, formatKiteSize(it, separator)) },
-                if (window.mustLeaveNow(now)) {
-                    getString(Res.string.today_leave_now)
-                } else {
-                    getString(Res.string.today_leave_by, day.leaveBy.clockTime(riderZone))
-                },
+                getString(Res.string.today_leave_by, day.leaveBy.clockTime(riderZone)),
             )
         return LocalNotification(
             id = "window:${day.spotId.value}:${day.date}",

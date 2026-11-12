@@ -29,29 +29,34 @@ class NewWindowsMapperTest {
         hour: Int,
     ): Instant = date.atTime(LocalTime(hour, 0)).toInstant(TimeZone.UTC)
 
-    /** A GO day whose best window runs from [from] to [to] o'clock. */
+    private fun window(
+        date: LocalDate,
+        from: Int,
+        to: Int,
+        spot: SpotId = bay,
+    ): SessionWindow =
+        SessionWindow(
+            spotId = spot,
+            start = at(date, from),
+            end = at(date, to),
+            hours = to - from,
+            marginalHours = 0,
+            leaveBy = at(date, from) - 2.hours,
+            usableStart = at(date, from),
+            usable = (to - from).hours,
+            confidence = Confidence.HIGH,
+            recommendedKiteM2 = 9.0,
+            qualifies = true,
+        )
+
+    /** A GO day whose best window runs from [from] to [to] o'clock, with [alternatives] behind it. */
     private fun go(
         date: LocalDate,
         from: Int,
         to: Int,
         spot: SpotId = bay,
-    ): DayDecision.Go {
-        val window =
-            SessionWindow(
-                spotId = spot,
-                start = at(date, from),
-                end = at(date, to),
-                hours = to - from,
-                marginalHours = 0,
-                leaveBy = at(date, from) - 2.hours,
-                usableStart = at(date, from),
-                usable = (to - from).hours,
-                confidence = Confidence.HIGH,
-                recommendedKiteM2 = 9.0,
-                qualifies = true,
-            )
-        return DayDecision.Go(date, window, alternatives = emptyList())
-    }
+        alternatives: List<SessionWindow> = emptyList(),
+    ): DayDecision.Go = DayDecision.Go(date, window(date, from, to, spot), alternatives)
 
     private fun noGo(date: LocalDate): DayDecision.NoGo = DayDecision.NoGo(date, Reason.TOO_LIGHT, details = emptyList(), nextGoDay = null)
 
@@ -106,6 +111,26 @@ class NewWindowsMapperTest {
 
         assertEquals(listOf(saturday), found.fresh.map { it.date })
         assertEquals(listOf(told(saturday, 13, 17), told(saturday, 17, 20)), found.notified)
+    }
+
+    @Test
+    fun `a day whose best spot changed is not news while the announced window is still one of its windows`() {
+        // The next model run ranks the lagoon first; the bay's window, the one announced, is now an alternative.
+        val lagoonFirst = go(saturday, 12, 17, lagoon, alternatives = listOf(window(saturday, 14, 18)))
+
+        val found = NewWindowsMapper.newWindows(listOf(lagoonFirst), listOf(told(saturday, 13, 17)), thursdayMorning)
+
+        assertEquals(emptyList(), found.fresh)
+        // The announced window is remembered where it is now, still at the bay.
+        assertEquals(listOf(told(saturday, 14, 18)), found.notified)
+    }
+
+    @Test
+    fun `a day that is a GO at another spot only after the announced window is gone is news`() {
+        val found = NewWindowsMapper.newWindows(listOf(go(saturday, 12, 17, lagoon)), listOf(told(saturday, 13, 17)), thursdayMorning)
+
+        assertEquals(listOf(lagoon), found.fresh.map { it.spotId })
+        assertEquals(listOf(told(saturday, 13, 17), told(saturday, 12, 17, lagoon)), found.notified)
     }
 
     @Test

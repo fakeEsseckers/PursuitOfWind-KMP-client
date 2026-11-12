@@ -9,15 +9,16 @@ import io.github.esseckers.pursuitofwind.data.fake.ControllableClock
 import io.github.esseckers.pursuitofwind.data.fake.FakePursuitOfWindServer
 import io.github.esseckers.pursuitofwind.data.fake.NetworkMode
 import io.github.esseckers.pursuitofwind.data.model.AppLanguage
+import io.github.esseckers.pursuitofwind.data.model.Profile
+import io.github.esseckers.pursuitofwind.data.model.WindUnit
 import io.github.esseckers.pursuitofwind.data.repository.PreferencesRepository
 import io.github.esseckers.pursuitofwind.data.repository.ProfileRepository
 import io.github.esseckers.pursuitofwind.data.repository.SpotRepository
 import io.github.esseckers.pursuitofwind.data.repository.WindowAlertsRepository
+import io.github.esseckers.pursuitofwind.engine.model.RiderProfile
+import io.github.esseckers.pursuitofwind.engine.model.SkillLevel
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.alerts.domain.entity.AlertsCheckResultEntity
-import io.github.esseckers.pursuitofwind.feature.today.SATURDAY
-import io.github.esseckers.pursuitofwind.feature.today.THURSDAY_8AM
-import io.github.esseckers.pursuitofwind.feature.today.alex
 import io.github.esseckers.pursuitofwind.testing.HeldRequests
 import io.github.esseckers.pursuitofwind.testing.RecordingAppLocale
 import io.github.esseckers.pursuitofwind.testing.RecordingBackgroundRefreshScheduler
@@ -26,9 +27,14 @@ import io.github.esseckers.pursuitofwind.testing.RecordingNotificationPermission
 import io.github.esseckers.pursuitofwind.testing.testGraph
 import io.github.esseckers.pursuitofwind.testing.value
 import io.ktor.client.engine.HttpClientEngine
+import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.yield
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atTime
+import kotlinx.datetime.toInstant
 import org.koin.core.Koin
 import org.koin.dsl.module
 import java.util.Locale
@@ -37,6 +43,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 
@@ -46,9 +53,23 @@ import kotlin.time.Duration.Companion.hours
  */
 class WindowAlertsCheckTest {
     private val systemLocale = Locale.getDefault()
-    private val clock = ControllableClock(THURSDAY_8AM)
+    private val saturday = LocalDate(2026, 10, 24)
+
+    /** Thursday 08:00 in Berlin, where the test graph puts the rider. */
+    private val clock = ControllableClock(LocalDate(2026, 10, 22).atTime(LocalTime(8, 0)).toInstant(TimeZone.of("Europe/Berlin")))
+    private val alex =
+        Profile(
+            displayName = "Alex",
+            rider = RiderProfile(weightKg = 80.0, level = SkillLevel.INTERMEDIATE, quiverM2 = listOf(7.0, 9.0, 12.0)),
+            windUnit = WindUnit.KNOTS,
+        )
     private val forecasts = HeldRequests { it.url.encodedPath.endsWith("/forecast") }
-    private val koin: Koin = testGraph(clock, module { single<HttpClientEngine> { forecasts.engine(get<FakePursuitOfWindServer>()) } }).koin
+    private val lagoonForecast = HeldRequests { it.url.encodedPath == "/v1/spots/salt-lagoon/forecast" }
+    private val koin: Koin =
+        testGraph(
+            clock,
+            module { single<HttpClientEngine> { lagoonForecast.engine(forecasts.engine(get<FakePursuitOfWindServer>())) } },
+        ).koin
     private val server get() = koin.get<FakePursuitOfWindServer>()
     private val notifier get() = koin.get<LocalNotifier>() as RecordingLocalNotifier
     private val permission get() = koin.get<NotificationPermission>() as RecordingNotificationPermission
@@ -68,10 +89,15 @@ class WindowAlertsCheckTest {
 
     /** Alex follows Nordstrand Bay as a favorite, asked for alerts, and the system shows notifications. */
     private suspend fun riderWithAlerts() {
-        koin.get<ProfileRepository>().save(alex()).value()
+        koin.get<ProfileRepository>().save(alex).value()
         koin.get<SpotRepository>().follow(SpotId("nordstrand-bay"), 2.hours, favorite = true).value()
         alerts.setEnabled(true).value()
         permission.allowed = true
+    }
+
+    /** Salt Lagoon becomes a favorite too, [drive] away. */
+    private suspend fun alsoFollowingSaltLagoon(drive: Duration = 3.hours) {
+        koin.get<SpotRepository>().follow(SpotId("salt-lagoon"), drive, favorite = true).value()
     }
 
     private suspend fun check(): AlertsCheckResultEntity = koin.get<WindowAlertsCheck>().run()
@@ -90,7 +116,7 @@ class WindowAlertsCheckTest {
                 listOf("Today: GO at Nordstrand Bay", "Tomorrow: GO at Nordstrand Bay", "Saturday: GO at Nordstrand Bay"),
                 first.map { it.title },
             )
-            assertEquals("window:nordstrand-bay:$SATURDAY", first.last().id)
+            assertEquals("window:nordstrand-bay:$saturday", first.last().id)
             assertEquals(first, notifier.shown)
             assertEquals(3, alerts.notified().value().size)
         }
@@ -173,7 +199,7 @@ class WindowAlertsCheckTest {
             permission.allowed = true
 
             assertEquals(AlertsCheckResultEntity.DONE, check())
-            koin.get<ProfileRepository>().save(alex()).value()
+            koin.get<ProfileRepository>().save(alex).value()
             assertEquals(AlertsCheckResultEntity.DONE, check())
 
             assertEquals(emptyList(), notifier.shown)
@@ -208,19 +234,81 @@ class WindowAlertsCheckTest {
         }
 
     @Test
+    fun `a new favorite does not have days told about again that were announced at another spot`() =
+        runTest {
+            riderWithAlerts()
+            check()
+            val first = notifier.shown.toList()
+
+            // Closer than Nordstrand Bay, so it may well be a day's best spot now. The bay's window, the one announced,
+            // is still among each day's windows.
+            alsoFollowingSaltLagoon(drive = 1.hours)
+            check()
+
+            assertEquals(3, first.size)
+            assertEquals(first, notifier.shown)
+        }
+
+    @Test
+    fun `a favorite the server no longer has costs the rider that spot only`() =
+        runTest {
+            riderWithAlerts()
+            alsoFollowingSaltLagoon()
+            lagoonForecast.refused = HttpStatusCode.NotFound
+
+            assertEquals(AlertsCheckResultEntity.DONE, check())
+
+            assertEquals(List(3) { "Nordstrand Bay" }, notifier.shown.map { it.title.substringAfter("GO at ") })
+        }
+
+    @Test
+    fun `a favorite whose forecast the server cannot give right now is worth another try and the others are told about`() =
+        runTest {
+            riderWithAlerts()
+            alsoFollowingSaltLagoon()
+            lagoonForecast.refused = HttpStatusCode.ServiceUnavailable
+
+            assertEquals(AlertsCheckResultEntity.RETRY, check())
+            assertEquals(3, notifier.shown.size)
+
+            lagoonForecast.refused = null
+            assertEquals(AlertsCheckResultEntity.DONE, check())
+            assertEquals(3, notifier.shown.size)
+        }
+
+    @Test
     fun `the platform's schedule follows the rider's choice from the stored one on`() =
         runTest {
             val following = launch { koin.get<AlertsSchedule>().follow() }
-
-            alerts.setEnabled(true).value()
-            awaitCalls(2)
-            alerts.setEnabled(false).value()
-            awaitCalls(3)
-            following.cancel()
-
             val schedule = RecordingBackgroundRefreshScheduler.SCHEDULE
             val cancel = RecordingBackgroundRefreshScheduler.CANCEL
-            assertEquals(listOf(cancel, schedule, cancel), scheduler.calls)
+
+            // The stored choice first: off, so whatever was scheduled is cancelled.
+            assertEquals(listOf(cancel), scheduler.awaitCalls(1))
+            alerts.setEnabled(true).value()
+            assertEquals(listOf(cancel, schedule), scheduler.awaitCalls(2))
+            alerts.setEnabled(false).value()
+            assertEquals(listOf(cancel, schedule, cancel), scheduler.awaitCalls(3))
+            following.cancel()
+        }
+
+    @Test
+    fun `saving something else in the settings file does not touch the schedule`() =
+        runTest {
+            alerts.setEnabled(true).value()
+            val following = launch { koin.get<AlertsSchedule>().follow() }
+            scheduler.awaitCalls(1)
+
+            // The profile and the language live in the same file as the choice.
+            koin.get<ProfileRepository>().save(alex).value()
+            koin.get<PreferencesRepository>().setLanguage(AppLanguage.RUSSIAN).value()
+            alerts.setEnabled(false).value()
+
+            assertEquals(
+                listOf(RecordingBackgroundRefreshScheduler.SCHEDULE, RecordingBackgroundRefreshScheduler.CANCEL),
+                scheduler.awaitCalls(2),
+            )
+            following.cancel()
         }
 
     @Test
@@ -233,9 +321,4 @@ class WindowAlertsCheckTest {
 
             assertEquals(emptyList(), scheduler.calls)
         }
-
-    /** DataStore emits on its own threads, so the schedule follows a moment after the choice is stored. */
-    private suspend fun awaitCalls(count: Int) {
-        while (scheduler.calls.size < count) yield()
-    }
 }

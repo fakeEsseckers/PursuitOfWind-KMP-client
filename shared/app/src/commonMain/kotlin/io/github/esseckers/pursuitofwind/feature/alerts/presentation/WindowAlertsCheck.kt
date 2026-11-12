@@ -17,8 +17,9 @@ import kotlin.time.Clock
 
 /**
  * One check for new session windows, run by the platform's scheduler while the app is closed (ADR 0011): fetch the
- * favorite spots' forecasts, decide the days as Today does, and tell the rider about each GO day whose window is news.
- * It does nothing unless the rider asked for it and the system lets notifications through.
+ * favorite spots' forecasts, decide the days as Today does, and tell the rider about each GO day that is news. It does
+ * nothing unless the rider asked for it and the system lets notifications through. A favorite whose forecast cannot be
+ * fetched is left out of this check; the others are decided on as usual.
  *
  * A window is remembered as announced before its notification shows. If the app is stopped in between, that one
  * notification is lost; the other order would show it again every hour while the device cannot keep what it showed.
@@ -32,20 +33,20 @@ internal class WindowAlertsCheck(
 ) {
     private val log = Logger.withTag("Alerts")
 
-    /** Never throws, apart from cancellation. */
+    /**
+     * Data failures come back as the result, never as an exception: [AlertsCheckResultEntity.RETRY] when a forecast was
+     * not fetched for a reason that may pass.
+     */
     suspend fun run(): AlertsCheckResultEntity {
-        if (!repository.enabled() || !permission.granted()) return AlertsCheckResultEntity.DONE
-        return when (val fetched = repository.fetch()) {
-            is Outcome.Failure -> {
-                log.i { "The forecast was not fetched: ${fetched.error}" }
-                if (fetched.error.mayPass()) AlertsCheckResultEntity.RETRY else AlertsCheckResultEntity.DONE
-            }
+        val wanted = repository.enabled() && permission.granted()
+        val snapshot = if (wanted) repository.fetch().valueOrNull() else null
+        return if (snapshot == null) AlertsCheckResultEntity.DONE else decide(snapshot)
+    }
 
-            is Outcome.Success -> {
-                fetched.value?.let { announce(it) }
-                AlertsCheckResultEntity.DONE
-            }
-        }
+    private suspend fun decide(snapshot: AlertsSnapshotEntity): AlertsCheckResultEntity {
+        if (snapshot.failures.isNotEmpty()) log.i { "Forecasts not fetched: ${snapshot.failures}" }
+        if (snapshot.forecasts.isNotEmpty()) announce(snapshot)
+        return if (snapshot.failures.any { it.mayPass() }) AlertsCheckResultEntity.RETRY else AlertsCheckResultEntity.DONE
     }
 
     private suspend fun announce(snapshot: AlertsSnapshotEntity) {

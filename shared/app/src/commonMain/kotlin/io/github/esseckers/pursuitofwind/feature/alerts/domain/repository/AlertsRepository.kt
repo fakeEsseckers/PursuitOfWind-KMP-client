@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 
 /** What the background check for new session windows reads and keeps. No call throws, apart from cancellation. */
 internal interface AlertsRepository {
-    /** The rider's choice as stored and whenever it changes. A choice that cannot be read is not emitted. */
+    /** The rider's choice as stored and whenever it changes. While it cannot be read, reading is tried again. */
     val choice: Flow<Boolean>
 
     /** Whether the rider asked to be told about new windows; false when that cannot be read. */
@@ -15,8 +15,9 @@ internal interface AlertsRepository {
 
     /**
      * Fetches the forecasts of the rider's favorite spots and returns them with the profile, or null when there is
-     * nothing to decide on: no profile, or no favorite spot. A forecast that cannot be fetched fails the whole call,
-     * so a check never decides on a forecast it could not bring up to date.
+     * nothing to decide on: no profile, or no favorite spot. A favorite whose forecast cannot be fetched is left out
+     * and reported in the snapshot: the check goes on with the others, and never decides on a forecast it could not
+     * bring up to date. Only a cache that cannot be read fails the call.
      */
     suspend fun fetch(): Outcome<AlertsSnapshotEntity?>
 

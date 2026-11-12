@@ -4,6 +4,9 @@ import io.github.esseckers.pursuitofwind.core.platform.BackgroundRefreshSchedule
 import io.github.esseckers.pursuitofwind.core.platform.LocalNotification
 import io.github.esseckers.pursuitofwind.core.platform.LocalNotifier
 import io.github.esseckers.pursuitofwind.core.platform.NotificationPermission
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 
 /** The notification area in tests: keeps what would have been shown. */
 internal class RecordingLocalNotifier : LocalNotifier {
@@ -37,19 +40,25 @@ internal class RecordingNotificationPermission : NotificationPermission {
     }
 }
 
-/** The platform's periodic check in tests: keeps whether it is scheduled, and every call in order. */
+/**
+ * The platform's periodic check in tests: keeps every call in order. The calls come from whatever thread stores the
+ * rider's choice, so a test waits for them with [awaitCalls] instead of looking at once.
+ */
 internal class RecordingBackgroundRefreshScheduler : BackgroundRefreshScheduler {
     override var available = true
-    val calls = mutableListOf<String>()
-    val scheduled: Boolean get() = calls.lastOrNull() == SCHEDULE
+    private val recorded = MutableStateFlow(emptyList<String>())
+    val calls: List<String> get() = recorded.value
 
     override fun schedule() {
-        calls += SCHEDULE
+        recorded.update { it + SCHEDULE }
     }
 
     override fun cancel() {
-        calls += CANCEL
+        recorded.update { it + CANCEL }
     }
+
+    /** Suspends until at least [count] calls were made, and returns them. */
+    suspend fun awaitCalls(count: Int): List<String> = recorded.first { it.size >= count }
 
     companion object {
         const val SCHEDULE = "schedule"

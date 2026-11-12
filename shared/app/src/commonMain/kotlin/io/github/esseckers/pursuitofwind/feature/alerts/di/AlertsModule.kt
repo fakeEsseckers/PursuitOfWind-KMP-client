@@ -16,5 +16,5 @@ internal val alertsModule: Module =
     module {
         factory<AlertsRepository> { AlertsRepositoryImpl(get(), get(), get(), get()) }
         factory { WindowAlertsCheck(repository = get(), permission = get(), notifier = get(), clock = get(), riderZone = get()) }
-        factory { AlertsSchedule(repository = get(), scheduler = get()) }
+        factory { AlertsSchedule(repository = { get() }, scheduler = get()) }
     }

@@ -10,12 +10,15 @@ import io.github.esseckers.pursuitofwind.feature.alerts.domain.repository.Alerts
  * whatever happened to it meanwhile.
  */
 internal class AlertsSchedule(
-    private val repository: AlertsRepository,
+    private val repository: () -> AlertsRepository,
     private val scheduler: BackgroundRefreshScheduler,
 ) {
-    /** Runs until cancelled; returns at once where the device runs no checks. */
+    /**
+     * Runs until cancelled. Where the device runs no checks it returns at once, before the data layer is touched, so
+     * such a device opens no database for this.
+     */
     suspend fun follow() {
         if (!scheduler.available) return
-        repository.choice.collect { wanted -> if (wanted) scheduler.schedule() else scheduler.cancel() }
+        repository().choice.collect { wanted -> if (wanted) scheduler.schedule() else scheduler.cancel() }
     }
 }

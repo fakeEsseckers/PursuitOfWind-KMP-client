@@ -1,5 +1,6 @@
 package io.github.esseckers.pursuitofwind.app.di
 
+import co.touchlab.kermit.Logger
 import io.github.esseckers.pursuitofwind.data.Environment
 import io.github.esseckers.pursuitofwind.data.di.dataModule
 import io.github.esseckers.pursuitofwind.feature.alerts.di.alertsModule
@@ -12,6 +13,7 @@ import io.github.esseckers.pursuitofwind.feature.spotmap.di.spotMapModule
 import io.github.esseckers.pursuitofwind.feature.spotpicker.di.spotPickerModule
 import io.github.esseckers.pursuitofwind.feature.spots.di.spotsModule
 import io.github.esseckers.pursuitofwind.feature.today.di.todayModule
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -54,5 +56,7 @@ internal fun appModules(
 internal fun startKoinOnce(platform: Module) {
     if (KoinPlatform.getKoinOrNull() != null) return
     val koin = startKoin { modules(listOf(platform) + appModules(Environment.Fake)) }.koin
-    CoroutineScope(SupervisorJob() + Dispatchers.Default).launch { koin.get<AlertsSchedule>().follow() }
+    // Lives as long as the process. A failure here is logged, not thrown: it must not take the app down with it.
+    val failures = CoroutineExceptionHandler { _, failure -> Logger.withTag("Alerts").e(failure) { "Following the alerts choice failed" } }
+    CoroutineScope(SupervisorJob() + Dispatchers.Default + failures).launch { koin.get<AlertsSchedule>().follow() }
 }
