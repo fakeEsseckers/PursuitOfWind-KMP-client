@@ -117,6 +117,7 @@ class WindowAlertsCheckTest {
                 first.map { it.title },
             )
             assertEquals("window:nordstrand-bay:$saturday", first.last().id)
+            assertEquals("pursuitofwind://spot/nordstrand-bay?date=$saturday", first.last().link)
             assertEquals(first, notifier.shown)
             assertEquals(3, alerts.notified().value().size)
         }
