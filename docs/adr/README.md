@@ -17,3 +17,4 @@ One decision per file, numbered in order, never renumbered. Superseded records s
 | [0011](0011-local-notifications-until-the-server-exists.md) | Local notifications until the server exists | Accepted |
 | [0013](0013-riders-add-spots-on-a-map.md) | Riders add spots on a map | Accepted |
 | [0014](0014-riding-hours-and-the-longest-window-first.md) | Riding hours, and the longest window first | Accepted |
+| [0015](0015-links-into-the-app-with-a-custom-scheme.md) | Links into the app with a custom scheme | Accepted |

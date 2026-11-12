@@ -39,7 +39,7 @@ Toolchain versions and why: `gradle/libs.versions.toml` and `docs/adr/0003-depen
 | `:shared:data` | Ktor client, `FakePursuitOfWindServer`, Room, DataStore, repositories, `AppError` |
 | `:testing:openapi` | JVM, test-only: validates requests and responses against `api/openapi.yaml` |
 | `:shared:app` | screens as `feature.<name>` packages (domain / data / presentation with MVI / di), `core` (MVI base, design system), `app` (root composable, Navigation 3, Koin graph); platform services as interfaces in `core/platform` with the Android implementations in `androidMain` (WorkManager worker, notifications); iOS framework `PursuitOfWindKit` |
-| `:androidApp` | Android entry point: application, activity, manifest (deep links and signing are not built yet) |
+| `:androidApp` | Android entry point: application, activity (hands links into the app to `openLink`), manifest (signing is not built yet) |
 | `iosApp/` | Xcode project, SwiftUI host (BG tasks and URL scheme are not built yet) |
 
 Dependencies point one way: `androidApp → app → data → (windengine, contract)`; `app` may also use `windengine` and `contract` directly. `windengine` and `contract` depend on nothing project-internal. `:testing:*` modules may be used from tests only. `checkModuleGraph` enforces this.

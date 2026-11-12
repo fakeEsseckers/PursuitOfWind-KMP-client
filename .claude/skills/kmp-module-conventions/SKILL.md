@@ -13,7 +13,7 @@ description: Module layout, source sets, dependency rules and platform-code poli
 | `:shared:contract` | android, ios, jvm | `@Serializable` DTOs mirroring `api/openapi.yaml`, error body, enums | business logic, mapping to domain |
 | `:shared:data` | android, ios, jvm (tests only) | Ktor client, `FakePursuitOfWindServer`, Room 3 (KSP), DataStore, repositories, `AppError`, DTO↔domain mappers, platform service interfaces, `dataModule(environment)` | Compose, ViewModels |
 | `:shared:app` | android, ios, jvm (tests only) | screens as `feature.<name>` packages with MVI ViewModels and Compose UI, `core` (MVI base, design system), navigation, DI graph (`appModules`, started by `startPursuitOfWind` on Android and `MainViewController` on iOS); Android implementations of platform services (`androidMain`: notifier, permission, WorkManager scheduler and worker); exports iOS framework `PursuitOfWindKit` | Ktor or Room types in public APIs |
-| `:androidApp` | android | `Application`, `MainActivity`, manifest (including the `POST_NOTIFICATIONS` permission); signing and deep links later | shared business logic |
+| `:androidApp` | android | `Application`, `MainActivity` (hands `pursuitofwind://` links to `openLink`), manifest (the `POST_NOTIFICATIONS` permission, the link intent filter); signing later | shared business logic |
 | `iosApp/` | — | Xcode project, SwiftUI `App`, `Info.plist`, BG task registration | business logic |
 | `:testing:openapi` | jvm (plain Kotlin/JVM) | `OpenApiSpec`: loads `api/openapi.yaml`, validates JSON against its schemas, checks recorded requests and responses | anything production code needs |
 

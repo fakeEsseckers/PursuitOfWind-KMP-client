@@ -64,7 +64,7 @@ Screens read from a local cache and never wait for the network: repositories exp
 - **Optimistic seats:** taking or releasing a seat shows the result at once and is rolled back, with the server's state, if the server says no (for example `409 SEATS_FULL`).
 - **Isolation:** each environment (fake backend, real server) has its own database, settings and secure store. With the fake backend no data leaves the device.
 
-Platform services (notifications, the background check, share sheet, clipboard) are interfaces in `:shared:app`; the Android implementations sit in its `androidMain` and are bound in Koin.
+Platform services (notifications, the background check, share sheet, clipboard) are interfaces in `:shared:app`; the Android implementations sit in its `androidMain` and are bound in Koin. Links into the app (`pursuitofwind://invite/…`, `pursuitofwind://spot/…`) are read by common code; `:androidApp` only hands them over from its activity.
 
 Choices and trade-offs: [ADR 0006](docs/adr/0006-room-3-as-the-offline-cache.md) (Room 3) and [ADR 0007](docs/adr/0007-koin-for-dependency-injection.md) (Koin).
 
@@ -94,7 +94,7 @@ The Spots tab lists the spots the rider follows. Each card says whether its wind
 
 ## Crew
 
-The Crew tab shows one of the rider's crews, with chips to switch when there are several: its invite code with "Invite friends" (the system share sheet), its rides by day, and its members. A rider without a crew creates one or joins with a code. To see a live crew in this build, join the Weekend Crew with the code `WIND-4KQ7`.
+The Crew tab shows one of the rider's crews, with chips to switch when there are several: its invite code with "Invite friends" (the system share sheet), its rides by day, and its members. A rider without a crew creates one or joins with a code. The shared invitation carries the code and a link, `pursuitofwind://invite/CODE`: opened on a phone with the app, it shows the Crew tab with the code already in the join dialog, and the rider confirms; a new rider sets up first and meets the dialog right after ([ADR 0015](docs/adr/0015-links-into-the-app-with-a-custom-scheme.md)). To see a live crew in this build, join the Weekend Crew with the code `WIND-4KQ7`.
 
 - **Rides:** each card has the spot, who drives and when they leave, the window at the spot, where to meet, who rides along and the free seats, and a link to the spot's forecast. A cancelled ride stays, crossed out, until its window ends.
 - **One action per ride:** "Take a seat" shows the seat at once. If someone else got the last seat first, the car shows full again and a snackbar says so. A passenger can leave; the driver can cancel, after confirming. These finish even if the rider leaves the tab.
@@ -130,7 +130,7 @@ Screens are connected with Navigation 3 in one place, `app.navigation`. The back
 
 The app can tell the rider about a new session window while it is closed. There is no server yet, so the phone checks by itself.
 
-- **What the rider sees:** one notification per GO day. The title names the day and the spot. The text gives the riding time in the spot's local time, the kite, and the time to leave in the rider's time zone, as the Today card does. It is in the language picked for the app. Tapping it opens the app.
+- **What the rider sees:** one notification per GO day. The title names the day and the spot. The text gives the riding time in the spot's local time, the kite, and the time to leave in the rider's time zone, as the Today card does. It is in the language picked for the app. Tapping it opens that spot's forecast at that day.
 - **Switch:** in the profile, off by default. The system asks for notification permission only when the rider turns the switch on. The switch shows what the rider wants and can always be turned off again; if the system does not show the app's notifications, the profile says so and offers the system's settings, and the choice is stored once notifications are allowed.
 - **How it works:** the check is common code. It fetches the forecasts of the favorite spots, decides today and the next two days with the same rule as Today, and announces each GO day that is news. A window counts as the announced one when spot, local date and time overlap, and a day is news only when none of its windows was announced, so a forecast that moves the start by an hour, or ranks another favorite first, announces nothing again. A favorite whose forecast cannot be fetched is left out of that check; for a lost connection or a 5xx the check also asks the scheduler to try again.
 - **Android:** WorkManager runs the check once an hour, only with a network connection, with exponential backoff. The schedule follows the stored choice and is put right every time the app's process starts. Turning off the app's notifications, or just their category, in the system's settings shows in the profile as blocked.
@@ -170,6 +170,7 @@ open iosApp/iosApp.xcodeproj            # then Run on an iOS simulator
 | [0011](docs/adr/0011-local-notifications-until-the-server-exists.md) | Local notifications until the server exists |
 | [0013](docs/adr/0013-riders-add-spots-on-a-map.md) | Riders add spots on a map |
 | [0014](docs/adr/0014-riding-hours-and-the-longest-window-first.md) | Riding hours, and the longest window first |
+| [0015](docs/adr/0015-links-into-the-app-with-a-custom-scheme.md) | Links into the app with a custom scheme |
 
 ## Roadmap
 
@@ -180,7 +181,7 @@ open iosApp/iosApp.xcodeproj            # then Run on an iOS simulator
 5. Design system and the Today screen — done
 6. Spot detail with the hourly wind chart, and navigation — done
 7. Screens: onboarding, Profile with the app language, Spots, Crew with "I'm going" — done (its former Settings contents live in the profile)
-8. Background evaluation and local notifications — Android done, iOS next
+8. Background evaluation, local notifications and links into the app — Android done, iOS next
 9. Server phase (separate repository), with guided tours and spotlight hints
 
 ## Disclaimer
