@@ -12,8 +12,8 @@ description: Module layout, source sets, dependency rules and platform-code poli
 | `:shared:windengine` | android, ios (arm64, simulatorArm64), jvm | engine types and pure functions | any I/O, DI, serialization, platform API |
 | `:shared:contract` | android, ios, jvm | `@Serializable` DTOs mirroring `api/openapi.yaml`, error body, enums | business logic, mapping to domain |
 | `:shared:data` | android, ios, jvm (tests only) | Ktor client, `FakePursuitOfWindServer`, Room 3 (KSP), DataStore, repositories, `AppError`, DTO↔domain mappers, platform service interfaces, `dataModule(environment)` | Compose, ViewModels |
-| `:shared:app` | android, ios, jvm (tests only) | screens as `feature.<name>` packages with MVI ViewModels and Compose UI, `core` (MVI base, design system), navigation, DI graph (`appModules`, started by `startPursuitOfWind` on Android and `MainViewController` on iOS); exports iOS framework `PursuitOfWindKit` | Ktor or Room types in public APIs |
-| `:androidApp` | android | `Application`, `MainActivity`, WorkManager workers, notification channel, manifest, deep links, signing | shared business logic |
+| `:shared:app` | android, ios, jvm (tests only) | screens as `feature.<name>` packages with MVI ViewModels and Compose UI, `core` (MVI base, design system), navigation, DI graph (`appModules`, started by `startPursuitOfWind` on Android and `MainViewController` on iOS); Android implementations of platform services (`androidMain`: notifier, permission, WorkManager scheduler and worker); exports iOS framework `PursuitOfWindKit` | Ktor or Room types in public APIs |
+| `:androidApp` | android | `Application`, `MainActivity`, manifest (including the `POST_NOTIFICATIONS` permission); signing and deep links later | shared business logic |
 | `iosApp/` | — | Xcode project, SwiftUI `App`, `Info.plist`, BG task registration | business logic |
 | `:testing:openapi` | jvm (plain Kotlin/JVM) | `OpenApiSpec`: loads `api/openapi.yaml`, validates JSON against its schemas, checks recorded requests and responses | anything production code needs |
 
@@ -36,13 +36,16 @@ Allowed dependency direction: `contract` and `windengine` are independent leaves
 ## Platform code policy
 
 1. **Interface + DI first.** Platform services are interfaces in `commonMain` of `:shared:data` (or `:shared:app` if UI-only), implemented in `androidMain` / `iosMain`, bound in Koin platform modules:
+   - `LocalNotifier` — shows a local notification (`:shared:app` `core/platform`; `AndroidLocalNotifier` in `androidMain` with one channel; bound in `startPursuitOfWind`)
+   - `NotificationPermission` — whether notifications show, the system's dialog, the system's settings (`AndroidNotificationPermission` asks through `VisibleActivity`)
+   - `BackgroundRefreshScheduler` — schedules the hourly check for new windows and says whether the device runs it (`available`). `WorkManagerRefreshScheduler` and `WindowAlertsWorker` in `:shared:app` `androidMain`; on iOS only `IosBackgroundRefreshScheduler` with `available = false` until `BGTaskScheduler` lands. Tests bind `RecordingLocalNotifier`, `RecordingNotificationPermission` and `RecordingBackgroundRefreshScheduler` (`RecordingNotifications.kt`)
    - `SecureTokenStore` — Keystore AES-GCM + DataStore on Android, Keychain on iOS
    - `ShareLauncher` — the system share sheet for an invitation (`:shared:app` `core/platform`, bound in `startPursuitOfWind` and `MainViewController`)
    - `AppLocale` — the app's language for resources (`:shared:app` `app/language`, bound in the same places; `RecordingAppLocale` in tests)
    - `TextClipboard` — copies text such as a spot's coordinates (`:shared:app` `core/platform`, bound in the same places; says whether the system showed what was copied, as Android 13+ does, so the app shows a snackbar only where it did not; `RecordingTextClipboard` in tests)
    - `SpotMap` — the map of spots (`:shared:app` `core/map`). `MapLibreSpotMap` draws it from common code and is bound in the same places; MapLibre's JVM artifact cannot run in JVM tests, so `testGraph` binds a `ScriptedSpotMap`
 
-   Local notifications, background refresh and push-token registration are not built yet; when they are, they follow the same pattern.
+   Push-token registration is not built yet; when it is, it follows the same pattern.
 2. **expect/actual only for small factories**: Room database builder, Ktor engine, DataStore path, platform name. No `expect class` with logic.
 3. Never put Android or iOS types in `commonMain` signatures.
 4. iOS-specific Kotlin lives in `iosMain` and calls platform frameworks directly (today `platform.Security` for the Keychain, `platform.UIKit` for the share sheet and clipboard). Swift code in `iosApp` stays thin: the app entry hosting `MainViewController()`, and later BG task registration and URL handling forwarded to Kotlin.
@@ -73,7 +76,7 @@ io.github.esseckers.pursuitofwind/
     map/                    # SpotMap and its MapLibre implementation
     ui/                     # formatting and labels shared by screens
     resources/              # generated Res (packageOfResClass)
-  feature/<screen>/         # welcome, today, spotdetail, profile, spots, spotpicker, spotmap, crew, rideoffer
+  feature/<screen>/         # welcome, today, spotdetail, profile, spots, spotpicker, spotmap, crew, rideoffer, alerts (no screen)
     domain/entity/          # the feature's domain types, named *Entity
     domain/mapper/          # pure rules over those types that one layer uses (`RefreshErrorMapper`, `TodayEvaluationMapper`), with tests
     domain/repository/      # the repository interface the feature needs
@@ -86,6 +89,8 @@ io.github.esseckers.pursuitofwind/
     presentation/preview/   # @Preview functions and the sample states they and UI tests use
     di/                     # the feature's Koin module
 ```
+
+`alerts` is a feature without a screen: `domain` (the rule, `NewWindowsMapper`), `data`, `presentation` (`WindowAlertsCheck` and `AlertsSchedule` instead of a ViewModel) and `di`. Its entry point for a platform scheduler is `app/WindowAlerts.kt`.
 
 Packages are not Gradle modules: a feature must not import another feature, and nothing enforces it at compile time, so reviewers check it. Test source sets mirror the same packages; shared fixtures of a feature sit at `feature/<screen>/` in `commonTest`.
 

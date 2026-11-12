@@ -4,7 +4,7 @@
 
 Kitesurfers who live hours from the water lose whole days to forecasts that looked fine on paper. Pursuit Of Wind turns the raw forecast into one answer — *go or no-go, when, where, with which kite and when to leave* — and shows who from your crew is driving with free seats.
 
-> **Status:** client phase. The decision engine, the API contract, the in-app fake backend, the data layer, onboarding with the profile and the spot picker, the app language, the Today screen, the Spots and Crew tabs and the spot's hourly wind chart are done; Settings is next. See the [roadmap](#roadmap).
+> **Status:** client phase. The decision engine, the API contract, the in-app fake backend, the data layer, onboarding with the profile and the spot picker, the app language, the Today screen, the Spots and Crew tabs, the spot's hourly wind chart and Android notifications about new session windows are done; iOS notifications are next. See the [roadmap](#roadmap).
 
 ## What is in this repository
 
@@ -26,7 +26,7 @@ graph LR
 | `:shared:data` | Android, iOS, JVM | Ktor client, offline cache (Room 3, DataStore), repositories, secure token storage, in-app fake backend. |
 | `:testing:openapi` | JVM, tests only | Validates requests and responses against [`api/openapi.yaml`](api/openapi.yaml). |
 | `:shared:app` | Android, iOS (JVM for tests) | Compose Multiplatform UI in feature packages with MVI, the design system, navigation, DI. Exported to iOS as `PursuitOfWindKit`. |
-| `:androidApp` | Android | Android entry point. |
+| `:androidApp` | Android | Android entry point and manifest. |
 | `iosApp/` | iOS | Xcode project hosting the shared UI. |
 
 Allowed dependencies are enforced by `checkModuleGraph`, part of `./gradlew check` ([ADR 0002](docs/adr/0002-module-structure-and-dependency-rules.md)).
@@ -64,6 +64,8 @@ Screens read from a local cache and never wait for the network: repositories exp
 - **Optimistic seats:** taking or releasing a seat shows the result at once and is rolled back, with the server's state, if the server says no (for example `409 SEATS_FULL`).
 - **Isolation:** each environment (fake backend, real server) has its own database, settings and secure store. With the fake backend no data leaves the device.
 
+Platform services (notifications, the background check, share sheet, clipboard) are interfaces in `:shared:app`; the Android implementations sit in its `androidMain` and are bound in Koin.
+
 Choices and trade-offs: [ADR 0006](docs/adr/0006-room-3-as-the-offline-cache.md) (Room 3) and [ADR 0007](docs/adr/0007-koin-for-dependency-injection.md) (Koin).
 
 ## Onboarding and profile
@@ -76,6 +78,8 @@ A new rider starts at a welcome screen that says what the app answers, then sets
 The app speaks English and Russian. It follows the phone, and the profile has a language choice (each language by its own name) that applies at once and stays on the device. Strings come from Compose Multiplatform resources, which read the platform's locale, so a new language composes the screens again; the back stack and every screen's ViewModel live above that, and the rider stays where they were, with what they typed.
 
 After that the app opens on Today, with Today, Spots, Crew and Profile as tabs. The Profile tab is the same form, saved in place: "Save" is on only when something changed, and a failed save says why and keeps what was typed. Today's empty states lead to the profile or the spot picker.
+
+The profile also has the switch for [notifications](#notifications), off until the rider turns it on. There is no separate Settings screen: units, language and the alerts switch are in the profile.
 
 Text fields keep their own text and cursor while the form lives in the ViewModel's state, so typing never waits for the state to come back; a form filled or rewritten from outside (the saved profile arriving, wind limits converted to a new unit) resets them.
 
@@ -122,6 +126,20 @@ Tapping a day on Today opens that spot's forecast for today and the next two day
 
 Screens are connected with Navigation 3 in one place, `app.navigation`. The back stack is a list of serializable destinations, each with its own ViewModel; Today asks for a spot through an MVI effect and does not know the spot screen ([ADR 0009](docs/adr/0009-navigation-3.md)). There is one back stack: Today is its root once the rider is set up, other tabs sit on top of it, so back from a tab returns to Today, and the tabs show only while a tab is on top: a bar on a phone, a rail along the side on a tablet or a wide window. On a tablet a spot opened from Spots shows beside the list, and Today shows its days side by side. Where the app starts depends on whether a profile is cached.
 
+## Notifications
+
+The app can tell the rider about a new session window while it is closed. There is no server yet, so the phone checks by itself.
+
+- **What the rider sees:** one notification per GO day. The title names the day and the spot. The text gives the riding time in the spot's local time, the kite, and when to leave in the rider's time zone, as the Today card does. It is in the language picked for the app. Tapping it opens the app.
+- **Switch:** in the profile, off by default. The system asks for notification permission only when the rider turns the switch on. If the system says no, the profile shows why and a button to the system's settings; the choice is stored once notifications are allowed.
+- **How it works:** the check is common code. It fetches the forecasts of the favorite spots, decides today and the next two days with the same rule as Today, and announces each GO day whose window is new. A window counts as the same one when spot, local date and time overlap, so a forecast that moves its start by an hour does not announce it again. A forecast that cannot be fetched (no network, 5xx) decides nothing and asks the scheduler to try again.
+- **Android:** WorkManager runs the check once an hour, only with a network connection, with exponential backoff. The schedule follows the stored choice and is put right every time the app's process starts.
+- **Limits:** local notifications only. A check runs at best once an hour; Doze and battery optimisation decide when it really runs. A notification is not withdrawn when a later forecast changes its mind. Nothing is announced while notifications are blocked. On iOS the profile does not offer the switch yet: the real implementation (`BGTaskScheduler`, `UNUserNotificationCenter`) is the next change, and iOS background refresh will be best effort. When the server exists it will send pushes; whether the local check stays as a fallback is undecided ([ADR 0011](docs/adr/0011-local-notifications-until-the-server-exists.md)).
+
+Like the verdicts they repeat, notifications support a decision and are not safety advice.
+
+The rule and the check are tested without a device: the rule as plain unit tests, the check on the real data layer and the fake backend with recording doubles for the notifier, permission and scheduler.
+
 ## Build and run
 
 Requirements: JDK 21, Android Studio with the Android SDK (API 37), and Xcode 26.4 or newer on macOS for iOS. Versions of everything else are pinned in [`gradle/libs.versions.toml`](gradle/libs.versions.toml).
@@ -149,6 +167,7 @@ open iosApp/iosApp.xcodeproj            # then Run on an iOS simulator
 | [0008](docs/adr/0008-mvi-presentation-in-feature-packages.md) | MVI presentation in feature packages |
 | [0009](docs/adr/0009-navigation-3.md) | Navigation 3 for moving between screens |
 | [0010](docs/adr/0010-live-fake-backend-instead-of-demo-mode.md) | A live fake backend instead of a demo mode |
+| [0011](docs/adr/0011-local-notifications-until-the-server-exists.md) | Local notifications until the server exists |
 | [0013](docs/adr/0013-riders-add-spots-on-a-map.md) | Riders add spots on a map |
 | [0014](docs/adr/0014-riding-hours-and-the-longest-window-first.md) | Riding hours, and the longest window first |
 
@@ -160,8 +179,8 @@ open iosApp/iosApp.xcodeproj            # then Run on an iOS simulator
 4. Data layer: network, cache, offline — done
 5. Design system and the Today screen — done
 6. Spot detail with the hourly wind chart, and navigation — done
-7. Screens: onboarding, Profile with the app language, Spots, Crew with "I'm going" — done; Settings — next
-8. Background evaluation and local notifications
+7. Screens: onboarding, Profile with the app language, Spots, Crew with "I'm going" — done (its former Settings contents live in the profile)
+8. Background evaluation and local notifications — Android done, iOS next
 9. Server phase (separate repository), with guided tours and spotlight hints
 
 ## Disclaimer
