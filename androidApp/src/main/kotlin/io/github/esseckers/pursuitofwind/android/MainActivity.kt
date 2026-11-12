@@ -31,9 +31,11 @@ class MainActivity : ComponentActivity() {
 
     /**
      * Hands a link the activity was opened with to the app, which checks it and ignores what it does not know. Nothing
-     * else of the intent is read: it may come from any app.
+     * else of the intent is read: it may come from any app. A task brought back from Recents comes with the intent
+     * that first started it, so that one is skipped: its link was opened then.
      */
     private fun openLinkOf(intent: Intent?) {
-        if (intent?.action == Intent.ACTION_VIEW) intent.dataString?.let(::openLink)
+        val fromRecents = intent != null && intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0
+        if (intent?.action == Intent.ACTION_VIEW && !fromRecents) intent.dataString?.let(::openLink)
     }
 }

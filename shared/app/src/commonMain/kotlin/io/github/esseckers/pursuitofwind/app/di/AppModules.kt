@@ -1,6 +1,7 @@
 package io.github.esseckers.pursuitofwind.app.di
 
 import co.touchlab.kermit.Logger
+import io.github.esseckers.pursuitofwind.app.EarlyLink
 import io.github.esseckers.pursuitofwind.app.navigation.PendingLinks
 import io.github.esseckers.pursuitofwind.data.Environment
 import io.github.esseckers.pursuitofwind.data.di.dataModule
@@ -60,6 +61,7 @@ internal fun appModules(
 internal fun startKoinOnce(platform: Module) {
     if (KoinPlatform.getKoinOrNull() != null) return
     val koin = startKoin { modules(listOf(platform) + appModules(Environment.Fake)) }.koin
+    EarlyLink.take()?.let { koin.get<PendingLinks>().open(it) }
     // Lives as long as the process. A failure here is logged, not thrown: it must not take the app down with it.
     val failures = CoroutineExceptionHandler { _, failure -> Logger.withTag("Alerts").e(failure) { "Following the alerts choice failed" } }
     CoroutineScope(SupervisorJob() + Dispatchers.Default + failures).launch { koin.get<AlertsSchedule>().follow() }

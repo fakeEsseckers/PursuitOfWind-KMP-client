@@ -1,6 +1,11 @@
 package io.github.esseckers.pursuitofwind.app.navigation
 
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.LocalSaveableStateRegistry
+import androidx.compose.runtime.saveable.SaveableStateRegistry
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assert
@@ -19,6 +24,7 @@ import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.PursuitOfWindTheme
+import io.github.esseckers.pursuitofwind.core.link.AppLink
 import io.github.esseckers.pursuitofwind.data.fake.ControllableClock
 import io.github.esseckers.pursuitofwind.data.repository.ProfileRepository
 import io.github.esseckers.pursuitofwind.data.repository.SpotRepository
@@ -149,6 +155,39 @@ class OnboardingNavigationTest {
             waitFor("crew.joinDialog.field")
             onNodeWithTag("crew.joinDialog.field").assert(hasText("WIND-4KQ7"))
             onNodeWithTag("tab.crew").assertIsSelected()
+        }
+
+    @Test
+    fun `an invitation that waits through onboarding comes back with the screens after the app's state is restored`() =
+        runComposeUiTest {
+            var registry by mutableStateOf(SaveableStateRegistry(restoredValues = null) { true })
+            var shown by mutableStateOf(true)
+            setContent {
+                if (shown) {
+                    CompositionLocalProvider(LocalSaveableStateRegistry provides registry) {
+                        KoinIsolatedContext(graph) {
+                            CompositionLocalProvider(LocalViewModelStoreOwner provides owner) { PursuitOfWindTheme { AppNavigation() } }
+                        }
+                    }
+                }
+            }
+            waitFor("welcome")
+            val links = graph.koin.get<PendingLinks>()
+            assertTrue(links.open("pursuitofwind://invite/WIND-4KQ7"))
+            onNodeWithTag("welcome.start").performScrollTo().performClick()
+            waitFor("profile.form")
+
+            // The system ends the process while the rider is away: what was in memory is gone, the saved state is not.
+            val saved = runOnIdle { registry.performSave() }
+            shown = false
+            waitForIdle()
+            runOnIdle { viewModels.clear() }
+            links.opened(AppLink.Invite("WIND-4KQ7"))
+            registry = SaveableStateRegistry(restoredValues = saved) { true }
+            shown = true
+
+            waitFor("profile.form")
+            waitUntil(timeoutMillis = TIMEOUT_MS) { links.link.value == AppLink.Invite("WIND-4KQ7") }
         }
 
     @Test

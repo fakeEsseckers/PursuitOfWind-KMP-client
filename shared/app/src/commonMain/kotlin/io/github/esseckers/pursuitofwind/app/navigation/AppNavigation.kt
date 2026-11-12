@@ -30,9 +30,12 @@ import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffo
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -149,6 +152,11 @@ private fun OpenLinks(
     riderIsSetUp: Boolean,
 ) {
     val link by links.link.collectAsStateWithLifecycle()
+    // The link that waits is saved with the screen: a new rider may leave the app during onboarding, and the system
+    // may end the process meanwhile. Restored, it waits again, unless a newer link came in with the restart.
+    var saved by rememberSaveable { mutableStateOf<String?>(null) }
+    remember { saved?.takeIf { links.link.value == null }?.let(links::open) }
+    SideEffect { saved = links.link.value?.uri }
     LaunchedEffect(link, riderIsSetUp) {
         val waiting = link
         if (waiting != null && riderIsSetUp) {

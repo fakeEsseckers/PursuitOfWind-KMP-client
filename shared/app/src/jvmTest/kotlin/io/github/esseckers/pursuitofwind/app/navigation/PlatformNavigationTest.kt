@@ -1,6 +1,7 @@
 package io.github.esseckers.pursuitofwind.app.navigation
 
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
@@ -15,14 +16,17 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.PursuitOfWindTheme
+import io.github.esseckers.pursuitofwind.core.link.AppLink
 import io.github.esseckers.pursuitofwind.core.platform.BackgroundRefreshScheduler
 import io.github.esseckers.pursuitofwind.core.platform.NotificationPermission
 import io.github.esseckers.pursuitofwind.data.fake.ControllableClock
+import io.github.esseckers.pursuitofwind.data.fake.FakePursuitOfWindServer
 import io.github.esseckers.pursuitofwind.data.repository.CrewRepository
 import io.github.esseckers.pursuitofwind.data.repository.ProfileRepository
 import io.github.esseckers.pursuitofwind.data.repository.SpotRepository
@@ -31,17 +35,21 @@ import io.github.esseckers.pursuitofwind.feature.spotdetail.NORDSTRAND
 import io.github.esseckers.pursuitofwind.feature.spotdetail.SATURDAY
 import io.github.esseckers.pursuitofwind.feature.spotdetail.alex
 import io.github.esseckers.pursuitofwind.feature.spotdetail.at
+import io.github.esseckers.pursuitofwind.testing.HeldRequests
 import io.github.esseckers.pursuitofwind.testing.RecordingBackgroundRefreshScheduler
 import io.github.esseckers.pursuitofwind.testing.RecordingNotificationPermission
 import io.github.esseckers.pursuitofwind.testing.releaseMainDispatcher
 import io.github.esseckers.pursuitofwind.testing.testGraph
 import io.github.esseckers.pursuitofwind.testing.value
+import io.ktor.client.engine.HttpClientEngine
+import io.ktor.http.HttpMethod
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.setMain
 import org.koin.compose.KoinIsolatedContext
+import org.koin.dsl.module
 import java.util.Locale
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -58,7 +66,14 @@ import kotlin.time.Duration.Companion.hours
 @OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
 class PlatformNavigationTest {
     private val clock = ControllableClock(at(SATURDAY, 8))
-    private val graph = testGraph(clock)
+    private val joins = HeldRequests { it.method == HttpMethod.Post && it.url.encodedPath == "/v1/crews/join" }
+    private val elsewhereForecast = HeldRequests { it.url.encodedPath == "/v1/spots/somewhere-else/forecast" }
+    private val graph =
+        testGraph(
+            clock,
+            module { single<HttpClientEngine> { joins.engine(elsewhereForecast.engine(get<FakePursuitOfWindServer>())) } },
+        )
+    private val links get() = graph.koin.get<PendingLinks>()
     private val viewModels = ViewModelStore()
     private val owner =
         object : ViewModelStoreOwner {
@@ -235,6 +250,72 @@ class PlatformNavigationTest {
             waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("today.header")).fetchSemanticsNodes().isNotEmpty() }
             onNodeWithTag("tab.today").assertIsSelected()
         }
+
+    @Test
+    fun `a link to a spot the rider does not follow shows nothing of it and fetches nothing`() =
+        runComposeUiTest {
+            showApp()
+
+            assertTrue(links.open("pursuitofwind://spot/somewhere-else"))
+
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("spot.missing")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithContentDescription("Back").performClick()
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("today.header")).fetchSemanticsNodes().isNotEmpty() }
+            // The screen decides whether to fetch before it shows anything; the rule itself is in SpotDetailRefreshPolicyTest.
+            assertEquals(0, elsewhereForecast.sent)
+        }
+
+    @Test
+    fun `an invitation opened on the Crew tab shows its code there and a second one takes its place`() =
+        runComposeUiTest {
+            showApp()
+            onNodeWithTag("tab.crew").performClick()
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("crew.join")).fetchSemanticsNodes().isNotEmpty() }
+
+            assertTrue(links.open("pursuitofwind://invite/WIND-4KQ7"))
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("crew.joinDialog.field")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("crew.joinDialog.field").assert(hasText("WIND-4KQ7"))
+
+            assertTrue(links.open("pursuitofwind://invite/OWLS-77"))
+            waitUntil(timeoutMillis = TIMEOUT_MS) {
+                onAllNodes(hasTestTag("crew.joinDialog.field") and hasText("OWLS-77")).fetchSemanticsNodes().isNotEmpty()
+            }
+            assertEquals(null, links.link.value)
+        }
+
+    @Test
+    fun `an invitation opened while a crew is being joined waits for that to end`() =
+        runComposeUiTest {
+            showApp()
+            onNodeWithTag("tab.crew").performClick()
+            waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("crew.join")).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithTag("crew.join").performScrollTo().performClick()
+            onNodeWithTag("crew.joinDialog.field").performTextInput("WIND-4KQ7")
+            joins.hold()
+            onNodeWithTag("crew.joinDialog.confirm").performClick()
+            runBlocking { joins.awaitHeld() }
+
+            assertTrue(links.open("pursuitofwind://invite/OWLS-77"))
+            waitForIdle()
+            // The dialog that is sending stays as it is, and the invitation is not used up.
+            onNodeWithTag("crew.joinDialog.field").assert(hasText("WIND-4KQ7"))
+            assertEquals(AppLink.Invite("OWLS-77"), links.link.value)
+
+            joins.release()
+            waitUntil(timeoutMillis = TIMEOUT_MS) {
+                onAllNodes(hasTestTag("crew.joinDialog.field") and hasText("OWLS-77")).fetchSemanticsNodes().isNotEmpty()
+            }
+            assertEquals(null, links.link.value)
+        }
+
+    private fun ComposeUiTest.showApp() {
+        setContent {
+            KoinIsolatedContext(graph) {
+                CompositionLocalProvider(LocalViewModelStoreOwner provides owner) { PursuitOfWindTheme { AppNavigation() } }
+            }
+        }
+        waitUntil(timeoutMillis = TIMEOUT_MS) { onAllNodes(hasTestTag("today.header")).fetchSemanticsNodes().isNotEmpty() }
+    }
 
     private companion object {
         /** Room, DataStore and the HTTP engine run on real threads here; leave room for a cold JVM on CI. */

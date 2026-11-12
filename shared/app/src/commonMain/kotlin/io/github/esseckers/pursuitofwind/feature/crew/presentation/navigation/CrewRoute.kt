@@ -49,8 +49,10 @@ internal fun CrewRoute(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    LaunchedEffect(inviteCode) {
-        if (inviteCode != null) {
+    // A dialog that is sending its request stays, so the invitation waits for it to end rather than being dropped.
+    val sending = state.dialog?.sending == true
+    LaunchedEffect(inviteCode, sending) {
+        if (inviteCode != null && !sending) {
             viewModel.onIntent(CrewIntent.OpenInvite(inviteCode))
             onInviteTaken()
         }

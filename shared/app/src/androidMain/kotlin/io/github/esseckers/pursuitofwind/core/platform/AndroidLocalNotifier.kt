@@ -43,9 +43,9 @@ internal class AndroidLocalNotifier(
 
     /**
      * What a tap starts: the app with the notification's link, for the activity that takes the app's links, or the app
-     * as the launcher starts it. The link is addressed to this app only, so no other app can answer it. Each
-     * notification gets a pending intent of its own (the request code), or the system would hand all of them the last
-     * one's link.
+     * as the launcher starts it. The link is addressed to this app only, so no other app can answer it. Notifications
+     * with different links already get different pending intents; the request code keeps them apart as well when
+     * there is no link, where every one would otherwise share the launcher's.
      */
     private fun tapIntent(notification: LocalNotification): PendingIntent? {
         val link = notification.link?.let { Intent(Intent.ACTION_VIEW, Uri.parse(it)).setPackage(context.packageName) }
