@@ -10,8 +10,10 @@ import androidx.work.WorkManager
 import java.util.concurrent.TimeUnit
 
 /**
- * Runs [WindowAlertsWorker] hourly through WorkManager, only with a network. KEEP leaves a schedule that exists alone,
- * so turning the switch on again does not push the next run back.
+ * Runs [WindowAlertsWorker] hourly through WorkManager, only with a network. The work is enqueued again on every start
+ * of the app's process, with UPDATE: a schedule that exists keeps its next run time, so the next check is not pushed
+ * back, and it takes on the request as it is now. With KEEP, a later version's constraints, period or worker class
+ * would never reach an installation that is already scheduled.
  */
 internal class WorkManagerRefreshScheduler(
     private val context: Context,
@@ -24,7 +26,7 @@ internal class WorkManagerRefreshScheduler(
                 .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
                 .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, BACKOFF_MINUTES, TimeUnit.MINUTES)
                 .build()
-        WorkManager.getInstance(context).enqueueUniquePeriodicWork(NAME, ExistingPeriodicWorkPolicy.KEEP, request)
+        WorkManager.getInstance(context).enqueueUniquePeriodicWork(NAME, ExistingPeriodicWorkPolicy.UPDATE, request)
     }
 
     override fun cancel() {

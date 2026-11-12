@@ -44,10 +44,11 @@ internal class AndroidLocalNotifier(
         return PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
     }
 
-    private companion object {
+    companion object {
+        /** The one channel of the app; the permission check reads whether the rider turned it off. */
         const val CHANNEL_ID = "windows"
 
         // The tag tells notifications apart, so the numeric id stays the same.
-        const val NOTIFICATION_ID = 0
+        private const val NOTIFICATION_ID = 0
     }
 }
