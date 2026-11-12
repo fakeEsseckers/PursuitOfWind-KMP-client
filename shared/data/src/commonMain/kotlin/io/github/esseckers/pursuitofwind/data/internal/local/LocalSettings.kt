@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.longPreferencesKey
@@ -11,7 +12,10 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import io.github.esseckers.pursuitofwind.contract.ContractJson
 import io.github.esseckers.pursuitofwind.contract.RiderProfileDto
 import io.github.esseckers.pursuitofwind.data.internal.mapping.cachedProfile
+import io.github.esseckers.pursuitofwind.data.internal.mapping.notifiedWindows
+import io.github.esseckers.pursuitofwind.data.internal.mapping.toStored
 import io.github.esseckers.pursuitofwind.data.model.AppLanguage
+import io.github.esseckers.pursuitofwind.data.model.NotifiedWindow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -30,8 +34,8 @@ internal data class StoredProfile(
 )
 
 /**
- * Small values in DataStore Preferences: the rider's profile, the id of the user the cache belongs to, and the app's
- * language. Later also notification de-duplication (Issue #11).
+ * Small values in DataStore Preferences: the rider's profile, the id of the user the cache belongs to, the app's
+ * language, whether the rider asked to be told about new session windows, and the windows already announced.
  */
 internal class LocalSettings(
     private val store: DataStore<Preferences>,
@@ -54,6 +58,9 @@ internal class LocalSettings(
 
     /** The app's language; a device choice, so a new owner of the cache keeps it. */
     val language: Flow<AppLanguage> = store.data.map { AppLanguage.of(it[LANGUAGE]) }.storageErrors()
+
+    /** Whether the rider asked to be told about new session windows: off until then, and a device choice too. */
+    val windowAlerts: Flow<Boolean> = store.data.map { it[WINDOW_ALERTS] ?: false }.storageErrors()
 
     suspend fun saveProfile(
         profile: RiderProfileDto?,
@@ -80,10 +87,25 @@ internal class LocalSettings(
         }
     }
 
+    suspend fun saveWindowAlerts(enabled: Boolean) {
+        storage { store.edit { preferences -> preferences[WINDOW_ALERTS] = enabled } }
+    }
+
+    /** The windows the rider was told about; none when nothing was stored or it cannot be read. */
+    suspend fun notifiedWindows(): List<NotifiedWindow> =
+        storage {
+            val stored = store.data.first()[NOTIFIED_WINDOWS]
+            stored?.let(::notifiedWindows).orEmpty()
+        }
+
+    suspend fun saveNotifiedWindows(windows: List<NotifiedWindow>) {
+        storage { store.edit { preferences -> preferences[NOTIFIED_WINDOWS] = windows.toStored() } }
+    }
+
     /** The user whose data the cache holds, null on a fresh install. */
     suspend fun cacheOwner(): String? = storage { store.data.first()[CACHE_OWNER] }
 
-    /** Drops the profile and records [userId] as the new owner of the cache. */
+    /** Drops the profile and the announced windows, and records [userId] as the new owner of the cache. */
     suspend fun switchOwner(userId: String) {
         storage {
             store.edit { preferences ->
@@ -103,9 +125,11 @@ internal class LocalSettings(
         private val PROFILE_UPDATED_AT = longPreferencesKey("profile_updated_at")
         private val CACHE_OWNER = stringPreferencesKey("cache_owner")
         private val LANGUAGE = stringPreferencesKey("language")
+        private val WINDOW_ALERTS = booleanPreferencesKey("window_alerts")
+        private val NOTIFIED_WINDOWS = stringPreferencesKey("notified_windows")
 
-        /** What belongs to the user, dropped for a new owner; the language and the owner are the device's. */
-        private val USER_KEYS = listOf(PROFILE, PROFILE_UPDATED_AT)
+        /** What belongs to the user, dropped for a new owner; the language, the alerts choice and the owner are the device's. */
+        private val USER_KEYS = listOf(PROFILE, PROFILE_UPDATED_AT, NOTIFIED_WINDOWS)
 
         /**
          * One open store per file per process: open it once (Koin `single`) and [close] it before opening the file

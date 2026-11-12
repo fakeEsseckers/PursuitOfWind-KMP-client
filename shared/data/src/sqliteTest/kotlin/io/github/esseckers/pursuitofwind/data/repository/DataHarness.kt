@@ -53,6 +53,7 @@ internal class DataHarness(
     val forecasts = ForecastRepository(network.api, database, clock)
     val crews = CrewRepository(network.api, database, feed, clock)
     val rides = RideRepository(network.api, database, store, feed, network.session, settings)
+    val alerts = WindowAlertsRepository(settings)
 
     override fun close() {
         database.close()
