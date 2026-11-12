@@ -242,6 +242,17 @@
     <string name="profile_fix_fields">Проверь отмеченные поля выше.</string>
     <string name="profile_saved">Профиль сохранён</string>
 
+    <!-- Being told about a new session window while the app is closed -->
+    <string name="profile_alerts">Уведомления</string>
+    <string name="profile_alerts_switch">Сообщать о новом окне, ради которого стоит ехать</string>
+    <string name="profile_alerts_hint">Приложение проверяет прогноз избранных спотов примерно раз в час, даже когда закрыто.</string>
+    <string name="profile_alerts_blocked">Уведомления от приложения выключены в настройках телефона.</string>
+    <string name="action_open_settings">Открыть настройки</string>
+    <!-- A notification's title: the day, then the spot ("Saturday: GO at Salt Lagoon") -->
+    <string name="alert_title">%1$s: ПОГНАЛИ, %2$s</string>
+    <!-- The name of these notifications in the phone's settings -->
+    <string name="alert_channel">Новые окна для катания</string>
+
     <!-- Spot picker -->
     <string name="spots_title">Твои споты</string>
     <string name="spots_intro">Выбери споты, на которых катаешься, и укажи, сколько до них ехать от дома. По каждому будет ответ на каждый день.</string>

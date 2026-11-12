@@ -231,6 +231,17 @@
     <string name="profile_fix_fields">Check the fields marked above.</string>
     <string name="profile_saved">Profile saved</string>
 
+    <!-- Being told about a new session window while the app is closed -->
+    <string name="profile_alerts">Notifications</string>
+    <string name="profile_alerts_switch">Tell me about a new window worth the drive</string>
+    <string name="profile_alerts_hint">The app checks the forecast of your favorite spots about once an hour, also while it is closed.</string>
+    <string name="profile_alerts_blocked">Notifications from this app are turned off in the phone’s settings.</string>
+    <string name="action_open_settings">Open settings</string>
+    <!-- A notification's title: the day, then the spot ("Saturday: GO at Salt Lagoon") -->
+    <string name="alert_title">%1$s: GO at %2$s</string>
+    <!-- The name of these notifications in the phone's settings -->
+    <string name="alert_channel">New session windows</string>
+
     <!-- Spot picker -->
     <string name="spots_title">Your spots</string>
     <string name="spots_intro">Pick the spots you ride and how long the drive from home is. Each of them gets an answer every day.</string>

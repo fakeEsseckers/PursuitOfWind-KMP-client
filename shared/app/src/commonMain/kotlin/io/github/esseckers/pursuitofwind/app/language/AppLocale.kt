@@ -11,4 +11,10 @@ internal interface AppLocale {
     /** What the app's content is given to show in [languageTag] (BCP 47), or in the phone's language with null. */
     @Composable
     fun provide(languageTag: String?): ProvidedValue<*>
+
+    /**
+     * Has text that is read outside the UI, such as a notification's while the app is closed, come in [languageTag]
+     * too; null leaves the phone's language.
+     */
+    fun use(languageTag: String?)
 }

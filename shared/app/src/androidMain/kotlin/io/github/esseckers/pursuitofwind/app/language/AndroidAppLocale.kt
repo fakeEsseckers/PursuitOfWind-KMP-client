@@ -15,4 +15,9 @@ internal class AndroidAppLocale : AppLocale {
         Locale.setDefault(locale)
         return LocalConfiguration provides Configuration(configuration).apply { setLocale(locale) }
     }
+
+    /** Resources read outside a composition follow the default locale, which a process started in the background has not set. */
+    override fun use(languageTag: String?) {
+        if (languageTag != null) Locale.setDefault(Locale.forLanguageTag(languageTag))
+    }
 }

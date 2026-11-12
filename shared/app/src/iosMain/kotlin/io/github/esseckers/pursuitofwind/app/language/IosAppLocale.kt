@@ -20,6 +20,10 @@ internal class IosAppLocale(
         return LocalLanguageTag provides languageTag
     }
 
+    override fun use(languageTag: String?) {
+        write(languageTag)
+    }
+
     private fun write(languageTag: String?) {
         val written = defaults.stringForKey(OWN_CHOICE_KEY)
         if (languageTag != null) {
