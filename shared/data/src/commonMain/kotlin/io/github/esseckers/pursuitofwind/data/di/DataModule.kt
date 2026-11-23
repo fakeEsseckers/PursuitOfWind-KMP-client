@@ -64,7 +64,7 @@ fun dataModule(
         singleOf(::UserCache)
         singleOf(::CrewStore)
         single { CrewFeedSync(get(), get(), get(), get()) }
-        singleOf(::AccountRepository)
+        single { AccountRepository(session = get(), api = get(), platform = currentPlatform) }
         singleOf(::ProfileRepository)
         singleOf(::PreferencesRepository)
         singleOf(::SpotRepository)

@@ -7,6 +7,8 @@ import io.github.esseckers.pursuitofwind.data.fake.ControllableClock
 import io.github.esseckers.pursuitofwind.data.fake.THURSDAY_MORNING
 import io.github.esseckers.pursuitofwind.data.internal.network.RetryPolicy
 import io.github.esseckers.pursuitofwind.data.model.Outcome
+import io.github.esseckers.pursuitofwind.data.network.fakeServer
+import io.github.esseckers.pursuitofwind.data.network.forwardingEngine
 import io.github.esseckers.pursuitofwind.data.repository.AccountRepository
 import io.github.esseckers.pursuitofwind.data.repository.CrewRepository
 import io.github.esseckers.pursuitofwind.data.repository.ForecastRepository
@@ -14,10 +16,13 @@ import io.github.esseckers.pursuitofwind.data.repository.ProfileRepository
 import io.github.esseckers.pursuitofwind.data.repository.RideRepository
 import io.github.esseckers.pursuitofwind.data.repository.SpotRepository
 import io.ktor.client.HttpClient
+import io.ktor.client.engine.HttpClientEngine
+import io.ktor.http.encodedPath
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.koin.core.annotation.KoinExperimentalAPI
 import org.koin.dsl.koinApplication
+import org.koin.dsl.module
 import org.koin.test.verify.verify
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -43,6 +48,38 @@ class DataModuleTest {
         dataModule(Environment.Fake).verify(extraTypes = builtByHand)
         dataModule(Environment.Remote("https://api.example.invalid")).verify(extraTypes = builtByHand)
     }
+
+    @Test
+    fun `the remote environment sends every request to its base URL`() =
+        runTest {
+            val asked = mutableListOf<String>()
+            // On the test's dispatcher, so the client's timeouts do not run out in virtual time while it answers.
+            val server = fakeServer(ControllableClock(THURSDAY_MORNING))
+            // In place of the engine for a real server: it notes where the app sends, and answers as the server would.
+            val wire =
+                module {
+                    single<HttpClientEngine> {
+                        forwardingEngine(server) { request, forward ->
+                            asked += "${request.url.protocol.name}://${request.url.host}${request.url.encodedPath}"
+                            forward()
+                        }
+                    }
+                }
+            val koin = koinApplication { modules(dataModule(Environment.Remote("https://api.example.test")), wire) }.koin
+            try {
+                val signedIn = koin.get<AccountRepository>().signIn()
+                assertIs<Outcome.Success<*>>(signedIn, signedIn.toString())
+                val catalog = koin.get<SpotRepository>().refreshCatalog()
+                assertIs<Outcome.Success<*>>(catalog, catalog.toString())
+
+                assertEquals(
+                    listOf("https://api.example.test/v1/auth/anonymous", "https://api.example.test/v1/spots/catalog"),
+                    asked.distinct(),
+                )
+            } finally {
+                koin.close()
+            }
+        }
 
     @Test
     fun `the fake environment works end to end through Koin`() =
