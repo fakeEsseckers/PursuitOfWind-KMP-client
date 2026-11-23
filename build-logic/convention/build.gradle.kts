@@ -44,5 +44,9 @@ gradlePlugin {
             id = "pursuitofwind.root"
             implementationClass = "RootConventionPlugin"
         }
+        register("publish") {
+            id = "pursuitofwind.publish"
+            implementationClass = "PublishConventionPlugin"
+        }
     }
 }

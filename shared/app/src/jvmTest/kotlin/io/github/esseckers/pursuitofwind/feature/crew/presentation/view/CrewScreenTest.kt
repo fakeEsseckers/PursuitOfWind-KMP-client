@@ -287,6 +287,17 @@ class CrewScreenTest {
         }
 
     @Test
+    fun `the join dialog of an invitation link holds its code and joins with it on confirm`() =
+        runComposeUiTest {
+            show(CrewPreviewData.invited)
+
+            onNodeWithTag("crew.joinDialog.field").assert(hasText("WIND-4KQ7"))
+            onNodeWithTag("crew.joinDialog.confirm").assertIsEnabled().performClick()
+
+            assertEquals(listOf<CrewIntent>(CrewIntent.JoinCrew("WIND-4KQ7")), intents)
+        }
+
+    @Test
     fun `no text is cut off at twice the font size on a phone`() =
         runSkikoComposeUiTest(size = PHONE_SIZE, density = PHONE_DENSITY) {
             show(CrewPreviewData.ready, fontScale = 2f)

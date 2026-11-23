@@ -4,4 +4,10 @@ package io.github.esseckers.pursuitofwind.feature.profile.presentation.model
 internal sealed interface ProfileEffect {
     /** The profile is saved (or was already saved as shown). */
     data object Saved : ProfileEffect
+
+    /** Ask the system to let the app's notifications through; the answer comes back as an intent. */
+    data object AskForNotifications : ProfileEffect
+
+    /** Open the system's settings of the app's notifications. */
+    data object OpenNotificationSettings : ProfileEffect
 }

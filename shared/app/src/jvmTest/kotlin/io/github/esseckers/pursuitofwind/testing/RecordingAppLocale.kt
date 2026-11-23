@@ -20,6 +20,11 @@ internal class RecordingAppLocale : AppLocale {
         if (languageTag != null) Locale.setDefault(Locale.forLanguageTag(languageTag))
         return LocalLanguageTag provides languageTag
     }
+
+    override fun use(languageTag: String?) {
+        tags += languageTag
+        if (languageTag != null) Locale.setDefault(Locale.forLanguageTag(languageTag))
+    }
 }
 
 private val LocalLanguageTag = staticCompositionLocalOf<String?> { null }

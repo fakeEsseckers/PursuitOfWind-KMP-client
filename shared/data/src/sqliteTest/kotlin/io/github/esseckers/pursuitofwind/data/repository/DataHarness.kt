@@ -2,6 +2,7 @@ package io.github.esseckers.pursuitofwind.data.repository
 
 import androidx.room3.RoomDatabase
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import io.github.esseckers.pursuitofwind.contract.PlatformDto
 import io.github.esseckers.pursuitofwind.data.fake.ControllableClock
 import io.github.esseckers.pursuitofwind.data.internal.local.LocalSettings
 import io.github.esseckers.pursuitofwind.data.internal.local.PursuitOfWindDatabase
@@ -46,13 +47,14 @@ internal class DataHarness(
     private val store = CrewStore(database)
     private val feed = CrewFeedSync(network.api, database, store, clock, feedPageSize)
 
-    val account = AccountRepository(network.session)
+    val account = AccountRepository(network.session, network.api, PlatformDto.ANDROID)
     val profiles = ProfileRepository(network.api, settings, clock)
     val preferences = PreferencesRepository(settings)
     val spots = SpotRepository(network.api, database, clock)
     val forecasts = ForecastRepository(network.api, database, clock)
     val crews = CrewRepository(network.api, database, feed, clock)
     val rides = RideRepository(network.api, database, store, feed, network.session, settings)
+    val alerts = WindowAlertsRepository(settings)
 
     override fun close() {
         database.close()

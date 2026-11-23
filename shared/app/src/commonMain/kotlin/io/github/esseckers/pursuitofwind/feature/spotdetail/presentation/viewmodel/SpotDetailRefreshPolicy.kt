@@ -10,7 +10,8 @@ internal object SpotDetailRefreshPolicy {
     /**
      * True when the cached forecast is missing or older than [Freshness.REFRESH_AFTER], or the last refresh here failed.
      * A forecast stamped later than [now] (the device clock was set back) counts as old. Opening the screen right
-     * after Today refreshed fetches nothing.
+     * after Today refreshed fetches nothing. Nor does a spot the rider does not follow: the screen has nothing to show
+     * for it, and a link from outside the app can name any spot.
      */
     fun isDue(
         snapshot: SpotDetailSnapshotEntity,
@@ -18,10 +19,7 @@ internal object SpotDetailRefreshPolicy {
         now: Instant,
     ): Boolean {
         val fetchedAt = snapshot.forecast.updatedAt
-        return fetchedAt == null ||
-            refresh.error != null ||
-            now < fetchedAt ||
-            now - fetchedAt >= Freshness.REFRESH_AFTER ||
-            snapshot.forecast.value.isEmpty()
+        val stale = fetchedAt == null || now < fetchedAt || now - fetchedAt >= Freshness.REFRESH_AFTER
+        return snapshot.spot.value != null && (stale || refresh.error != null || snapshot.forecast.value.isEmpty())
     }
 }

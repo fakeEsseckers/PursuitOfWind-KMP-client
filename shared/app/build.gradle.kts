@@ -53,6 +53,11 @@ kotlin {
             implementation(libs.kermit)
             implementation(libs.maplibre.compose)
         }
+        androidMain.dependencies {
+            // WorkManager runs the hourly window check; the activity result API hosts the notification permission dialog.
+            implementation(libs.androidx.work.runtime)
+            implementation(libs.androidx.activity.compose)
+        }
         commonTest.dependencies {
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.turbine)

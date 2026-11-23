@@ -128,6 +128,9 @@ internal object CrewPreviewData {
     /** A code no crew has. */
     val joinFailed = reduce(CrewResult.DialogShown(CrewDialog.Join(error = Res.string.crew_invite_invalid)), from = noCrew)
 
+    /** A rider without a crew opened an invitation link: the join dialog holds its code. */
+    val invited = reduce(CrewResult.DialogShown(CrewDialog.Join(code = "WIND-4KQ7")), from = noCrew)
+
     /** Alex is about to cancel the Friday ride, which Jonas counts on. */
     val confirmingCancel =
         reduce(CrewResult.DialogShown(CrewDialog.ConfirmCancel("rid_alex", lakeWeiss.name, passengers = 1)), from = ready)

@@ -2,6 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- For the server once the build is given its address; the map's tiles need it already. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:name=".PursuitOfWindApplication"
         android:allowBackup="false"
@@ -14,13 +18,22 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PursuitOfWind"
         tools:targetApi="33">
+        <!-- singleTop: a link opened while the app is on screen arrives in onNewIntent, not in a second activity. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTop"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- pursuitofwind://invite/CODE and pursuitofwind://spot/ID: the app reads them strictly and ignores the rest. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="pursuitofwind" />
             </intent-filter>
         </activity>
     </application>

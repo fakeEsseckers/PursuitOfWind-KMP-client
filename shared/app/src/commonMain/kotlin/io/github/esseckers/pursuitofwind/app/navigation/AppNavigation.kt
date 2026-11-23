@@ -29,14 +29,19 @@ import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffo
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.testTag
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavEntry
@@ -49,6 +54,7 @@ import androidx.navigation3.ui.NavDisplay
 import io.github.esseckers.pursuitofwind.app.language.AppLanguageScope
 import io.github.esseckers.pursuitofwind.core.designsystem.icon.AppIcons
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Sizes
+import io.github.esseckers.pursuitofwind.core.link.AppLink
 import io.github.esseckers.pursuitofwind.core.resources.Res
 import io.github.esseckers.pursuitofwind.core.resources.tab_crew
 import io.github.esseckers.pursuitofwind.core.resources.tab_profile
@@ -69,6 +75,7 @@ import io.github.esseckers.pursuitofwind.feature.today.presentation.navigation.T
 import io.github.esseckers.pursuitofwind.feature.welcome.presentation.view.WelcomeScreen
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import kotlin.time.Instant
 
 /**
@@ -107,6 +114,8 @@ internal fun AppNavigation(
 ) {
     val backStack = rememberNavBackStack(navigationConfiguration, start)
     val navigator = remember(backStack) { Navigator(backStack) }
+    val links: PendingLinks = koinInject()
+    OpenLinks(links, navigator, riderIsSetUp = backStack.firstOrNull() == Destination.Today)
     // Outside the language scope, so a new language keeps the back stack and every screen's ViewModel. Saved state of
     // the screens (scroll positions) starts over with the language: its holder cannot be shared across the switch.
     val viewModels = rememberViewModelStoreNavEntryDecorator<NavKey>()
@@ -126,16 +135,45 @@ internal fun AppNavigation(
             onBack = navigator::back,
             entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator(), viewModels),
             sceneStrategies = listOf(listDetail),
-            entryProvider = entries(navigator),
+            entryProvider = entries(navigator, links),
         )
     }
 }
 
+/**
+ * Opens the link that waits, if any, once the rider is set up: during onboarding it keeps waiting, and Today becoming
+ * the root is what lets it through. A spot's forecast is opened here. An invitation only gets the Crew tab here; the
+ * tab takes the code, so the link waits until the tab is on screen.
+ */
+@Composable
+private fun OpenLinks(
+    links: PendingLinks,
+    navigator: Navigator,
+    riderIsSetUp: Boolean,
+) {
+    val link by links.link.collectAsStateWithLifecycle()
+    // The link that waits is saved with the screen: a new rider may leave the app during onboarding, and the system
+    // may end the process meanwhile. Restored, it waits again, unless a newer link came in with the restart.
+    var saved by rememberSaveable { mutableStateOf<String?>(null) }
+    remember { saved?.takeIf { links.link.value == null }?.let(links::open) }
+    SideEffect { saved = links.link.value?.uri }
+    LaunchedEffect(link, riderIsSetUp) {
+        val waiting = link
+        if (waiting != null && riderIsSetUp) {
+            navigator.open(waiting)
+            if (waiting is AppLink.Spot) links.opened(waiting)
+        }
+    }
+}
+
 /** Each destination's screen, with its navigation lambdas. */
-private fun entries(navigator: Navigator): (NavKey) -> NavEntry<NavKey> =
+private fun entries(
+    navigator: Navigator,
+    links: PendingLinks,
+): (NavKey) -> NavEntry<NavKey> =
     entryProvider {
         onboarding(navigator)
-        tabs(navigator)
+        tabs(navigator, links)
         screensOnTop(navigator)
     }
 
@@ -165,8 +203,11 @@ private fun EntryProviderScope<NavKey>.onboarding(navigator: Navigator) {
     }
 }
 
-/** The tabs, each with the tab bar or rail beside it. */
-private fun EntryProviderScope<NavKey>.tabs(navigator: Navigator) {
+/** The tabs, each with the tab bar or rail beside it. The Crew tab takes the invitation that waits in [links]. */
+private fun EntryProviderScope<NavKey>.tabs(
+    navigator: Navigator,
+    links: PendingLinks,
+) {
     entry<Destination.Today>(metadata = tabTransitions) {
         TabScreen(AppTab.TODAY, navigator) {
             TodayRoute(
@@ -199,7 +240,12 @@ private fun EntryProviderScope<NavKey>.tabs(navigator: Navigator) {
     }
     entry<Destination.Crew>(metadata = tabTransitions) {
         TabScreen(AppTab.CREW, navigator) {
-            CrewRoute(onOpenSpot = { spotId, date -> navigator.open(Destination.SpotDetail(spotId.value, date)) })
+            val invite = links.link.collectAsStateWithLifecycle().value as? AppLink.Invite
+            CrewRoute(
+                onOpenSpot = { spotId, date -> navigator.open(Destination.SpotDetail(spotId.value, date)) },
+                inviteCode = invite?.code,
+                onInviteTaken = { invite?.let(links::opened) },
+            )
         }
     }
     entry<Destination.Profile>(metadata = tabTransitions) {

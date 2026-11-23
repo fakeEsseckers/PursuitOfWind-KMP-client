@@ -38,10 +38,11 @@ internal sealed interface CrewDialog {
         val error: StringResource? = null,
     ) : CrewDialog
 
-    /** Entering an invite code; [error] when joining failed. */
+    /** Entering an invite code, starting from [code] when an invitation link brought one; [error] when joining failed. */
     data class Join(
         override val sending: Boolean = false,
         val error: StringResource? = null,
+        val code: String = "",
     ) : CrewDialog
 
     /** The driver confirms cancelling [rideId] to [spotName], which [passengers] were counting on. */

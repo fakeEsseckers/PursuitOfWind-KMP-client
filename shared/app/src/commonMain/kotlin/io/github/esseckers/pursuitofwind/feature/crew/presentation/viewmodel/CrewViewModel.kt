@@ -64,6 +64,7 @@ internal class CrewViewModel(
             is CrewIntent.ChooseCrew -> choose(intent.crewId)
             CrewIntent.StartCreate -> dispatchResult(CrewResult.DialogShown(CrewDialog.Create()))
             CrewIntent.StartJoin -> dispatchResult(CrewResult.DialogShown(CrewDialog.Join()))
+            is CrewIntent.OpenInvite -> openInvite(intent.inviteCode)
             CrewIntent.CloseDialog -> dispatchResult(CrewResult.DialogDismissed)
             is CrewIntent.CreateCrew -> submit(created = true) { repository.create(intent.name.trim()) }
             is CrewIntent.JoinCrew -> submit(created = false) { repository.join(intent.inviteCode) }
@@ -98,6 +99,15 @@ internal class CrewViewModel(
     private fun choose(crewId: String) {
         dispatchResult(CrewResult.Chosen(crewId))
         viewModelScope.launch { repository.refresh(crewId) }
+    }
+
+    /**
+     * The join dialog with the code of an invitation link, for the rider to confirm: a link never joins by itself. A
+     * dialog that is sending its request stays, so a link cannot take over a crew being created or joined.
+     */
+    private fun openInvite(inviteCode: String) {
+        if (currentState.inputs.dialog?.sending == true) return
+        dispatchResult(CrewResult.DialogShown(CrewDialog.Join(code = inviteCode)))
     }
 
     /** Creates or joins a crew from the open dialog, which stays open with the reason when that fails. */

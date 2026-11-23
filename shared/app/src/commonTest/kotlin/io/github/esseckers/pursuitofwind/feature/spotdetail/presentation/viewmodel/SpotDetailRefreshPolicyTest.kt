@@ -26,6 +26,15 @@ class SpotDetailRefreshPolicyTest {
     }
 
     @Test
+    fun `the forecast of a spot the rider does not follow is never fetched`() {
+        // What a link from outside the app can ask for: any spot id at all.
+        val unknown = snapshot(spot = null, hours = emptyList()).let { it.copy(forecast = it.forecast.copy(updatedAt = null)) }
+
+        assertFalse(due(unknown))
+        assertFalse(due(unknown, refresh = RefreshStatus(finished = true, error = AppError.Network)))
+    }
+
+    @Test
     fun `a missing old or failed forecast is fetched`() {
         assertTrue(due(snapshot(fetched = now - 30.minutes)))
         assertTrue(due(snapshot(fetched = now - 10.minutes, hours = emptyList())))

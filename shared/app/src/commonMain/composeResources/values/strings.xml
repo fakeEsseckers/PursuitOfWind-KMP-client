@@ -231,6 +231,17 @@
     <string name="profile_fix_fields">Check the fields marked above.</string>
     <string name="profile_saved">Profile saved</string>
 
+    <!-- Being told about a new session window while the app is closed -->
+    <string name="profile_alerts">Notifications</string>
+    <string name="profile_alerts_switch">Tell me about a new window worth the drive</string>
+    <string name="profile_alerts_hint">The app checks the forecast of your favorite spots about once an hour, even when it is closed.</string>
+    <string name="profile_alerts_blocked">Notifications from this app are turned off in the phone’s settings.</string>
+    <string name="action_open_settings">Open settings</string>
+    <!-- A notification's title: the day, then the spot ("Saturday: GO at Salt Lagoon") -->
+    <string name="alert_title">%1$s: GO at %2$s</string>
+    <!-- The name of these notifications in the phone's settings -->
+    <string name="alert_channel">New session windows</string>
+
     <!-- Spot picker -->
     <string name="spots_title">Your spots</string>
     <string name="spots_intro">Pick the spots you ride and how long the drive from home is. Each of them gets an answer every day.</string>
@@ -294,7 +305,8 @@
     <string name="crew_switch">Switch crew</string>
     <string name="crew_invite_code">Invite code: %1$s</string>
     <string name="action_share_invite">Invite friends</string>
-    <string name="crew_invite_text">Join my kite crew “%1$s” in Pursuit Of Wind with the invite code %2$s.</string>
+    <!-- %3$s is a link that opens the app at the join dialog -->
+    <string name="crew_invite_text">Join my kite crew “%1$s” in Pursuit Of Wind with the invite code %2$s, or open %3$s on a phone that has the app.</string>
     <string name="crew_members">Members</string>
     <string name="crew_member_you">%1$s (you)</string>
     <string name="crew_member_owner">founder</string>

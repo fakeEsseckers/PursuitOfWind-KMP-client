@@ -1,6 +1,7 @@
 package io.github.esseckers.pursuitofwind.app.navigation
 
 import androidx.navigation3.runtime.NavKey
+import io.github.esseckers.pursuitofwind.core.link.AppLink
 import io.github.esseckers.pursuitofwind.data.model.Profile
 import io.github.esseckers.pursuitofwind.data.model.WindUnit
 import io.github.esseckers.pursuitofwind.engine.model.RiderProfile
@@ -152,6 +153,30 @@ class NavigatorTest {
             listOf(Destination.Today, Destination.Spots, Destination.Crew, Destination.Profile),
             AppTab.entries.map { it.destination },
         )
+    }
+
+    @Test
+    fun `a link to a spot opens its forecast on top of Today whatever was open`() {
+        val stack = mutableListOf<NavKey>(Destination.Today, Destination.Profile)
+        val navigator = Navigator(stack)
+
+        navigator.open(AppLink.Spot("nordstrand-bay", LocalDate(2026, 10, 24)))
+        assertEquals(listOf<NavKey>(Destination.Today, saturday), stack)
+        // The same link again opens nothing more.
+        navigator.open(AppLink.Spot("nordstrand-bay", LocalDate(2026, 10, 24)))
+        assertEquals(listOf<NavKey>(Destination.Today, saturday), stack)
+        navigator.back()
+        assertEquals(listOf<NavKey>(Destination.Today), stack)
+    }
+
+    @Test
+    fun `an invitation link opens the Crew tab over Today`() {
+        val stack = mutableListOf<NavKey>(Destination.Today, saturday)
+        val navigator = Navigator(stack)
+
+        navigator.open(AppLink.Invite("WIND-4KQ7"))
+
+        assertEquals(listOf<NavKey>(Destination.Today, Destination.Crew), stack)
     }
 
     @Test

@@ -10,6 +10,6 @@ import org.koin.dsl.module
 /** The profile form: its repository over the shared data layer, and its ViewModel (one per back stack entry). */
 internal val profileModule: Module =
     module {
-        factory<ProfileEditRepository> { ProfileEditRepositoryImpl(get(), get()) }
+        factory<ProfileEditRepository> { ProfileEditRepositoryImpl(get(), get(), get()) }
         viewModel { ProfileViewModel(repository = get()) }
     }

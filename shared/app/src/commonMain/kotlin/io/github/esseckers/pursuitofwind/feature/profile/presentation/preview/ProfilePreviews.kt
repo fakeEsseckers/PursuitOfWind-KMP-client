@@ -49,3 +49,11 @@ private fun ProfileLoadingPreview() = ProfilePreview(ProfilePreviewData.loading)
 @Preview
 @Composable
 private fun ProfileSavingPreview() = ProfilePreview(ProfilePreviewData.saving)
+
+@Preview
+@Composable
+private fun ProfileAlertsOnPreview() = ProfilePreview(ProfilePreviewData.alertsOn)
+
+@Preview
+@Composable
+private fun ProfileAlertsBlockedDarkPreview() = ProfilePreview(ProfilePreviewData.alertsBlocked, darkTheme = true)

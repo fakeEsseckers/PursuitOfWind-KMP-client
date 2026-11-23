@@ -16,6 +16,7 @@ import io.github.esseckers.pursuitofwind.data.repository.PreferencesRepository
 import io.github.esseckers.pursuitofwind.data.repository.ProfileRepository
 import io.github.esseckers.pursuitofwind.data.repository.RideRepository
 import io.github.esseckers.pursuitofwind.data.repository.SpotRepository
+import io.github.esseckers.pursuitofwind.data.repository.WindowAlertsRepository
 import io.ktor.client.engine.HttpClientEngine
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.singleOf
@@ -63,13 +64,14 @@ fun dataModule(
         singleOf(::UserCache)
         singleOf(::CrewStore)
         single { CrewFeedSync(get(), get(), get(), get()) }
-        singleOf(::AccountRepository)
+        single { AccountRepository(session = get(), api = get(), platform = currentPlatform) }
         singleOf(::ProfileRepository)
         singleOf(::PreferencesRepository)
         singleOf(::SpotRepository)
         singleOf(::ForecastRepository)
         singleOf(::CrewRepository)
         singleOf(::RideRepository)
+        singleOf(::WindowAlertsRepository)
     }
 
 private fun Environment.baseUrl(): String =

@@ -22,6 +22,7 @@ import io.github.esseckers.pursuitofwind.core.resources.weekday_wednesday
 import io.github.esseckers.pursuitofwind.core.resources.weekday_wednesday_inline
 import kotlinx.datetime.DayOfWeek
 import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -33,14 +34,26 @@ internal fun dayLabel(
     label: DayLabel,
     inSentence: Boolean = false,
 ): String {
-    val (standalone, inline) =
-        when (label) {
-            DayLabel.Today -> Res.string.day_today to Res.string.day_today_inline
-            DayLabel.Tomorrow -> Res.string.day_tomorrow to Res.string.day_tomorrow_inline
-            is DayLabel.Weekday -> weekday(label.day)
-        }
+    val (standalone, inline) = names(label)
     return stringResource(if (inSentence) inline else standalone)
 }
+
+/** [dayLabel] for text the app shows outside its screens, such as a notification. */
+internal suspend fun dayLabelText(
+    label: DayLabel,
+    inSentence: Boolean = false,
+): String {
+    val (standalone, inline) = names(label)
+    return getString(if (inSentence) inline else standalone)
+}
+
+/** The name of [label] on its own, and inside a sentence. */
+private fun names(label: DayLabel): Pair<StringResource, StringResource> =
+    when (label) {
+        DayLabel.Today -> Res.string.day_today to Res.string.day_today_inline
+        DayLabel.Tomorrow -> Res.string.day_tomorrow to Res.string.day_tomorrow_inline
+        is DayLabel.Weekday -> weekday(label.day)
+    }
 
 private fun weekday(day: DayOfWeek): Pair<StringResource, StringResource> =
     when (day) {

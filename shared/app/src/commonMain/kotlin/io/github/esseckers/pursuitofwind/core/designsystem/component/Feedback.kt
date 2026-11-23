@@ -193,7 +193,7 @@ internal fun ActionButton(
     }
 }
 
-/** The decision-support disclaimer. It stays visible on Today and in Settings. */
+/** The decision-support disclaimer. It stays visible on Welcome, on Today and on a spot's forecast. */
 @Composable
 internal fun Disclaimer(modifier: Modifier = Modifier) {
     Row(

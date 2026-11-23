@@ -80,8 +80,6 @@ Use this body for new issues (labels: `phase:client`, `area:<module>`, `priority
 
 ## Releasing the APK
 
-Not set up yet: there is no `release.yml` or release signing so far. When it exists:
-
 1. All issues for the milestone closed, `main` green.
-2. Tag `vX.Y.Z` → `release.yml` builds the signed release APK and publishes a GitHub Release.
-3. Release notes: what is new, that the APK runs on the in-app fake backend, known limitations (local notifications only, iOS build not distributed).
+2. Tag `vX.Y.Z` → `release.yml` runs the check, publishes `windengine` and `contract` to GitHub Packages (ADR 0012), builds the release APK (R8; signed when the repository has the release key in its secrets) and publishes a GitHub Release with the APK and `openapi.yaml`. `scripts/build-release-apk.sh` is the same build locally.
+3. Release notes: what is new, whether the build runs on the in-app fake backend or a server (the repository variable `API_BASE_URL`), known limitations (local notifications only, iOS build not distributed).

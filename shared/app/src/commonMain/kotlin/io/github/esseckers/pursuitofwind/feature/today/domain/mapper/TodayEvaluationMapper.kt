@@ -1,5 +1,7 @@
 package io.github.esseckers.pursuitofwind.feature.today.domain.mapper
 
+import io.github.esseckers.pursuitofwind.core.domain.mapper.DAYS_DECIDED
+import io.github.esseckers.pursuitofwind.core.domain.mapper.DayDecisionsMapper
 import io.github.esseckers.pursuitofwind.data.model.Profile
 import io.github.esseckers.pursuitofwind.engine.DecisionEngine
 import io.github.esseckers.pursuitofwind.engine.model.DayDecision
@@ -10,19 +12,14 @@ import io.github.esseckers.pursuitofwind.engine.model.SpotForecast
 import io.github.esseckers.pursuitofwind.feature.today.domain.entity.DayEvaluationEntity
 import io.github.esseckers.pursuitofwind.feature.today.domain.entity.SpotForecastEntity
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
-import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 
 /** Today and the next two days. */
-internal const val DAYS_SHOWN = 3
+internal const val DAYS_SHOWN = DAYS_DECIDED
 
 /** The engine's answer for Today over the favorite spots' cached forecasts. */
 internal object TodayEvaluationMapper {
-    /**
-     * The days from the rider's today in [riderZone] on, at most [days] of them: a spot behind the rider's time zone can
-     * still be on the rider's yesterday, and that day is left out.
-     */
+    /** The days from the rider's today in [riderZone] on, at most [days] of them ([DayDecisionsMapper]). */
     fun evaluate(
         profile: Profile,
         spots: List<SpotForecastEntity>,
@@ -32,11 +29,9 @@ internal object TodayEvaluationMapper {
     ): List<DayEvaluationEntity> {
         val configs = spots.associate { it.spot.spot.id to it.spot.toSpotConfig() }
         val hours = spots.associate { it.spot.spot.id to it.hours }
-        val today = now.toLocalDateTime(riderZone).date
-        return DecisionEngine
-            .decideDays(configs.map { (id, config) -> SpotForecast(config, hours.getValue(id)) }, profile.rider, now)
-            .filter { it.date >= today }
-            .take(days)
+        val forecasts = configs.map { (id, config) -> SpotForecast(config, hours.getValue(id)) }
+        return DayDecisionsMapper
+            .decide(forecasts, profile.rider, now, riderZone, days)
             .map { decision ->
                 when (decision) {
                     is DayDecision.Go -> {

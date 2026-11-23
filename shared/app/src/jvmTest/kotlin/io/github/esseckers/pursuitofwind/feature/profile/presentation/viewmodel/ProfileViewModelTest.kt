@@ -16,8 +16,10 @@ import io.github.esseckers.pursuitofwind.data.model.AppLanguage
 import io.github.esseckers.pursuitofwind.data.model.WindUnit
 import io.github.esseckers.pursuitofwind.data.repository.PreferencesRepository
 import io.github.esseckers.pursuitofwind.data.repository.ProfileRepository
+import io.github.esseckers.pursuitofwind.data.repository.WindowAlertsRepository
 import io.github.esseckers.pursuitofwind.engine.model.RidingHours
 import io.github.esseckers.pursuitofwind.engine.model.SkillLevel
+import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.AlertsUi
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileEdit
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileEffect
 import io.github.esseckers.pursuitofwind.feature.profile.presentation.model.ProfileError
@@ -55,6 +57,7 @@ class ProfileViewModelTest {
     private val koin: Koin = testGraph(clock).koin
     private val server get() = koin.get<FakePursuitOfWindServer>()
     private val profiles get() = koin.get<ProfileRepository>()
+    private val alerts get() = koin.get<WindowAlertsRepository>()
     private val viewModels = ViewModelStore()
 
     @BeforeTest
@@ -194,6 +197,128 @@ class ProfileViewModelTest {
             }
             assertEquals(AppLanguage.RUSSIAN, koin.get<PreferencesRepository>().language.first())
             assertNull(profiles.profile.first().value)
+        }
+
+    @Test
+    fun `turning the alerts on asks the system once and its yes stores the choice`() =
+        runTest(dispatcher) {
+            val viewModel = viewModel()
+            viewModel.state.test(timeout = TURBINE_TIMEOUT) {
+                awaitState { !it.loading }
+                viewModel.onIntent(ProfileIntent.SetAlerts(on = true))
+                // A second tap while the system's dialog is up asks nothing more.
+                viewModel.onIntent(ProfileIntent.SetAlerts(on = true))
+                assertEquals(AlertsUi(on = true), awaitState { it.alerts.on }.alerts)
+                // Nothing is stored before the system has answered.
+                assertFalse(alerts.enabled.first())
+
+                viewModel.onIntent(ProfileIntent.NotificationsChecked(allowed = true))
+
+                awaitState { it.inputs.alertsChosen }
+                cancelAndIgnoreRemainingEvents()
+            }
+            viewModel.effects.test(timeout = TURBINE_TIMEOUT) {
+                assertEquals(ProfileEffect.AskForNotifications, awaitItem())
+                expectNoEvents()
+            }
+            assertEquals(true, alerts.enabled.first())
+        }
+
+    @Test
+    fun `a no from the system stores nothing and the wish stands until the system allows notifications`() =
+        runTest(dispatcher) {
+            val viewModel = viewModel()
+            viewModel.state.test(timeout = TURBINE_TIMEOUT) {
+                awaitState { !it.loading }
+                viewModel.onIntent(ProfileIntent.SetAlerts(on = true))
+                viewModel.onIntent(ProfileIntent.NotificationsChecked(allowed = false))
+                assertEquals(AlertsUi(on = true, blocked = true), awaitState { it.alerts.blocked }.alerts)
+                assertFalse(alerts.enabled.first())
+
+                viewModel.onIntent(ProfileIntent.OpenNotificationSettings)
+                // Back from the system's settings, where the rider allowed them: the wish becomes the choice.
+                viewModel.onIntent(ProfileIntent.NotificationsChecked(allowed = true))
+
+                assertEquals(AlertsUi(on = true), awaitState { it.inputs.alertsChosen }.alerts)
+                cancelAndIgnoreRemainingEvents()
+            }
+            viewModel.effects.test(timeout = TURBINE_TIMEOUT) {
+                assertEquals(ProfileEffect.AskForNotifications, awaitItem())
+                assertEquals(ProfileEffect.OpenNotificationSettings, awaitItem())
+            }
+            assertEquals(true, alerts.enabled.first())
+        }
+
+    @Test
+    fun `a wish the system refused is taken back with the switch and stays gone when notifications are allowed later`() =
+        runTest(dispatcher) {
+            val viewModel = viewModel()
+            viewModel.state.test(timeout = TURBINE_TIMEOUT) {
+                awaitState { !it.loading }
+                viewModel.onIntent(ProfileIntent.SetAlerts(on = true))
+                viewModel.onIntent(ProfileIntent.NotificationsChecked(allowed = false))
+                awaitState { it.alerts.blocked }
+
+                viewModel.onIntent(ProfileIntent.SetAlerts(on = false))
+                assertEquals(AlertsUi(), awaitState { !it.alerts.on }.alerts)
+                viewModel.onIntent(ProfileIntent.NotificationsChecked(allowed = true))
+
+                assertEquals(AlertsUi(), awaitState { it.inputs.notificationsAllowed == true }.alerts)
+                cancelAndIgnoreRemainingEvents()
+            }
+            assertEquals(false, alerts.enabled.first())
+        }
+
+    @Test
+    fun `saving the profile does not take back a wish the system refused`() =
+        runTest(dispatcher) {
+            profiles.save(alex()).value()
+            val viewModel = viewModel()
+            viewModel.state.test(timeout = TURBINE_TIMEOUT) {
+                awaitState { !it.loading }
+                viewModel.onIntent(ProfileIntent.SetAlerts(on = true))
+                viewModel.onIntent(ProfileIntent.NotificationsChecked(allowed = false))
+                awaitState { it.alerts.blocked }
+
+                // The settings file holds the profile too, so the stored choice is emitted again.
+                viewModel.edit(ProfileEdit.Weight("78"))
+                viewModel.onIntent(ProfileIntent.Save)
+                val saved = awaitState { !it.saving && !it.hasChanges && it.form.weightKg == "78" }
+
+                assertEquals(AlertsUi(on = true, blocked = true), saved.alerts)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `alerts chosen earlier that the system stopped showing say so and turn off without asking`() =
+        runTest(dispatcher) {
+            alerts.setEnabled(true).value()
+            val viewModel = viewModel()
+            viewModel.state.test(timeout = TURBINE_TIMEOUT) {
+                viewModel.onIntent(ProfileIntent.NotificationsChecked(allowed = false))
+                assertEquals(AlertsUi(on = true, blocked = true), awaitState { !it.loading && it.alerts.blocked }.alerts)
+
+                viewModel.onIntent(ProfileIntent.SetAlerts(on = false))
+
+                assertEquals(AlertsUi(), awaitState { !it.alerts.on }.alerts)
+                cancelAndIgnoreRemainingEvents()
+            }
+            viewModel.effects.test(timeout = TURBINE_TIMEOUT) { expectNoEvents() }
+            assertEquals(false, alerts.enabled.first())
+        }
+
+    @Test
+    fun `notifications the system shows turn nothing on by themselves`() =
+        runTest(dispatcher) {
+            val viewModel = viewModel()
+            viewModel.state.test(timeout = TURBINE_TIMEOUT) {
+                awaitState { !it.loading }
+                viewModel.onIntent(ProfileIntent.NotificationsChecked(allowed = true))
+                assertEquals(AlertsUi(), awaitState { it.inputs.notificationsAllowed == true }.alerts)
+                cancelAndIgnoreRemainingEvents()
+            }
+            assertEquals(false, alerts.enabled.first())
         }
 
     @Test

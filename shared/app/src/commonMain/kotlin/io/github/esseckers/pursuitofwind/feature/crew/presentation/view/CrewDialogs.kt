@@ -78,6 +78,7 @@ internal fun CrewDialogs(
                 maxLength = MAX_INVITE_CODE,
                 capitalization = KeyboardCapitalization.Characters,
                 tag = "crew.joinDialog",
+                initial = dialog.code,
                 onConfirm = { onIntent(CrewIntent.JoinCrew(it)) },
                 onDismiss = close,
             )
@@ -91,7 +92,8 @@ internal fun CrewDialogs(
 
 /**
  * One line of text and a confirm button, enabled once the text has a non-space character. While [sending], the button
- * shows progress and the dialog cannot be dismissed; [error] shows below the field and the text stays.
+ * shows progress and the dialog cannot be dismissed; [error] shows below the field and the text stays. The field starts
+ * with [initial].
  */
 @Suppress("LongParameterList") // Two call sites, each naming every value; a holder class would only rename them.
 @Composable
@@ -107,8 +109,10 @@ private fun TextDialog(
     tag: String,
     onConfirm: (String) -> Unit,
     onDismiss: () -> Unit,
+    initial: String = "",
 ) {
-    var text by rememberSaveable { mutableStateOf("") }
+    // Keyed by what it starts from: a second invitation opened over the dialog shows its own code.
+    var text by rememberSaveable(initial) { mutableStateOf(initial.take(maxLength)) }
     val canConfirm = text.isNotBlank() && !sending
     AlertDialog(
         onDismissRequest = { if (!sending) onDismiss() },

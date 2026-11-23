@@ -14,6 +14,7 @@ import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
@@ -23,6 +24,7 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isHeading
+import androidx.compose.ui.test.isOn
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -45,6 +47,8 @@ import io.github.esseckers.pursuitofwind.app.language.AppLocale
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.PursuitOfWindTheme
 import io.github.esseckers.pursuitofwind.core.designsystem.theme.Spacing
 import io.github.esseckers.pursuitofwind.core.map.SpotMap
+import io.github.esseckers.pursuitofwind.core.platform.BackgroundRefreshScheduler
+import io.github.esseckers.pursuitofwind.core.platform.NotificationPermission
 import io.github.esseckers.pursuitofwind.core.platform.ShareLauncher
 import io.github.esseckers.pursuitofwind.core.platform.TextClipboard
 import io.github.esseckers.pursuitofwind.data.fake.ControllableClock
@@ -52,6 +56,7 @@ import io.github.esseckers.pursuitofwind.data.model.GeoPoint
 import io.github.esseckers.pursuitofwind.data.repository.CrewRepository
 import io.github.esseckers.pursuitofwind.data.repository.ProfileRepository
 import io.github.esseckers.pursuitofwind.data.repository.SpotRepository
+import io.github.esseckers.pursuitofwind.data.repository.WindowAlertsRepository
 import io.github.esseckers.pursuitofwind.engine.model.Bearing
 import io.github.esseckers.pursuitofwind.engine.model.SpotId
 import io.github.esseckers.pursuitofwind.feature.spotdetail.NORDSTRAND
@@ -59,6 +64,8 @@ import io.github.esseckers.pursuitofwind.feature.spotdetail.SATURDAY
 import io.github.esseckers.pursuitofwind.feature.spotdetail.alex
 import io.github.esseckers.pursuitofwind.feature.spotdetail.at
 import io.github.esseckers.pursuitofwind.testing.RecordingAppLocale
+import io.github.esseckers.pursuitofwind.testing.RecordingBackgroundRefreshScheduler
+import io.github.esseckers.pursuitofwind.testing.RecordingNotificationPermission
 import io.github.esseckers.pursuitofwind.testing.RecordingShareLauncher
 import io.github.esseckers.pursuitofwind.testing.RecordingTextClipboard
 import io.github.esseckers.pursuitofwind.testing.ScriptedSpotMap
@@ -395,7 +402,10 @@ class AppNavigationTest {
 
             waitUntil(timeoutMillis = TIMEOUT_MS) { (graph.koin.get<ShareLauncher>() as RecordingShareLauncher).shared.isNotEmpty() }
             assertEquals(
-                listOf("Join my kite crew “Weekend Crew” in Pursuit Of Wind with the invite code WIND-4KQ7."),
+                listOf(
+                    "Join my kite crew “Weekend Crew” in Pursuit Of Wind with the invite code WIND-4KQ7, " +
+                        "or open pursuitofwind://invite/WIND-4KQ7 on a phone that has the app.",
+                ),
                 (graph.koin.get<ShareLauncher>() as RecordingShareLauncher).shared,
             )
         }

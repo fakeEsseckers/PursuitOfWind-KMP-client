@@ -23,5 +23,22 @@ public sealed interface Environment {
         val baseUrl: String,
     ) : Environment {
         override val storageName: String = "pursuitofwind"
+
+        init {
+            val origin = baseUrl.substringAfter("://", missingDelimiterValue = "")
+            val schemeKnown = baseUrl.startsWith("https://") || baseUrl.startsWith("http://")
+            require(schemeKnown && origin.isNotEmpty() && origin.none { it == '/' || it == '?' || it == '#' || it.isWhitespace() }) {
+                "The server's base URL must be an origin such as https://api.example.com, was '$baseUrl'"
+            }
+        }
+    }
+
+    public companion object {
+        /**
+         * The environment a build runs in, from the base URL it was built with: a real server when there is one, the
+         * in-app fake backend when [baseUrl] is null or blank. Entry points call this, so setting one build property is
+         * all it takes to move the app to a server.
+         */
+        public fun of(baseUrl: String?): Environment = baseUrl?.trim()?.takeIf { it.isNotEmpty() }?.let(::Remote) ?: Fake
     }
 }
