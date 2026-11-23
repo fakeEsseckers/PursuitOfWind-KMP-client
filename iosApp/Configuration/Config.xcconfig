@@ -8,4 +8,10 @@ APP_NAME = PursuitOfWind
 MARKETING_VERSION = 0.1.0
 CURRENT_PROJECT_VERSION = 1
 
+// The origin of the server this build talks to (no path). Empty runs the app on its in-app fake backend.
+// A double slash starts a comment in this file, so write the address with an empty variable between the slashes:
+//   API_BASE_URL = https:/$()/api.example.com
+// Put it in Config.local.xcconfig to keep it out of the repository.
+API_BASE_URL =
+
 #include? "Config.local.xcconfig"
