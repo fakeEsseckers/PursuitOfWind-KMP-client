@@ -2,6 +2,7 @@ package io.github.esseckers.pursuitofwind.app.di
 
 import co.touchlab.kermit.Logger
 import io.github.esseckers.pursuitofwind.app.EarlyLink
+import io.github.esseckers.pursuitofwind.app.PushTokenRegistrar
 import io.github.esseckers.pursuitofwind.app.navigation.PendingLinks
 import io.github.esseckers.pursuitofwind.data.Environment
 import io.github.esseckers.pursuitofwind.data.di.dataModule
@@ -40,6 +41,7 @@ internal fun appModules(
         module {
             factory<TimeZone> { riderZone() }
             single { PendingLinks() }
+            factory { PushTokenRegistrar(source = get(), account = get()) }
         },
         dataModule(environment, clock),
         todayModule,
@@ -54,15 +56,21 @@ internal fun appModules(
     )
 
 /**
- * Starts Koin once per process with [platform] bindings. The app talks to the in-app fake backend, which behaves like
- * a live server, until the real server exists. From here on the platform's background check follows the rider's choice
- * ([AlertsSchedule]), also when the system started the process without a screen.
+ * Starts Koin once per process with [platform] bindings, in [environment]: the in-app fake backend, which behaves like
+ * a live server, or a real server when the build was given its base URL ([Environment.of]). From here on the
+ * platform's background check follows the rider's choice ([AlertsSchedule]), also when the system started the process
+ * without a screen, and the server is told the device's push token, if the device has one.
  */
-internal fun startKoinOnce(platform: Module) {
+internal fun startKoinOnce(
+    platform: Module,
+    environment: Environment,
+) {
     if (KoinPlatform.getKoinOrNull() != null) return
-    val koin = startKoin { modules(listOf(platform) + appModules(Environment.Fake)) }.koin
+    val koin = startKoin { modules(listOf(platform) + appModules(environment)) }.koin
     EarlyLink.take()?.let { koin.get<PendingLinks>().open(it) }
     // Lives as long as the process. A failure here is logged, not thrown: it must not take the app down with it.
-    val failures = CoroutineExceptionHandler { _, failure -> Logger.withTag("Alerts").e(failure) { "Following the alerts choice failed" } }
-    CoroutineScope(SupervisorJob() + Dispatchers.Default + failures).launch { koin.get<AlertsSchedule>().follow() }
+    val failures = CoroutineExceptionHandler { _, failure -> Logger.withTag("App").e(failure) { "Work started with the app failed" } }
+    val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default + failures)
+    scope.launch { koin.get<AlertsSchedule>().follow() }
+    scope.launch { koin.get<PushTokenRegistrar>().register() }
 }

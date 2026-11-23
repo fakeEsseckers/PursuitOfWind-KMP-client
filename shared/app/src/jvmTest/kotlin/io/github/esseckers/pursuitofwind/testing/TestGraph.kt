@@ -5,7 +5,9 @@ import io.github.esseckers.pursuitofwind.app.language.AppLocale
 import io.github.esseckers.pursuitofwind.core.map.SpotMap
 import io.github.esseckers.pursuitofwind.core.platform.BackgroundRefreshScheduler
 import io.github.esseckers.pursuitofwind.core.platform.LocalNotifier
+import io.github.esseckers.pursuitofwind.core.platform.NoPushToken
 import io.github.esseckers.pursuitofwind.core.platform.NotificationPermission
+import io.github.esseckers.pursuitofwind.core.platform.PushTokenSource
 import io.github.esseckers.pursuitofwind.core.platform.ShareLauncher
 import io.github.esseckers.pursuitofwind.core.platform.TextClipboard
 import io.github.esseckers.pursuitofwind.data.Environment
@@ -44,6 +46,7 @@ internal fun testGraph(
                 single<LocalNotifier> { RecordingLocalNotifier() }
                 single<NotificationPermission> { RecordingNotificationPermission() }
                 single<BackgroundRefreshScheduler> { RecordingBackgroundRefreshScheduler() }
+                single<PushTokenSource> { NoPushToken }
             }
         modules(appModules(Environment.Fake, clock, riderZone = { TimeZone.of("Europe/Berlin") }) + platform + overrides)
     }

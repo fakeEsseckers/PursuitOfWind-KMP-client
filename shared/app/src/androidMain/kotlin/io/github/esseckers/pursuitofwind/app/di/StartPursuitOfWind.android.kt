@@ -12,16 +12,27 @@ import io.github.esseckers.pursuitofwind.core.platform.AndroidShareLauncher
 import io.github.esseckers.pursuitofwind.core.platform.AndroidTextClipboard
 import io.github.esseckers.pursuitofwind.core.platform.BackgroundRefreshScheduler
 import io.github.esseckers.pursuitofwind.core.platform.LocalNotifier
+import io.github.esseckers.pursuitofwind.core.platform.NoPushToken
 import io.github.esseckers.pursuitofwind.core.platform.NotificationPermission
+import io.github.esseckers.pursuitofwind.core.platform.PushTokenSource
 import io.github.esseckers.pursuitofwind.core.platform.ShareLauncher
 import io.github.esseckers.pursuitofwind.core.platform.TextClipboard
 import io.github.esseckers.pursuitofwind.core.platform.VisibleActivity
 import io.github.esseckers.pursuitofwind.core.platform.WorkManagerRefreshScheduler
+import io.github.esseckers.pursuitofwind.data.Environment
 import org.koin.dsl.module
 
-/** Starts the app's dependency graph. Call from `Application.onCreate`, before any screen is shown. */
-fun startPursuitOfWind(application: Application) {
+/**
+ * Starts the app's dependency graph. Call from `Application.onCreate`, before any screen is shown. [apiBaseUrl] is the
+ * origin of the server the build was made for (`https://api.example.com`); null or blank runs the app on its in-app
+ * fake backend.
+ */
+fun startPursuitOfWind(
+    application: Application,
+    apiBaseUrl: String? = null,
+) {
     startKoinOnce(
+        environment = Environment.of(apiBaseUrl),
         platform =
             module {
                 single<Context> { application }
@@ -34,6 +45,7 @@ fun startPursuitOfWind(application: Application) {
                 single<AppLocale> { AndroidAppLocale() }
                 single<SpotMap> { MapLibreSpotMap() }
                 single<TextClipboard> { AndroidTextClipboard(application) }
+                single<PushTokenSource> { NoPushToken }
             },
     )
 }
