@@ -21,12 +21,39 @@ android {
         targetSdk = androidTargetSdk
         versionCode = 1
         versionName = "0.1.0"
+
+        // The server this build talks to: -Ppursuitofwind.apiBaseUrl=https://api.example.com (an origin, no path).
+        // Without it the app runs on its in-app fake backend.
+        val apiBaseUrl = providers.gradleProperty("pursuitofwind.apiBaseUrl").getOrElse("")
+        buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
+    }
+
+    buildFeatures {
+        buildConfig = true
+    }
+
+    // The release key comes from the environment (CI secrets, or a developer's own shell): nothing about it is in the
+    // repository. Without it the release build is still made, unsigned, so R8 is exercised on every machine.
+    val releaseKeystore = providers.environmentVariable("RELEASE_KEYSTORE_FILE").orNull
+    signingConfigs {
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = file(releaseKeystore)
+                storePassword = providers.environmentVariable("RELEASE_KEYSTORE_PASSWORD").orNull
+                keyAlias = providers.environmentVariable("RELEASE_KEY_ALIAS").orNull
+                keyPassword = providers.environmentVariable("RELEASE_KEY_PASSWORD").orNull
+            }
+        }
     }
 
     buildTypes {
         release {
-            // R8 and release signing arrive with the release APK (Issue #12).
-            isMinifyEnabled = false
+            // R8 shrinks and obfuscates. The libraries ship their own keep rules (kotlinx.serialization, Room, Ktor,
+            // WorkManager, MapLibre); proguard-rules.pro holds what is the app's own.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.findByName("release")
         }
     }
 

@@ -10,7 +10,7 @@ class PursuitOfWindApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         if (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0) watchForMistakes()
-        startPursuitOfWind(this)
+        startPursuitOfWind(this, apiBaseUrl = BuildConfig.API_BASE_URL)
     }
 
     /**
