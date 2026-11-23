@@ -153,6 +153,21 @@ Xcode builds the shared framework by running Gradle from a build phase with a mi
 open iosApp/iosApp.xcodeproj            # then Run on an iOS simulator
 ```
 
+### Against a server
+
+A build runs on the in-app fake backend unless it is given the origin of a server that implements [`api/openapi.yaml`](api/openapi.yaml):
+
+```bash
+./gradlew :androidApp:installDebug -Ppursuitofwind.apiBaseUrl=http://10.0.2.2:8080    # a server on this machine, from an emulator
+./gradlew :androidApp:installDebug -Ppursuitofwind.apiBaseUrl=https://api.example.com
+```
+
+The address is an origin, without a path. Debug builds alone allow plain HTTP, and only to the developer's machine (`10.0.2.2`, `localhost`); everything else is HTTPS. A server build keeps its data apart from the fake backend's, so switching back and forth mixes nothing. On iOS the same address goes into `API_BASE_URL` in `iosApp/Configuration/Config.xcconfig` (written as `https:/$()/api.example.com`, because `//` starts a comment there); the app reads it from `Info.plist`. The server will send pushes; the app's seam for the device's token is `PushTokenSource`, which no platform fills yet.
+
+### Releases
+
+A tag `vX.Y.Z` runs [`release.yml`](.github/workflows/release.yml): the full check, then the engine and the contract are published as Maven artifacts for the server ([ADR 0012](docs/adr/0012-sharing-the-engine-and-the-contract-with-the-server.md)), and a GitHub Release gets the Android APK and the `openapi.yaml` of that tag. Release builds shrink with R8. The key comes from repository secrets; without them the APK is built unsigned. With the repository variable `API_BASE_URL` set, the build talks to that server and an App Bundle for Google Play is built too. The same build runs locally with [`scripts/build-release-apk.sh`](scripts/build-release-apk.sh).
+
 ## Engineering decisions
 
 | ADR | Decision |
@@ -168,6 +183,7 @@ open iosApp/iosApp.xcodeproj            # then Run on an iOS simulator
 | [0009](docs/adr/0009-navigation-3.md) | Navigation 3 for moving between screens |
 | [0010](docs/adr/0010-live-fake-backend-instead-of-demo-mode.md) | A live fake backend instead of a demo mode |
 | [0011](docs/adr/0011-local-notifications-until-the-server-exists.md) | Local notifications until the server exists |
+| [0012](docs/adr/0012-sharing-the-engine-and-the-contract-with-the-server.md) | Sharing the engine and the contract with the server |
 | [0013](docs/adr/0013-riders-add-spots-on-a-map.md) | Riders add spots on a map |
 | [0014](docs/adr/0014-riding-hours-and-the-longest-window-first.md) | Riding hours, and the longest window first |
 | [0015](docs/adr/0015-links-into-the-app-with-a-custom-scheme.md) | Links into the app with a custom scheme |
@@ -182,7 +198,8 @@ open iosApp/iosApp.xcodeproj            # then Run on an iOS simulator
 6. Spot detail with the hourly wind chart, and navigation — done
 7. Screens: onboarding, Profile with the app language, Spots, Crew with "I'm going" — done (its former Settings contents live in the profile)
 8. Background evaluation, local notifications and links into the app — Android done, iOS next
-9. Server phase (separate repository), with guided tours and spotlight hints
+9. Ready for a server: a build takes its address, the engine and the contract are published for it, release builds with R8 — done; store listings and push are with the server phase
+10. Server phase (separate repository), with guided tours and spotlight hints
 
 ## Disclaimer
 

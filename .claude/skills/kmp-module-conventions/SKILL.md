@@ -45,7 +45,7 @@ Allowed dependency direction: `contract` and `windengine` are independent leaves
    - `TextClipboard` — copies text such as a spot's coordinates (`:shared:app` `core/platform`, bound in the same places; says whether the system showed what was copied, as Android 13+ does, so the app shows a snackbar only where it did not; `RecordingTextClipboard` in tests)
    - `SpotMap` — the map of spots (`:shared:app` `core/map`). `MapLibreSpotMap` draws it from common code and is bound in the same places; MapLibre's JVM artifact cannot run in JVM tests, so `testGraph` binds a `ScriptedSpotMap`
 
-   Push-token registration is not built yet; when it is, it follows the same pattern.
+   - `PushTokenSource` — the device's push token for the server (`:shared:app` `core/platform`). No push service is wired yet, so every platform binds `NoPushToken`; `PushTokenRegistrar` (`app`) sends a token to the server at start when there is one
 2. **expect/actual only for small factories**: Room database builder, Ktor engine, DataStore path, platform name. No `expect class` with logic.
 3. Never put Android or iOS types in `commonMain` signatures.
 4. iOS-specific Kotlin lives in `iosMain` and calls platform frameworks directly (today `platform.Security` for the Keychain, `platform.UIKit` for the share sheet and clipboard). Swift code in `iosApp` stays thin: the app entry hosting `MainViewController()`, and later BG task registration and URL handling forwarded to Kotlin.

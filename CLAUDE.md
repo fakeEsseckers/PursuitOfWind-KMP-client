@@ -15,7 +15,10 @@ The full brief for this phase is `docs/prompts/client-phase.ru.md` (Russian). It
 ```text
 ./scripts/setup.sh                          # one-time: checks JDK, Android SDK, Xcode; writes local.properties
 ./scripts/check.sh                          # what Linux CI runs: ktlint, detekt, Lint, all tests, checkModuleGraph, koverVerify, debug APK
-./gradlew :androidApp:installDebug          # run on a device or emulator
+./gradlew :androidApp:installDebug          # run on a device or emulator (in-app fake backend)
+./gradlew :androidApp:installDebug -Ppursuitofwind.apiBaseUrl=http://10.0.2.2:8080   # against a server (an origin, no path)
+./scripts/build-release-apk.sh 1.2.0        # what release.yml builds: R8 release APK (+ App Bundle with API_BASE_URL) into dist/
+./gradlew :shared:windengine:publishToMavenLocal :shared:contract:publishToMavenLocal   # the artifacts the server consumes
 ./gradlew :shared:windengine:allTests       # engine tests on every target available on this machine
 ./gradlew :shared:windengine:jvmTest        # fastest feedback loop for engine work
 ./gradlew :shared:windengine:testAndroidHostTest
@@ -39,7 +42,7 @@ Toolchain versions and why: `gradle/libs.versions.toml` and `docs/adr/0003-depen
 | `:shared:data` | Ktor client, `FakePursuitOfWindServer`, Room, DataStore, repositories, `AppError` |
 | `:testing:openapi` | JVM, test-only: validates requests and responses against `api/openapi.yaml` |
 | `:shared:app` | screens as `feature.<name>` packages (domain / data / presentation with MVI / di), `core` (MVI base, design system), `app` (root composable, Navigation 3, Koin graph); platform services as interfaces in `core/platform` with the Android implementations in `androidMain` (WorkManager worker, notifications); iOS framework `PursuitOfWindKit` |
-| `:androidApp` | Android entry point: application, activity (hands links into the app to `openLink`), manifest (signing is not built yet) |
+| `:androidApp` | Android entry point: application (passes the build's server address), activity (hands links into the app to `openLink`), manifest, R8 and release signing from the environment |
 | `iosApp/` | Xcode project, SwiftUI host (BG tasks and URL scheme are not built yet) |
 
 Dependencies point one way: `androidApp → app → data → (windengine, contract)`; `app` may also use `windengine` and `contract` directly. `windengine` and `contract` depend on nothing project-internal. `:testing:*` modules may be used from tests only. `checkModuleGraph` enforces this.
