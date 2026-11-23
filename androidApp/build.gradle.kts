@@ -19,8 +19,10 @@ android {
         applicationId = appNamespace()
         minSdk = androidMinSdk
         targetSdk = androidTargetSdk
-        versionCode = 1
-        versionName = "0.1.0"
+        // A release carries the version of its tag and a build number that only grows (release.yml); other builds
+        // these defaults. Google Play refuses an upload whose versionCode it has seen.
+        versionCode = providers.gradleProperty("pursuitofwind.versionCode").map(String::toInt).getOrElse(1)
+        versionName = providers.gradleProperty("pursuitofwind.version").getOrElse("0.1.0")
 
         // The server this build talks to: -Ppursuitofwind.apiBaseUrl=https://api.example.com (an origin, no path).
         // Without it the app runs on its in-app fake backend.

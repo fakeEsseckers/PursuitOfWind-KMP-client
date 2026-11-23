@@ -1,0 +1,66 @@
+name: Release
+
+# A tag vX.Y.Z publishes the engine and the contract for the server (docs/adr/0012) and attaches the Android build
+# and the API contract to a GitHub Release.
+#
+# Repository settings this reads, all optional:
+#   secrets RELEASE_KEYSTORE_BASE64, RELEASE_KEYSTORE_PASSWORD, RELEASE_KEY_ALIAS, RELEASE_KEY_PASSWORD
+#     the release key; without them the APK is built unsigned
+#   variable API_BASE_URL
+#     the server's origin; without it the app runs on its in-app fake backend, and no App Bundle is built
+on:
+  push:
+    tags: ['v*']
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Check, publish, release
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      # The GitHub Release, and the Maven artifacts in this repository's GitHub Packages.
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Version from the tag
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+
+      - name: Check
+        run: ./scripts/check.sh
+
+      - name: Publish the engine and the contract
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./gradlew :shared:windengine:publish :shared:contract:publish -Ppursuitofwind.version="$VERSION"
+
+      - name: Build the release
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+          # Grows with every run of this workflow, as Google Play requires of a build number.
+          VERSION_CODE: ${{ github.run_number }}
+        run: ./scripts/build-release-apk.sh "$VERSION"
+
+      - name: Create the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* --title "$GITHUB_REF_NAME" --generate-notes

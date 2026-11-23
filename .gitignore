@@ -45,3 +45,8 @@ Pods/
 # OS
 .DS_Store
 Thumbs.db
+
+# What scripts/build-release-apk.sh collects for a release
+/dist/
+*.jks
+*.keystore
