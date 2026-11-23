@@ -18,4 +18,4 @@ Rules:
 - Errors are `application/problem+json` with the documented codes; mutations honor `Idempotency-Key`; the fake validates Bearer tokens.
 - Every route has a JVM contract test validating request and response against the spec.
 
-When you finish, report: endpoints touched, whether the change is breaking, tests added, and any note the server phase needs (also written into `docs/architecture.md`).
+When you finish, report: endpoints touched, whether the change is breaking, tests added, and any note the server phase needs (also recorded in `api/CHANGELOG.md`).

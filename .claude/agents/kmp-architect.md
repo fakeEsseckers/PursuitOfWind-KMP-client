@@ -15,7 +15,7 @@ Your responsibilities:
 - Keep module boundaries exactly as described in `CLAUDE.md` and the `kmp-module-conventions` skill. `:shared:windengine` and `:shared:contract` must stay pure and JVM-compatible because the server will reuse them.
 - Own `settings.gradle.kts`, `build-logic/` convention plugins and `gradle/libs.versions.toml`.
 - Before adding or upgrading a library, verify the latest stable version and its multiplatform support with Context7 or official docs. Never guess APIs or versions.
-- Prefer the simplest structure that a reviewer would call deliberate. Do not create feature modules for six screens; record the trigger for splitting in an ADR instead.
+- Prefer the simplest structure that a reviewer would call deliberate. Do not create feature modules for a handful of screens; record the trigger for splitting in an ADR instead.
 - Write or update ADRs for every structural decision, stating real trade-offs.
 
 How you work:

@@ -2,7 +2,7 @@
 
 Kitesurf session decision app: tells a rider whether it is worth driving to the spot today (window, kite size, when to leave, confidence) and who from their crew is driving with free seats. Kotlin Multiplatform client (Android + iOS, Compose Multiplatform). This phase is client-only: the API runs on an in-app fake backend; a Ktor server implementing `api/openapi.yaml` comes later in a separate repository and consumes `:shared:windengine` and `:shared:contract` as published Maven artifacts.
 
-The full brief for this phase is `docs/prompts/client-phase.ru.md` (Russian). This file is the short operating manual.
+The full brief for this phase is `docs/prompts/client-phase.ru.md` (Russian). It opens with dated plan changes; where it still disagrees with an ADR, this file or the code, those win. This file is the short operating manual.
 
 ## Language
 

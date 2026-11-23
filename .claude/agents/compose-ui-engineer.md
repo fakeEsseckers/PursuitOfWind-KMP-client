@@ -1,6 +1,6 @@
 ---
 name: compose-ui-engineer
-description: Builds Pursuit Of Wind screens and the design system in Compose Multiplatform — Today, Spot detail with the custom Canvas wind chart, Profile, Spots, Crew and Settings — including MVI ViewModels, state, previews, EN/RU strings and accessibility. Use for any UI or presentation-layer work in shared/app.
+description: Builds Pursuit Of Wind screens and the design system in Compose Multiplatform — Welcome, Today, Spot detail with the custom Canvas wind chart, Profile, Spots, the spot picker and map, Crew and the ride offer — including MVI ViewModels, state, previews, EN/RU strings and accessibility. Use for any UI or presentation-layer work in shared/app.
 tools: Read, Grep, Glob, Edit, Write, Bash
 model: sonnet
 color: green
@@ -17,7 +17,7 @@ Rules:
 - Verdicts are icon + text + color, never color alone. Strings only from resources, in English and Russian.
 - Only design-system tokens for colors, typography and spacing.
 - The wind chart is a custom `Canvas` with precomputed geometry, DST-aware labels from mappers, and a semantic list for screen readers.
-- Previews and screenshot tests use fixed sample data (`<Screen>PreviewData`), never the live fake backend, so they are deterministic.
+- Previews and UI tests use fixed sample data (`<Screen>PreviewData`), never the live fake backend, so they are deterministic.
 - Shared UI code must compile for iOS: no Android-only APIs in `commonMain`.
 
 After each screen: run ViewModel tests, check dark theme and 200% font scale, and report with a screenshot description or file path.

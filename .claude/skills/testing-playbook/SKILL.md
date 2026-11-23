@@ -1,6 +1,6 @@
 ---
 name: testing-playbook
-description: How tests are written and run in Pursuit Of Wind — test pyramid, naming, table-driven and property tests, coroutines with virtual time and Turbine, fake server usage, contract and screenshot tests, coverage and commands. Use when writing or fixing any test, investigating a flaky test, or checking coverage.
+description: How tests are written and run in Pursuit Of Wind — test pyramid, naming, table-driven and property tests, coroutines with virtual time and Turbine, fake server usage, contract and UI tests, coverage and commands. Use when writing or fixing any test, investigating a flaky test, or checking coverage.
 ---
 
 # Testing playbook
@@ -18,7 +18,6 @@ description: How tests are written and run in Pursuit Of Wind — test pyramid, 
 | MVI base (`MviViewModel`) | `:shared:app` `commonTest` | coroutines-test, Turbine, a test ViewModel | once |
 | ViewModels | `:shared:app` `jvmTest` | Turbine, `StandardTestDispatcher`, `ControllableClock`, the real data layer through `appModules(Environment.Fake, clock)` | per screen |
 | Screens | `:shared:app` `jvmTest` | Compose UI test on the desktop runtime (`androidx.compose.ui.test.v2.runComposeUiTest`) | each state, semantics, 200% font |
-| Screenshots | Android/JVM | Roborazzi (optional) | key screens × preview states |
 
 ## Conventions
 

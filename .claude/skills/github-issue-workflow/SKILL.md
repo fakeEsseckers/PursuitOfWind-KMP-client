@@ -80,6 +80,8 @@ Use this body for new issues (labels: `phase:client`, `area:<module>`, `priority
 
 ## Releasing the APK
 
+Not set up yet: there is no `release.yml` or release signing so far. When it exists:
+
 1. All issues for the milestone closed, `main` green.
 2. Tag `vX.Y.Z` → `release.yml` builds the signed release APK and publishes a GitHub Release.
 3. Release notes: what is new, that the APK runs on the in-app fake backend, known limitations (local notifications only, iOS build not distributed).

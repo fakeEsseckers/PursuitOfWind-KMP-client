@@ -36,17 +36,16 @@ Allowed dependency direction: `contract` and `windengine` are independent leaves
 ## Platform code policy
 
 1. **Interface + DI first.** Platform services are interfaces in `commonMain` of `:shared:data` (or `:shared:app` if UI-only), implemented in `androidMain` / `iosMain`, bound in Koin platform modules:
-   - `LocalNotifier` — show / cancel local notifications
-   - `BackgroundRefreshScheduler` — schedule periodic evaluation
    - `SecureTokenStore` — Keystore AES-GCM + DataStore on Android, Keychain on iOS
    - `ShareLauncher` — the system share sheet for an invitation (`:shared:app` `core/platform`, bound in `startPursuitOfWind` and `MainViewController`)
    - `AppLocale` — the app's language for resources (`:shared:app` `app/language`, bound in the same places; `RecordingAppLocale` in tests)
    - `TextClipboard` — copies text such as a spot's coordinates (`:shared:app` `core/platform`, bound in the same places; says whether the system showed what was copied, as Android 13+ does, so the app shows a snackbar only where it did not; `RecordingTextClipboard` in tests)
    - `SpotMap` — the map of spots (`:shared:app` `core/map`). `MapLibreSpotMap` draws it from common code and is bound in the same places; MapLibre's JVM artifact cannot run in JVM tests, so `testGraph` binds a `ScriptedSpotMap`
-   - `PushTokenRegistrar` — no-op in this phase
+
+   Local notifications, background refresh and push-token registration are not built yet; when they are, they follow the same pattern.
 2. **expect/actual only for small factories**: Room database builder, Ktor engine, DataStore path, platform name. No `expect class` with logic.
 3. Never put Android or iOS types in `commonMain` signatures.
-4. iOS-specific Kotlin lives in `iosMain` and calls platform frameworks directly (`platform.UserNotifications`, `platform.BackgroundTasks`, `platform.Security`). Swift code in `iosApp` stays thin: app entry, BG task registration, URL handling forwarded to Kotlin.
+4. iOS-specific Kotlin lives in `iosMain` and calls platform frameworks directly (today `platform.Security` for the Keychain, `platform.UIKit` for the share sheet and clipboard). Swift code in `iosApp` stays thin: the app entry hosting `MainViewController()`, and later BG task registration and URL handling forwarded to Kotlin.
 
 ## Package layout inside a module
 
@@ -63,16 +62,18 @@ io.github.esseckers.pursuitofwind.<module>/
 
 ```text
 io.github.esseckers.pursuitofwind/
-  app/                      # App(), di/appModules(), navigation/ (Navigation 3), platform entry points
+  app/                      # App(), di/appModules(), navigation/ (Navigation 3), language/ (AppLocale), platform entry points
   core/
     Extensions.kt           # CollectEffects, launchFinishing, Clock.ticks: helpers every screen uses
     mvi/                    # MviViewModel, Reducer
     domain/                 # rules several features share (RideRulesMapper) and their *Entity types
     refresh/                # a screen's refresh status and the notice above its content
     designsystem/           # theme/, component/, icon/
+    platform/               # platform UI services: ShareLauncher, TextClipboard
+    map/                    # SpotMap and its MapLibre implementation
     ui/                     # formatting and labels shared by screens
     resources/              # generated Res (packageOfResClass)
-  feature/<screen>/         # today, spotdetail, profile, spots, crew, settings
+  feature/<screen>/         # welcome, today, spotdetail, profile, spots, spotpicker, spotmap, crew, rideoffer
     domain/entity/          # the feature's domain types, named *Entity
     domain/mapper/          # pure rules over those types that one layer uses (`RefreshErrorMapper`, `TodayEvaluationMapper`), with tests
     domain/repository/      # the repository interface the feature needs
